@@ -96,3 +96,41 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   remain unset until that pilot is actually run (next: Day 1 afternoon/evening implementation).
 - Not yet done: `simulate_g1_ddm.R` implementation, calibration script execution,
   `discretise_confidence()` implementation, unit tests.
+
+## 2026-09-23 — Day 1 afternoon: discretise_confidence() and simulate_g1_ddm()
+
+- Implemented `discretise_confidence()` (`code/01_simulate/discretise_confidence.R`): rank-based
+  within-subject `K`-quantile binning via `dplyr::ntile()`. Returns `data` (input + integer
+  `confidence` column), `cutpoints` (per-subject `K-1` empirical quantile cut-points plus
+  duplicate-value/degenerate-cutpoint counts), `category_counts`, and a one-row `tie_summary`.
+  Manually verified: uniform ~n/K category counts by construction; correctly flags all 20 tied
+  values and a degenerate cutpoint in an artificial `{0,1}`-repeated test case; errors cleanly
+  on missing columns or `NA` in the value column.
+- Implemented `simulate_g1_ddm()` (`code/01_simulate/simulate_g1_ddm.R`) per the DGP spec locked
+  this morning: two internal helpers, `.ddm_decision_phase()` (vectorised Euler–Maruyama to
+  first boundary crossing, `dt = 0.001s` steps, cost scales with only the still-active trials)
+  and `.ddm_postdecision_phase()` (continues the same accumulator, unboundaried, for a fixed
+  `tau`). `q` is the response-sign-flipped post-decisional evidence relative to the starting
+  point; `y = q + N(0, sigma_c^2)`; confidence is binned via `discretise_confidence()`, with its
+  diagnostics attached as attributes (`cutpoints`, `category_counts`, `tie_summary`) rather than
+  changing the function's primary tibble-of-trials return shape. RNG isolated per call via
+  `withr::with_seed()`.
+- Manual smoke test (`v=1.2, a=1.5, t0=0.3, tau=0.3, sigma_c=0.5`, 5 × 200 trials): ran in
+  0.12s; `rt > t0` always; `correct == (stimulus == response)` always; empirical accuracy 85%.
+  At `sigma_c = 0`, `y == q` exactly and confidence is monotonic in `q` per subject (not just
+  correlated — checked via `order()` + `is.unsorted()`). At `sigma_c = 50`, Spearman
+  `cor(q, y) ≈ 0.03` (chosen to demonstrate near-zero correlation is reachable; the actual
+  low/medium/high grid values are still pending the pilot). Same-seed calls are `identical()`.
+- Wrote the protocol's required unit tests into `tests/test_discretise_confidence.R` (12 tests:
+  category counts, row/column preservation, `K=6` support for the later binning-sensitivity
+  analysis, tie/degeneracy flagging, input validation) and `tests/test_simulate_g1_ddm.R` (17
+  tests: row/column contract, `sigma_c=0` monotonicity, large-`sigma_c` decorrelation +
+  nondegenerate category counts, `aggregate_metad()` compatibility — skipped if `hmetad` isn't
+  installed — and seed reproducibility). Ran `testthat::test_dir("tests")`: all pass (the
+  `test_data_format.R` stub remains an intentional empty skip, deferred to the Day 2 fit
+  wrapper work).
+- `renv::status()` shows ~70 packages "recorded but not detected as used" (transitive tidyverse
+  deps not yet directly called) — expected given the `type="all"` snapshot; not re-snapshotting
+  yet, per the plan already noted above to prefer dependency-scan-based snapshots later.
+- Not yet done: DDM calibration pilot (`v`/`σ_c` values still placeholders), `simulate_g0.R`,
+  `simulate_g2_gumbel.R`, `validate_generators.R`, `test_data_format.R`.
