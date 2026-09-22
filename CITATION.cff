@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Metacognitive Noise Recovery with hmetad: Static meta-d′ estimation under dynamic confidence generation and distributional misspecification"
+type: software
+authors:
+  - family-names: "Chan"
+    given-names: "Karen C.L."
+repository-code: "https://github.com/"
+license: MIT
+version: 0.1.0
+date-released: 2026-09-22
