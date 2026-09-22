@@ -36,3 +36,24 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   `qs::qsave()` / `qs::qread()`; interim per-cell result files use the `.qs2` extension instead
   of `.qs`. Updated `code/00_setup/00_packages.R`, `code/02_fit/run_one_cell.R`, and
   `.gitignore` accordingly. No effect on the scientific design.
+
+### renv::init() and snapshot
+
+- Ran `renv::init(project = ..., bare = TRUE, force = TRUE)` to activate renv for the project
+  (creates `.Rprofile`, `renv/activate.R`, `renv/settings.json`, `renv/library/`).
+- Ran `renv::hydrate(packages = <Day-1 package list>, update = FALSE)` to populate the project
+  library by linking the already-verified packages from the user library (156 packages total,
+  including transitive dependencies) — no re-download needed since versions were already
+  current.
+- Ran `renv::snapshot(type = "all", prompt = FALSE)` to lock every package in the library
+  (not just statically-detected dependencies, since most package references in code stubs are
+  still commented out at this scaffolding stage). Lockfile written to `renv.lock`, recording
+  R 4.5.0 and exact versions/sources for all 156 packages (CRAN plus three r-universe sources:
+  `cmdstanr` from bbsbayes, `hmetad` from metacoglab, `rstan`/`StanHeaders` from stan-dev).
+- Committed `.Rprofile`, `renv.lock`, and `renv/{.gitignore,activate.R,settings.json}`.
+  `renv/library/` stays gitignored (both renv's own `renv/.gitignore` and the project
+  `.gitignore` exclude it), consistent with protocol section 2.3.
+- **Note for future snapshots:** once real dependencies (`library()`/`::`-calls) land in the
+  R scripts, prefer the default `renv::snapshot()` (dependency-scan based) so the lockfile
+  reflects only what's actually used; re-run with `type = "all"` deliberately if a full-library
+  lock is wanted again.
