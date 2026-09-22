@@ -164,3 +164,29 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   for the full primary-grid conditions (this pilot used one pseudo-subject at `d′=1.5` only, per
   the calibration plan — the Day-1 gate's broader "validate at primary grid scale" check is
   still pending).
+
+## 2026-09-23 — Day 1 close-out: simulate_g0(), simulate_g2_gumbel(), remaining tests
+
+- Implemented `simulate_g0()` (`code/01_simulate/simulate_g0.R`) using
+  `hmetad::sim_metad_participant()` with `sd_dprime = sd_M = sd_c = 0` (no between-subject
+  variability on the parameters the known-truth check depends on). Verified: `log_M = -1`
+  produces an `M` column of exactly `exp(-1) = 0.3679` for all 4000 simulated rows (20
+  participants × 200 trials), and a quick `fit_metad()` recovered posterior `Intercept` ≈
+  −1.02 (95% CI [−1.31, −0.81]) — correctly bracketing the generating `log_M`.
+- Implemented `simulate_g2_gumbel()` (`code/01_simulate/simulate_g2_gumbel.R`). `hmetad` exports
+  no Gumbel-min `lcdf`/`lccdf` (only `normal_lcdf`/`normal_lccdf`), so wrote both, choosing a
+  fixed unit-variance scale (`beta = sqrt(6)/pi`) and shifting the location so the distribution's
+  mean equals the input `mu` exactly (`nu = mu + gamma*beta`), making `mu` play the same role as
+  in the Gaussian case. Verified numerically: `exp(lcdf)+exp(lccdf)==1` everywhere tested;
+  numerically-integrated mean/variance from the CDF match `mu`/`1`; `sim_metad()` with these
+  functions produced no `NA`s and showed the expected accuracy increase with `dprime`
+  (hit rate 0.70→0.81 for `dprime` 0.75→1.5). Full derivation and the still-pending Stan-side
+  function requirement for Day 2 fitting recorded in `docs/design_decisions.md`.
+- Filled in `tests/test_data_format.R` (17 tests): schema checks (stimulus/response/confidence
+  validity) and `hmetad::aggregate_metad()` compatibility for all three generators (G0, G1, G2),
+  the G0 known-`M` check, and a Gumbel-min CDF-pair validity check. Ran
+  `testthat::test_dir("tests")`: all 46 tests across the three test files pass.
+- Day 1 gate substantially closed: all four generator functions
+  (`discretise_confidence`, `simulate_g1_ddm`, `simulate_g0`, `simulate_g2_gumbel`) implemented,
+  calibrated where required, and tested. Remaining before the full grid: the Day 2 fit wrapper
+  (`fit_one_hmetad()`), including the Gumbel-min Stan-side function definitions noted above.

@@ -124,6 +124,48 @@ written against this package. Key facts established empirically (see
 - **G2 distribution:** `gumbel_min`, per protocol section 3.3 and `stanvars_metad()`'s own
   worked example (`stanvars_metad(4, distribution = "gumbel_min")`).
 
+## 2026-09-23 — G0/G2 generator implementation and Gumbel-min parameterisation
+
+`simulate_g0()` and `simulate_g2_gumbel()` (`code/01_simulate/simulate_g0.R`,
+`code/01_simulate/simulate_g2_gumbel.R`) both use `hmetad::sim_metad_participant()` with
+`sd_dprime = sd_M = sd_c = 0` (no between-subject variability in the parameters that matter for
+the known-truth check — a small default between-subject spread is kept on the confidence
+thresholds, `sd_z_c2_{0,1} = 0.1`, since zero threshold variability would be an unrealistic
+degenerate case and isn't needed for `log_M` to be exact). `log_M` is passed straight through as
+`mean_M` under `allow_negative_values = FALSE`, per the hmetad API notes above. Verified: for
+`log_M = -1`, the `M` column is exactly `exp(-1) = 0.3679` for every simulated row, and a quick
+`fit_metad()` recovers a posterior `Intercept` of ≈ −1.02 (95% CI [−1.31, −0.81]).
+
+**`hmetad` exports no Gumbel-min `lcdf`/`lccdf`** (only `normal_lcdf`/`normal_lccdf`, both with
+signature `(x, mu)` and an implicit fixed unit scale). `simulate_g2_gumbel.R` defines its own
+pair using the standard Gumbel-min CDF `F(x) = 1 - exp(-exp((x-nu)/beta))`, with two locked
+implementation choices to keep it a drop-in, comparable analog to the normal case per the
+package's "parameter-free" requirement:
+
+- **Fixed scale `beta = sqrt(6)/pi`**, giving unit variance (matching the normal's implicit
+  `sd = 1`).
+- **Location shifted so the distribution's mean equals the input `mu` exactly**:
+  `nu = mu + gamma * beta` (`gamma` = Euler–Mascheroni constant), since the raw Gumbel-min
+  location parameter is *not* its mean (`mean = nu - gamma*beta`) and `mu` needs to play the
+  same "mean-of-signal-distribution" role that `dprime`/`meta_c` play in the Gaussian case.
+
+Verified numerically: `exp(lcdf(x,mu)) + exp(lccdf(x,mu)) == 1` for all tested `x`; numerically
+estimated mean/variance from the CDF recover `mu`/`1` to within Monte Carlo/grid error; `sim_metad()`
+with these functions produces no `NA`s and shows accuracy increasing with `dprime` as expected
+(hit rate 0.70→0.81 going from `dprime=0.75` to `1.5`, both non-degenerate). This is a
+documented, locked distributional choice, not a claim that meta-d′/dprime on the Gumbel-min
+scale is numerically equivalent to the Gaussian scale (protocol section 3.3's scale caveat still
+applies to any cross-distribution parameter comparison).
+
+**Day 2 dependency, not yet implemented:** fitting the correctly-specified G2 model requires
+matching **Stan-side** `gumbel_min_lcdf`/`gumbel_min_lccdf` function definitions (via an extra
+`brms::stanvar(scode = ..., block = "functions")` passed alongside `stanvars_metad(K,
+distribution = "gumbel_min")` to `fit_metad()`), using the identical `nu`/`beta`
+parameterisation as the R functions above. `stanvars_metad()`'s own generated code already
+*calls* `gumbel_min_lcdf`/`gumbel_min_lccdf` (confirmed by inspecting its Stan code) but does not
+define them — this is exactly what its documentation means by "you must additionally provide two
+functions to Stan." Needed in `code/02_fit/fit_hmetad.R`.
+
 ## 2026-09-23 — G1 DGP specification (protocol section 3.2)
 
 Written before implementation, per the Day-1 gate. Diffusion coefficient fixed at `s = 1`
