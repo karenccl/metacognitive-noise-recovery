@@ -16,6 +16,15 @@ the core scientific question.
 
 Repository structure created per protocol section 2.1. No scientific decisions locked yet.
 
+## 2026-09-23 — Deviation: qs → qs2
+
+Protocol section 4.1 lists `qs` for atomic per-cell result storage. `qs` is archived on CRAN
+and unavailable for R 4.5.0; installed `qs2` (same author, maintained successor) instead.
+Interim result files now use `qs2::qs_save()`/`qs2::qs_read()` and the `.qs2` extension in
+place of `.qs`. Purely a serialization-format substitution; no effect on the scientific design,
+grid, or estimands. See `docs/computational_environment.md` and `docs/analysis_log.md` for
+details.
+
 ## Locked decisions (from protocol)
 
 - **Primary estimand:** group-level or condition-level posterior `log_M` from `hmetad`.

@@ -26,3 +26,13 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - Full results recorded in `docs/computational_environment.md`.
 - Not yet done: `renv::init()` / `renv::snapshot()` to lock the environment (renv is installed
   but the project has no `renv.lock` yet).
+
+### qs → qs2 substitution
+
+- `install.packages("qs")` failed: `qs` is archived on CRAN, not available for R 4.5.0.
+- Installed `qs2` 0.3.1 (same author, current maintained successor) plus its dependencies
+  `RcppParallel` 6.2.1 and `stringfish` 0.19.2 — all from CRAN binaries, no compile issues.
+- **Deviation from protocol section 4.1:** use `qs2::qs_save()` / `qs2::qs_read()` in place of
+  `qs::qsave()` / `qs::qread()`; interim per-cell result files use the `.qs2` extension instead
+  of `.qs`. Updated `code/00_setup/00_packages.R`, `code/02_fit/run_one_cell.R`, and
+  `.gitignore` accordingly. No effect on the scientific design.

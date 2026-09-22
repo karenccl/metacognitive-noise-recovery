@@ -4,7 +4,7 @@ data/interim/*
 !data/interim/.gitkeep
 outputs/*.rds
 outputs/**/*.rds
-*.qs
+*.qs2
 .cmdstan/
 *.o
 *.hpp

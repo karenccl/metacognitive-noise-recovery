@@ -24,7 +24,9 @@ Verified 2026-09-23 (Day 0 backend check).
 | here | 1.0.2 |
 | testthat | 3.3.2 |
 | renv | 1.2.2 |
-| qs | **not installed** — required by protocol section 4.1 for atomic result storage (`data/interim/*.qs`); install before Day 2 batch infrastructure |
+| qs2 | 0.3.1 |
+| RcppParallel | 6.2.1 (qs2 dependency) |
+| stringfish | 0.19.2 (qs2 dependency) |
 
 Full `sessioninfo::session_info()` output not yet captured; re-run and paste after `renv::init()` /
 `renv::snapshot()` so the lockfile and this log stay consistent.
@@ -36,6 +38,7 @@ Full `sessioninfo::session_info()` output not yet captured; re-run and paste aft
 | 2026-09-23 | `cmdstanr::cmdstan_version()` | 2.36.0 — matches protocol's expected CmdStan 2.36.0 |
 | 2026-09-23 | CmdStan compile+sample smoke test (`examples/bernoulli/bernoulli.stan`, 2 chains × 200 warmup/200 sampling) | Passed. Compiled and sampled in ~1.2s; `rhat` ≈ 1.03 for both parameters, no errors. See `docs/analysis_log.md` for the run transcript. |
 | 2026-09-23 | Package availability check (`requireNamespace()` for all Day-1 install list) | All present except `qs` (not installed) |
+| 2026-09-23 | `qs` install attempt | Failed — `qs` is archived on CRAN for R 4.5.0, superseded by `qs2` (same author). Installed `qs2` 0.3.1 instead. **Deviation:** all references to `qs::qsave()`/`qs::qread()` in code/docs use `qs2::qs_save()`/`qs2::qs_read()` instead; interim files use the `.qs2` extension. |
 
 **A newer CmdStan version than 2.36.0 is available** (per `cmdstanr` update notice). Not
 upgraded — the protocol locks 2.36.0 as the recorded/expected version; revisit only if a
