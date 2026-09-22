@@ -134,3 +134,33 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   yet, per the plan already noted above to prefer dependency-scan-based snapshots later.
 - Not yet done: DDM calibration pilot (`v`/`σ_c` values still placeholders), `simulate_g0.R`,
   `simulate_g2_gumbel.R`, `validate_generators.R`, `test_data_format.R`.
+
+## 2026-09-23 — Day 1 afternoon: DDM calibration and σ_c pilot
+
+- Implemented `code/01_simulate/validate_generators.R`: drift-`v` bisection calibration to
+  target `d′` (common-random-numbers seed across iterations for a smooth bisection target), and
+  a `σ_c` low/medium/high pilot that reuses one shared `q` realisation (decision + post-decision
+  stages don't depend on `σ_c`) and only re-draws readout noise per candidate — fast (full
+  script ran in well under a minute for 100k+100k calibration trials and a 20k×12 pilot sweep).
+- Calibration results: `d′ = 0.75` → `v = 0.388` (empirical `d′ = 0.733`); `d′ = 1.5` →
+  `v = 0.797` (empirical `d′ = 1.500`); both within the ±0.02 tolerance at a shared
+  `a = 1.5, t0 = 0.3s` — no per-target boundary/nondecision-time deviation needed. The two
+  empirical-`d′` formulas (hit/FA vs. `2·Φ⁻¹(p_correct)`) agreed exactly (0 disagreement),
+  ruling out a response-bias bug.
+- σ_c pilot (`N=20,000`, calibrated `v` for `d′=1.5`): confirmed empirically that raw
+  confidence-category occupancy stays ~25%/category across the whole sweep (as the design
+  decisions predicted) and is not a usable diagnostic; used Spearman
+  `cor(confidence, correct)` instead, which fell smoothly and monotonically from 0.319 to
+  0.037 across 12 candidate `σ_c` values spanning `0.05×SD(q)` to `8×SD(q)`. No tied readout
+  values anywhere in the sweep.
+- Chosen low/medium/high: `σ_c = 0.291, 0.872, 2.91` (`cor(confidence,correct) = 0.287, 0.176,
+  0.062` respectively) — picked as the closest matches to 3 points spanning 85%/50%/15% of the
+  observed association range, not evenly-spaced arbitrary numbers.
+- Wrote `outputs/tables/ddm_calibration.csv`, `outputs/tables/sigma_c_pilot.csv` (full 12-point
+  sweep), `outputs/tables/sigma_c_chosen.csv`. Updated `config/design.yml`
+  (`ddm.v_by_dprime_target`, `ddm.sigma_c_values`) and `docs/design_decisions.md` with the full
+  results.
+- Not yet done: `simulate_g0.R`, `simulate_g2_gumbel.R`, `test_data_format.R`, degeneracy checks
+  for the full primary-grid conditions (this pilot used one pseudo-subject at `d′=1.5` only, per
+  the calibration plan — the Day-1 gate's broader "validate at primary grid scale" check is
+  still pending).

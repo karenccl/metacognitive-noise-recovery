@@ -9,7 +9,7 @@ grid:
   n_subjects: [20, 40]
   n_trials: [100, 200, 400]
   dprime_target: [0.75, 1.5]
-  sigma_c_levels: [low, medium, high]  # TODO: calibrate actual values (protocol 3.2, pilot not yet run)
+  sigma_c_levels: [low, medium, high]  # values: ddm.sigma_c_values below (calibrated 2026-09-23)
   replications:
     target: 30
     minimum: 15
@@ -27,9 +27,21 @@ ddm:
   t0: 0.3       # nondecision time, seconds, starting value pending calibration
   tau: 0.3      # post-decision accumulation duration, seconds
   dprime_tolerance: 0.02  # bisection stop tolerance for calibrated empirical d'
-  # v (drift magnitude per dprime_target) and sigma_c_values (low/medium/high)
-  # are NOT set here -- they are calibration outputs, written to
-  # outputs/tables/ddm_calibration.csv and back into this file once run.
+  # Calibrated 2026-09-23 by code/01_simulate/validate_generators.R (bisection,
+  # N=100,000 trials/target, common-random-numbers seed). Full detail in
+  # outputs/tables/ddm_calibration.csv and docs/design_decisions.md.
+  v_by_dprime_target:
+    "0.75": 0.388   # empirical d' = 0.733 (target 0.75, within tolerance)
+    "1.5": 0.797    # empirical d' = 1.500 (target 1.5, within tolerance)
+  # sigma_c pilot (N=20,000 trials, calibrated v for d'=1.5, a=1.5, tau=0.3):
+  # SD(q) = 0.5811. Chosen as the candidates whose Spearman
+  # cor(confidence, correct) is closest to 3 targets spanning the observed
+  # range (near-ceiling/mid/near-floor), not evenly-spaced sigma_c values --
+  # see outputs/tables/sigma_c_pilot.csv for the full 12-point sweep.
+  sigma_c_values:
+    low: 0.291      # sigma_c/SD(q) = 0.5,  cor(q,y) = 0.883, cor(confidence,correct) = 0.287
+    medium: 0.872   # sigma_c/SD(q) = 1.5,  cor(q,y) = 0.530, cor(confidence,correct) = 0.176
+    high: 2.91      # sigma_c/SD(q) = 5.0,  cor(q,y) = 0.182, cor(confidence,correct) = 0.062
 
 sampling:
   chains: 4

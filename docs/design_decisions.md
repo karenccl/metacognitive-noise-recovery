@@ -217,8 +217,50 @@ degeneracy the protocol's section 1.4 correction warns about). Instead:
 4. Save the pilot sweep and final chosen values into `docs/design_decisions.md` (update this
    section) and `config/design.yml` once run.
 
-**Not yet run** — `v`, `a`, `t0`, `tau`, and the three `σ_c` values in `config/design.yml`
-remain `null`/placeholder pending this pilot (Day 1 afternoon/evening implementation step).
+## 2026-09-23 — DDM calibration and σ_c pilot results
+
+Run via `code/01_simulate/validate_generators.R` (seed base `20260923` from
+`config/design.yml`). Full tables in `outputs/tables/ddm_calibration.csv`,
+`outputs/tables/sigma_c_pilot.csv`, `outputs/tables/sigma_c_chosen.csv`.
+
+**Drift calibration** (bisection, `N = 100,000` trials/target, `a = 1.5`, `t0 = 0.3s`, shared
+seed across bisection iterations — common random numbers, so empirical `d′(v)` is smooth and
+bisection is stable):
+
+| `d′` target | `v` | empirical `d′` (H/FA formula) | empirical `d′` (2·Φ⁻¹(p_correct)) | hit rate | FA rate | mean RT |
+|---|---|---|---|---|---|---|
+| 0.75 | 0.388 | 0.733 | 0.733 | 0.702 | 0.298 | ~1.1 s |
+| 1.5 | 0.797 | 1.500 | 1.500 | 0.836 | 0.164 | ~0.75 s |
+
+Both `d′` targets reached within the ±0.02 tolerance. The two empirical `d′` formulas agree
+**exactly** for both targets (max disagreement = 0), confirming no detectable response bias —
+a shared `a = 1.5, t0 = 0.3s` works for both target levels, so no per-target `a`/`t0`
+deviation was needed.
+
+**σ_c pilot** (`N = 20,000` trials, one pseudo-subject, calibrated `v = 0.797` for `d′ = 1.5`,
+`a = 1.5`, `tau = 0.3s`; `SD(q) = 0.5811`). Confirmed the section-1.4 concern empirically: raw
+confidence-category counts stay at ~25%/category across the entire sweep (by construction of
+the rank-based binning) and were not usable as a diagnostic; `cor(confidence, correct)`
+(Spearman) was used instead and decreases smoothly and monotonically across all 12 candidate
+`σ_c` values (0.999→0.113 for `cor(q,y)`; 0.319→0.037 for `cor(confidence, correct)`); no tied
+`y` values anywhere in the sweep.
+
+**Chosen low/medium/high** (closest matches to 3 targets spanning the observed
+`cor(confidence, correct)` range, at 85%/50%/15% of that range from the ceiling — see
+`validate_generators.R` for the exact selection rule):
+
+| Level | `σ_c` | `σ_c` / SD(q) | `cor(q, y)` | `cor(confidence, correct)` |
+|---|---|---|---|---|
+| low | 0.291 | 0.5 | 0.883 | 0.287 |
+| medium | 0.872 | 1.5 | 0.530 | 0.176 |
+| high | 2.91 | 5.0 | 0.182 | 0.062 |
+
+These are a clearly distinguishable, non-arbitrary spread (not evenly-spaced numbers picked
+without justification) and are now locked in `config/design.yml` (`ddm.v_by_dprime_target`,
+`ddm.sigma_c_values`). **Note:** these calibration/pilot runs used the decision+post-decision
+stages only (no readout-noise-dependent quantity affects `q`), so the same `q` realisation was
+reused across the whole `σ_c` sweep — an intentional, documented variance-reduction choice, not
+a shortcut that changes what's being measured.
 
 ## What this project must not claim
 
