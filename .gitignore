@@ -1,0 +1,9 @@
+data/raw/
+data/interim/
+data/processed/
+.Rproj.user/
+.Rhistory
+.RData
+renv/library/
+renv/staging/
+renv/python/
