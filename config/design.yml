@@ -1,14 +1,15 @@
 # Locked design constants (protocol section 1.3). All grid, seed, and
 # sampler settings referenced by code/ must live here -- no script
-# should hardcode these values independently.
+# should hardcode these values independently. See docs/design_decisions.md
+# for rationale.
 
-seed_base: null  # TODO: set base seed for deterministic derivation
+seed_base: 20260923  # date this was locked (2026-09-23), used as the deterministic RNG root
 
 grid:
   n_subjects: [20, 40]
   n_trials: [100, 200, 400]
   dprime_target: [0.75, 1.5]
-  sigma_c_levels: [low, medium, high]  # TODO: calibrate actual values (protocol 3.2)
+  sigma_c_levels: [low, medium, high]  # TODO: calibrate actual values (protocol 3.2, pilot not yet run)
   replications:
     target: 30
     minimum: 15
@@ -16,25 +17,44 @@ grid:
 confidence:
   k: 4
 
+ddm:
+  # Starting values for calibration (docs/design_decisions.md); v is
+  # solved per dprime_target, a/t0 held fixed unless calibration shows
+  # both targets cannot be reached with a shared value.
+  s: 1          # diffusion coefficient (fixed, standard DDM convention)
+  dt: 0.001     # Euler-Maruyama time step, seconds
+  a: 1.5        # boundary separation, starting value pending calibration
+  t0: 0.3       # nondecision time, seconds, starting value pending calibration
+  tau: 0.3      # post-decision accumulation duration, seconds
+  dprime_tolerance: 0.02  # bisection stop tolerance for calibrated empirical d'
+  # v (drift magnitude per dprime_target) and sigma_c_values (low/medium/high)
+  # are NOT set here -- they are calibration outputs, written to
+  # outputs/tables/ddm_calibration.csv and back into this file once run.
+
 sampling:
   chains: 4
   warmup: 1000
   iter_sampling: 1000
   adapt_delta: 0.95
-  max_treedepth: null  # TODO: set and document
+  max_treedepth: 12
   escalation:
     adapt_delta: 0.99
-    max_treedepth: null  # TODO: set and document
+    max_treedepth: 14
 
 diagnostics:
   rhat_max: 1.01
-  # TODO: document ESS thresholds and any additional flags
+  bulk_ess_min: 400
+  tail_ess_min: 400
+  max_treedepth_hit_flag: true  # any transition at max_treedepth triggers refit
 
 distributions:
   g2_alternative: gumbel_min
 
+fitting:
+  metac_absolute: true   # meta_c = c (package default; see docs/design_decisions.md)
+  aggregate: true         # fit_metad(..., aggregate = TRUE) on trial-level input
+
 priors:
-  g0: null   # TODO
-  g1: null   # TODO
-  g2_correct: null   # TODO
-  g2_gaussian: null  # TODO
+  log_M_production: "normal(0, 1)"        # used for all G0/G1/G2 production fits
+  log_M_sensitivity: ["normal(0, 0.5)", "normal(0, 1)", "normal(0, 2)"]  # Day-4 prior sensitivity sweep
+  metac2_gap: "normal(0, 1)"              # applied to all metac2_parameters(K) coefficients

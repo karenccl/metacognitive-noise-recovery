@@ -57,3 +57,42 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   R scripts, prefer the default `renv::snapshot()` (dependency-scan based) so the lockfile
   reflects only what's actually used; re-run with `type = "all"` deliberately if a full-library
   lock is wanted again.
+
+## 2026-09-23 — Day 1 midday: hmetad docs and design decisions
+
+- No bundled vignettes in `hmetad` 0.2.1; read all exported-function help pages via
+  `tools::Rd_db("hmetad")` instead (`sim_metad`, `sim_metad_participant`, `sim_metad_condition`,
+  `sim_metad_participant_condition`, `fit_metad`, `aggregate_metad`, `stanvars_metad`, `metad`,
+  `metad_pmf`, `type2_probabilities`, `joint_probabilities`, `epred_draws_metad`,
+  `metac2_parameters`, `example_data`, `example_model`), plus inspected `example_data()` and
+  `aggregate_metad(example_data())` structure directly.
+- Ran an empirical check (not just trusting the prose help text, which turned out to have an
+  error) of how `M`/`log_M` are scaled across `sim_metad()`, `sim_metad_participant()`, and
+  `fit_metad()`. Result: `sim_metad(M=...)` is natural-scale; `sim_metad_participant(mean_M=...,
+  allow_negative_values=FALSE)` (the default) is already log-scale; `fit_metad()`'s posterior
+  `M` Intercept under the default is `log_M` directly (recovered ≈ −1.06 for a generating
+  `log_M = −1`). Full detail and code-level consequences recorded in
+  `docs/design_decisions.md`.
+- Locked: `metac_absolute = TRUE`, `aggregate = TRUE`, production `log_M` prior
+  `normal(0, 1)`, `metac2_parameters(K)` prior `normal(0, 1)`, G2 alternative distribution
+  `gumbel_min`. Updated `config/design.yml` accordingly (`fitting:`, `priors:` sections; also
+  filled `seed_base`, `sampling.max_treedepth`/escalation, `diagnostics.bulk_ess_min`/
+  `tail_ess_min`).
+- Wrote the G1 DDM data-generating process as explicit equations + pseudocode (drift/boundary
+  decision stage, correlated post-decisional continuation for fixed duration `tau`, signed
+  decision-consistent latent quantity `q`, additive Gaussian readout noise `y = q + ε`,
+  `ε ~ N(0, σ_c²)`) into `docs/design_decisions.md`, satisfying the Day-1 gate requirement to
+  specify G1 in writing before implementation. Explicitly avoids the "`a·RT` as terminal
+  evidence" mistake named in protocol section 3.2.
+- Wrote the DDM-to-empirical-d′ calibration plan (bisection on drift `v` at fixed `a`/`t0`,
+  targeting `d′ ∈ {0.75, 1.5}` within ±0.02, output to
+  `outputs/tables/ddm_calibration.csv`) and the σ_c low/medium/high pilot plan. Flagged
+  explicitly that raw confidence-category occupancy is **not** a valid degeneracy diagnostic
+  here, since the locked rank-based within-subject `K=4` discretisation guarantees ~25% per
+  category by construction regardless of σ_c (protocol section 1.4) — the pilot instead checks
+  Spearman `ρ(q,y)` and the confidence–accuracy association.
+- Added `ddm:` block to `config/design.yml` with starting values (`a=1.5`, `t0=0.3s`,
+  `tau=0.3s`, `s=1`, `dt=0.001s`) pending the calibration pilot; `v` and the three `σ_c` values
+  remain unset until that pilot is actually run (next: Day 1 afternoon/evening implementation).
+- Not yet done: `simulate_g1_ddm.R` implementation, calibration script execution,
+  `discretise_confidence()` implementation, unit tests.

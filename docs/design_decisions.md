@@ -6,11 +6,13 @@ the core scientific question.
 
 ## Status
 
-- [ ] Absolute vs. relative type-2 criteria decision, and why
-- [ ] Aggregation route / expected `hmetad` input schema
-- [ ] Exact primary/secondary outcomes
-- [ ] Grid, seed scheme, sampling configuration, diagnostic/refit policy
-- [ ] Definition of what counts as a deviation
+- [x] Absolute vs. relative type-2 criteria decision, and why
+- [x] Aggregation route / expected `hmetad` input schema
+- [x] Exact primary/secondary outcomes
+- [x] Grid, seed scheme, sampling configuration, diagnostic/refit policy
+- [x] Definition of what counts as a deviation
+- [x] G1 DGP written as equations/pseudocode
+- [x] DDM-to-empirical-d′ calibration plan
 
 ## 2026-09-22 — Initial scaffold
 
@@ -46,6 +48,177 @@ details.
   policy decided before batch execution.
 - **Stop rule:** release the reproducible state at the end of Day 6; unfinished optional
   analyses become limitations, not additional unplanned work.
+
+## 2026-09-23 — hmetad API notes (from package help; no vignettes bundled in 0.2.1)
+
+`hmetad` 0.2.1 (metacoglab r-universe) is a `brms`-based reimplementation of the meta-d′ model,
+not the classic Fleming JAGS/Stan HMeta-d toolbox. Its function names match everywhere the
+protocol references them (`sim_metad`, `fit_metad`, `aggregate_metad`, `stanvars_metad`,
+`epred_draws_metad`, `joint_probabilities`, `type2_probabilities`), so the protocol was clearly
+written against this package. Key facts established empirically (see
+`docs/analysis_log.md` for the verification script/output):
+
+- **Scale of `M`/`log_M` differs by function — this is the single most important gotcha:**
+  - `sim_metad(M = ...)`: `M` is on the **natural scale** (M itself). To generate data with a
+    target `log_M`, pass `M = exp(log_M_target)`. Verified: `sim_metad(M = exp(-1))` returns
+    an `M` column of exactly `0.3679`.
+  - `sim_metad_participant(mean_M = ..., allow_negative_values = FALSE)` (`FALSE` is the
+    documented default): `mean_M` is on the **log scale already** — pass `log_M_target`
+    directly. Verified: `mean_M = -1` under `allow_negative_values = FALSE` produces an `M`
+    column of `exp(-1) = 0.3679` (i.e. the function exponentiates internally). Under
+    `allow_negative_values = TRUE`, `mean_M` is used as-is on the natural/identity scale
+    (verified: `mean_M = -1` → `M` column of exactly `-1`). The `?sim_metad_participant` help
+    text has the `TRUE`/`FALSE` description swapped relative to the actual default argument
+    value — trust the empirical check, not the prose.
+  - `fit_metad(..., allow_negative_values = FALSE)` (default): the posterior `Intercept` for
+    the `M` distributional parameter **is `log_M` directly**, no further transform needed.
+    Verified: fitting `sim_metad(N_trials = 2000, dprime = 1.5, M = exp(-1))` recovered a
+    posterior `Intercept` of ≈ −1.06 (95% CI [−1.52, −0.72]), correctly bracketing the
+    generating `log_M = −1`.
+  - **Consequence for code:** `simulate_g0.R` and `simulate_g2_gumbel.R` must convert any
+    config-specified `log_M` target to `M = exp(log_M)` before calling `sim_metad()`/
+    `sim_metad_condition()`, or pass `log_M` straight through as `mean_M` if using
+    `sim_metad_participant()`/`sim_metad_participant_condition()` with
+    `allow_negative_values = FALSE`. `extract_fit_summary.R` reads the `M` `Intercept` row as
+    `log_M` with no transform.
+
+- **Type-2 criterion parameterization (`metac_absolute`):** `fit_metad()`/`stanvars_metad()`/
+  `metad()` default to `metac_absolute = TRUE`, i.e. `meta_c = c` (the type-2 criterion is
+  fixed equal to the type-1 criterion — the standard meta-d′ assumption, e.g. Maniscalco &
+  Lau). The alternative (`metac_absolute = FALSE`, `meta_c = M * c`) re-expresses the type-2
+  criterion *relative* to `c`/`dprime` and is not needed for this project.
+  **Locked decision: use `metac_absolute = TRUE` (the package default) throughout G0/G1/G2,**
+  matching the standard model definition the protocol's `log_M` interpretation assumes.
+
+- **Aggregation route:** `fit_metad(..., aggregate = TRUE)` (default) accepts one-row-per-trial
+  data with `stimulus`, `response`, `confidence` (+ any grouping columns in the formula) and
+  internally calls `aggregate_metad()` to build the multinomial sufficient-statistic
+  representation (`N_0`, `N_1`, and a `N_0_1..N_0_K, N_1_1..N_1_K`-style count matrix — `4*K`
+  cells per group). **Locked decision:** all fits use `aggregate = TRUE` on trial-level input;
+  no script calls `aggregate_metad()` directly except for diagnostics
+  (`validate_generators.R`, category-occupancy checks). This is precisely why the likelihood is
+  aggregated-count-based and why LOO must be interpreted at the subject/cell level, not the
+  trial level (protocol section 4, understanding check 5).
+
+- **`K`** is auto-inferred by `aggregate_metad()`/`fit_metad()` from `max(confidence)` if not
+  passed explicitly; scripts should pass `K` explicitly (from `config/design.yml`) rather than
+  rely on inference, so a partially-degenerate discretisation (e.g. a subject never reaching
+  the top category) can't silently change `K` for one cell.
+
+- **Setting priors:** `metac2_parameters(K, response = "both")` returns the `K-1` threshold-gap
+  parameter names for use with `brms::set_prior()`, per the package's own documented example:
+  `set_prior("normal(0, 1)", class = "b", dpar = metac2_parameters(K = 4))`.
+
+## 2026-09-23 — Locked fitting/prior policy
+
+- **Type-2 criterion:** `metac_absolute = TRUE` (see above).
+- **Aggregation:** `aggregate = TRUE` on trial-level data (see above).
+- **Primary log_M prior (G0/G1/G2 production fits):** `normal(0, 1)` on the `M` dpar
+  Intercept — the middle of the three values used in the Day-4 prior-sensitivity sweep
+  (`normal(0, 0.5)`, `normal(0, 1)`, `normal(0, 2)`), so the sensitivity analysis brackets the
+  production choice rather than being unrelated to it.
+- **Confidence-threshold-gap prior:** `normal(0, 1)` on all `metac2_parameters(K)` coefficients
+  (per the package's documented example), for both G0/G1 (`distribution = "normal"`, default)
+  and G2's correctly-specified fit (`distribution = "gumbel_min"`); G2's Gaussian-misspecified
+  fit reuses the same priors as G0/G1 since it *is* the G0/G1 model family.
+- **G2 distribution:** `gumbel_min`, per protocol section 3.3 and `stanvars_metad()`'s own
+  worked example (`stanvars_metad(4, distribution = "gumbel_min")`).
+
+## 2026-09-23 — G1 DGP specification (protocol section 3.2)
+
+Written before implementation, per the Day-1 gate. Diffusion coefficient fixed at `s = 1`
+throughout (standard DDM convention; `v`/`a` are expressed in units of `s`). Time step
+`dt = 0.001 s` (1 ms) for Euler–Maruyama simulation of the accumulator.
+
+**Parameters (per participant, fixed across trials within a cell unless noted):**
+`v` (drift magnitude), `a` (boundary separation), `z = a/2` (unbiased starting point),
+`t0` (nondecision time), `tau` (fixed post-decision accumulation duration), `σ_c` (readout
+noise SD, the G1 ground truth manipulated across the low/medium/high grid cells).
+
+**Per-trial generative process, for participant *i*, trial *t*:**
+
+1. Draw stimulus `s_it ∈ {−1, +1}` with `P(s_it = +1) = 0.5`.
+2. Set trial drift `δ_it = s_it · v` (drift toward the `+1`-consistent boundary `a` when
+   `s_it = +1`, toward boundary `0` when `s_it = −1`).
+3. Simulate the pre-decision accumulator as a discrete-time approximation to the DDM:
+   `x_0 = z = a/2`; `x_{k+1} = x_k + δ_it · dt + sqrt(dt) · ξ_k`, `ξ_k ~ N(0, 1)`, until
+   `x_k` first crosses `0` or `a` at step `k*`. Decision time `DT_it = k* · dt`;
+   `rt_it = t0 + DT_it`. Type-1 response `r_it = +1` if the upper boundary `a` was hit,
+   `r_it = −1` if the lower boundary `0` was hit. `correct_it = 1[r_it = s_it]`.
+4. **Post-decisional accumulation (correlated with pre-decision evidence — the same
+   accumulator continues, it does not restart):** continue the identical accumulator update
+   (`δ_it`, same noise process, same `dt`) for a further fixed duration `tau`, i.e.
+   `⌊tau / dt⌋` additional steps, *without* an absorbing boundary (the accumulator can wander
+   arbitrarily, including back across the decision boundary — this is what allows
+   post-decisional evidence to disagree with the initial choice). Let `x_final` be the
+   accumulator value after these additional steps.
+5. Define the **decision-consistent confidence-relevant latent quantity**:
+   `q_it = (x_final − a/2) · r_it` (using `r_it ∈ {−1, +1}`). This flips sign for `r_it = −1`
+   responses so that, for both response types, larger `q_it` means more accumulated evidence
+   *in favor of the response actually made* (i.e., higher intended confidence), and `q_it`
+   can go negative (post-decisional evidence against the choice made — a "changed my mind"
+   region), which is an intended feature of the mechanism, not a bug.
+6. **Noisy confidence evidence (protocol eq.):** `y_it = q_it + ε_it`, `ε_it ~ N(0, σ_c²)`.
+   `σ_c` is independent of trial/participant noise draws (uncorrelated with `ξ_k`).
+7. Convert `y_it` to `confidence_it ∈ {1, …, K}` (`K = 4`) via the locked
+   `discretise_confidence()` rank-based within-subject rule, applied over all of a subject's
+   trials at once (not per-cell), using the **continuous** `y_it`, not `q_it` or accuracy.
+
+**Retained columns (protocol requirement — keep both `q` and `y` even though only binned
+`confidence` goes to `hmetad`):** `participant`, `trial`, `stimulus` (recoded `0`/`1` for
+`hmetad`), `response` (recoded `0`/`1`), `correct`, `rt`, `q`, `y`, `confidence`, plus generator
+metadata columns `v`, `a`, `t0`, `tau`, `sigma_c`, `seed`.
+
+**Explicitly avoided:** using `a · RT` (or any function of RT alone) as a stand-in for
+terminal/post-decisional evidence magnitude (protocol section 3.2's named fatal mistake) — `q`
+above is always read directly off the simulated accumulator trajectory, never derived from RT.
+
+## 2026-09-23 — DDM-to-empirical-d′ and σ_c calibration plan
+
+**Drift/boundary → target `d′` (`{0.75, 1.5}`), to run in `code/01_simulate/validate_generators.R`
+before the primary grid, output to `outputs/tables/ddm_calibration.csv`:**
+
+1. Fix `a` and `t0` at documented starting values (`a = 1.5`, `t0 = 0.3 s`, revisit only if
+   step 3 cannot reach both target `d′` levels within plausible RTs); vary only `v`.
+2. For each candidate `v`, simulate `N = 100,000` trials (step 3 of the DGP above, decision
+   stage only — no post-decision stage needed for calibration) at `50/50` stimulus.
+3. Compute empirical hit rate `H = P(r = +1 ∣ s = +1)` and false-alarm rate
+   `F = P(r = +1 ∣ s = −1)`; empirical `d′ = Φ⁻¹(H) − Φ⁻¹(F)` (the general SDT formula; the
+   symmetric drift/boundary design should give `H ≈ 1 − F`, so this should agree with the
+   simplified `d′ = 2·Φ⁻¹(p_correct)` as a cross-check — report both, flag if they disagree
+   materially since that would indicate a bias/asymmetry bug).
+4. Adjust `v` (bisection on `d′`) until empirical `d′` is within a prespecified tolerance
+   (`±0.02`) of each target. Record `v`, resulting `d′`, `H`, `F`, mean RT, and `N` per target
+   in `outputs/tables/ddm_calibration.csv`.
+5. If both targets cannot be reached with a shared `a`/`t0` at plausible mean RTs
+   (`< 2 s`), allow `a`/`t0` to vary by target level and document why in this file (a
+   deviation, but an anticipated and justified one — see protocol section 3.2).
+
+**σ_c low/medium/high pilot, before the primary grid:**
+
+Because the `K = 4` discretisation is a rank-based within-subject quantile rule (protocol
+section 1.4), **marginal confidence-category occupancy will be ≈25% per category for every
+σ_c by construction** — that is not a valid pilot diagnostic here (this is exactly the
+degeneracy the protocol's section 1.4 correction warns about). Instead:
+
+1. At one calibrated DDM setting (`d′ = 1.5`, one large pseudo-subject, `T = 20,000`), sweep a
+   grid of candidate `σ_c` values (e.g. informed by the empirical SD of `q` from step 2 of the
+   drift calibration, spanning roughly `0.1×SD(q)` to `3×SD(q)`).
+2. For each candidate, compute: (a) Spearman `ρ(q, y)` — should fall from ≈1 toward 0 as `σ_c`
+   increases; (b) the point-biserial/Spearman association between `y` (or binned `confidence`)
+   and `correct` — the substantively meaningful "is confidence still informative" diagnostic,
+   since raw category counts will not show degeneracy; (c) proportion of tied `y` values before
+   binning (should be ≈0 given continuous Gaussian noise added to continuous `q`; a nonzero
+   rate would indicate a simulation bug, e.g. duplicated trials or an degenerate `q`).
+3. Choose "low/medium/high" as three `σ_c` values spanning a clearly distinguishable range of
+   the confidence–accuracy association from (b) — not evenly-spaced arbitrary numbers. Record
+   the actual chosen values and the full pilot sweep table (do not just label them low/medium/
+   high without justification, per protocol section 3.2).
+4. Save the pilot sweep and final chosen values into `docs/design_decisions.md` (update this
+   section) and `config/design.yml` once run.
+
+**Not yet run** — `v`, `a`, `t0`, `tau`, and the three `σ_c` values in `config/design.yml`
+remain `null`/placeholder pending this pilot (Day 1 afternoon/evening implementation step).
 
 ## What this project must not claim
 
