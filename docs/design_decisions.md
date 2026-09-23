@@ -432,6 +432,100 @@ only during a full grid run.
 **Day 2 gap now closed.** All three generators (G0, G1, G2 correct + misspecified) have a
 working, tested fitting path. Ready to launch the full production grid.
 
+## 2026-09-23 — Production run stopped and revised before relaunch
+
+The first full-grid launch (2160 rows, 30 reps/cell) was stopped by the user after producing 16
+results, to make several changes before committing real compute to it. Each change below is a
+locked decision (updates the "locked decisions" list where relevant); rationale is recorded here
+per the reproducibility-log requirement (protocol section 2.2).
+
+### Replications: 30 → 20
+
+Measured throughput at 5-way concurrency was ~52 fits/hour (thermal-throttled below the raw
+~124s/fit `cores=4` benchmark, which implies a theoretical ~145 fits/hour at 5-way concurrency),
+making the 30-rep grid a 41+ hour run rather than the ~12-13 hour projection. Revised
+`config/design.yml`'s `grid.replications.target` to **20**.
+
+**Rationale:** RQ1 (protocol's primary question) is an ordinal/monotonicity question — probability
+of correct `log_M` ordering across `σ_c` and the sign/direction of the `log_M`-on-`σ_c` slope —
+not a point-estimate-precision question. At 20 replications, Monte Carlo SE of a bias estimate is
+≈0.04 (on the `log_M` scale), adequate for this purpose. Per-cell 95% CI coverage (a G0 secondary
+metric) is imprecise at *any* feasible replication count for a single cell (a 20-replication
+binomial proportion has a wide CI on its own coverage rate) — this was true even at 30 reps and is
+not meaningfully worse at 20. The plan is therefore to **pool coverage across all G0 cells**
+(360 replications total after pooling, giving coverage MCSE ≈1.3%) and report pooled coverage
+with its MCSE, rather than claim precision on any single cell's coverage. This does not weaken
+the primary (G1 ordinal) claim, which was never coverage-based. `grid.replications.minimum: 15`
+(protocol's floor) is unchanged and not needed here since 20 was reached directly, not via
+further escalation.
+
+### Pre-registered failed-fit handling rule (before seeing any real results)
+
+To avoid the appearance (or reality) of post-hoc rationalization once the grid finishes, the
+following is locked **now**, before any production-scale results exist:
+
+- **Primary analysis:** includes every fit with `status` `"pass"` **or** `"fail"` (i.e. every
+  attempted fit that produced a posterior at all, whether or not it cleared diagnostic
+  thresholds after escalation). Fits are **flagged** by their status in all primary tables/figures
+  — never silently pooled with passes as if equivalent — per protocol section 6.4's "never
+  suppress failed fits."
+- **Sensitivity analysis:** re-runs the primary metrics on **pass-only** fits, to check whether
+  conclusions depend on including diagnostically-flagged fits.
+- **`status = "error"` rows** (simulation or Stan compile/runtime errors, not merely poor
+  diagnostics) are excluded from both the primary and sensitivity *parameter-estimate* analyses
+  (there is no posterior to include) and are instead **reported as convergence/computational
+  failures in RQ3** (protocol's understanding-check framing: "a high convergence-failure rate
+  signals computational instability... and must be reported"), i.e. counted in the failure-rate
+  denominator and tabulated by condition, consistent with the already-locked "Fail" row of the
+  status table in protocol section 4.4.
+
+### Compact output format (storage)
+
+`run_one_cell.R` now saves a **compact record** per grid row instead of the full `brmsfit`:
+`status`, `diagnostics` (already compact — R-hat/ESS table for focal `b_*`/`sd_*` parameters
+only, from `extract_fit_summary()`), `escalated`, `warnings`, `error_message`, all grid metadata,
+the aggregated observed counts (`agg`, from `hmetad::aggregate_metad()`), and posterior **draws
+for `b_*`/`sd_*` parameters only** (`extract_b_sd_draws()`, mirroring `extract_fit_summary()`'s
+own focal-parameter selection so the two never disagree about what counts as "focal"). This is
+still everything a group-level/condition-level analysis needs (protocol's primary estimand is
+population-level `log_M`, not any individual participant's random-effect deviation).
+
+The **full `brmsfit`** is additionally kept only when `rep_id <= config's
+execution.keep_full_fit_max_rep_id` (locked at **2**) — enough to spot-check/debug a fit
+interactively (e.g. re-run `pp_check()`-style diagnostics by hand) without keeping ~2000 full Stan
+fit objects on disk.
+
+For **G2 rows only** (both fit variants — G2's whole purpose is a correct-vs-misspecified
+comparison, so both need the same diagnostics, not just "correct"), also computes and saves:
+- `loo` — the full `brms::loo()` object (confirmed working out-of-the-box on these custom-family
+  fits: `log_lik()` returns a `draws x n_participants` matrix, i.e. one LOO observation per
+  participant, consistent with the already-documented "aggregated subject-level cell counts"
+  LOO-unit caveat). Needed for the Day-4/Day-5 G2 LOO/ELPD comparison.
+- `epred_summary` — a **per-cell summary** (mean/median/95% interval) of
+  `hmetad::epred_draws_metad()`, grouped by participant × stimulus × response × confidence ×
+  joint_response, **not the raw per-draw output** (confirmed working; at N=40 the raw output
+  would be ~2.5M rows per fit, which would defeat the entire point of slimming this format down).
+  Observed counts for the same cells live in the already-saved `agg`, so the Day-5 PPC script
+  (`code/04_ppc_and_comparison/ppc_joint_counts.R`, not yet implemented) joins the two rather than
+  this summary duplicating the observed side.
+
+The 16 result files already produced by the stopped launch (old, full-`brmsfit` format) were
+deleted so every cell reruns cleanly in the new format — none were lost science, since the run
+had barely started (16 of 2160 planned rows, all G0).
+
+### Run order: G1 → G0 → G2
+
+`code/00_setup/02_create_grid.R`'s cell-ordering `arrange()` now uses
+`factor(generator, levels = c("g1", "g0", "g2"))` instead of alphabetical order, so
+`run_grid.R` (which processes pending rows in `config/grid.csv`'s file order) runs all G1 cells
+first, then G0, then G2. User-directed; no scientific effect (grid cells are independent), just a
+priority ordering (G1 is the primary-question generator).
+
+### `.gitattributes`
+
+Added `* text=auto eol=lf` to stop line-ending churn (Windows CRLF vs. the repo's LF convention)
+showing up as spurious diffs on `renv.lock` and other text files across sessions/machines.
+
 ## What this project must not claim
 
 See protocol section 1.2. In particular: do not claim `log_M` "recovers" σ_c numerically; do not

@@ -309,3 +309,51 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - **All three generators now have a working, tested fitting path. Ready to launch the full
   production grid** (2160 rows, `config/grid.csv`, ~12-13 hours projected with 5-way
   concurrency). Launching next.
+
+## 2026-09-23 — Production run stopped, revised, relaunched
+
+- **Launched the full grid** (2160 rows, 30 reps/cell, 5-way concurrency). After producing 16
+  results (all G0, all pass), **user stopped the run** to make the changes below before
+  committing further compute — measured throughput was ~52 fits/hour at 5-way concurrency
+  (thermal-throttled well below the ~124s/fit `cores=4` benchmark's ~145 fits/hour theoretical
+  rate), which projected to 41+ hours for 30 reps rather than the earlier ~12-13 hour estimate.
+- **Deleted the 16 stale result files** (old full-`brmsfit` format, produced before the format
+  change below) so every cell reruns cleanly.
+- **Replications 30 → 20** in `config/design.yml`. Rationale (full version in
+  `docs/design_decisions.md`): RQ1 is an ordinal/monotonicity question with adequate bias MCSE
+  (~0.04) at 20 reps; per-cell CI coverage is imprecise at any feasible rep count regardless, so
+  the plan is to pool coverage across G0 cells (MCSE ~1.3%) and report it with MCSE rather than
+  per-cell. Regenerated `config/grid.csv`: now 1440 rows (240 G0 + 720 G1 + 480 G2 fit rows over
+  1200 unique cells).
+- **Pre-registered the failed-fit handling rule** in `docs/design_decisions.md`, before any
+  production-scale results exist: primary analysis includes `pass` + `fail` (flagged, never
+  silently pooled); sensitivity analysis uses `pass`-only; `error` rows are excluded from
+  parameter-estimate analyses and instead reported as convergence failures in RQ3 (failure-rate
+  denominator + per-condition tabulation).
+- **Slimmed `run_one_cell.R`'s output format.** Added `extract_b_sd_draws()` (posterior draws for
+  `b_*`/`sd_*` parameters only, mirroring `extract_fit_summary()`'s own focal-parameter
+  selection), `summarise_epred()` (per-cell mean/median/95%-interval summary of
+  `hmetad::epred_draws_metad()`, not the raw ~2.5M-row-at-N=40 per-draw output), and
+  `add_g2_extras()` (computes `brms::loo()` — confirmed working out-of-the-box, one LOO
+  observation per participant — and the epred summary, for **both** G2 fit variants, since G2's
+  purpose is comparing them). The full `brmsfit` is now kept only for `rep_id <=
+  execution.keep_full_fit_max_rep_id` (locked at 2); every other row gets the compact record.
+  Verified on a 5-row smoke grid mixing `rep_id` 1 and 3: `rep_id<=2` files ≈4.5MB (full fit
+  kept), `rep_id=3` files ≈370KB (compact only) — roughly a 12x reduction for the ~90% of
+  replications (18/20) that don't need the full fit. Confirmed `draws_b_sd` (4000×15, exactly the
+  9 population intercepts + 3 random-effect SDs + draw-index columns), `agg` (aggregated observed
+  counts, 10 rows for N=10), and G2's `loo`/`epred_summary` (160 rows = 10 participants × 16
+  cells, with mean/median/q025/q975) all populated correctly, including for the one `status="fail"`
+  smoke row (a flagged fit's LOO/PPC are still informative, so these are computed regardless of
+  status as long as a fit object exists).
+- **Run order G1 → G0 → G2**: changed `code/00_setup/02_create_grid.R`'s cell-ordering `arrange()`
+  to `factor(generator, levels = c("g1","g0","g2"))`. Verified in the regenerated `config/grid.csv`:
+  720 G1 rows first, then 240 G0, then 480 G2.
+- **Added `.gitattributes`** (`* text=auto eol=lf`) to stop CRLF/LF churn on `renv.lock` and other
+  text files. Added the `cores=4` largest-cell benchmark row (123.9407s) to
+  `outputs/tables/compute_benchmark.csv` with a new `cores` column distinguishing it from the
+  four `cores=1` rows already there.
+- Full `testthat::test_dir("tests")` re-run after all changes: all pass.
+- **Relaunching** the full grid now (1440 rows, 20 reps/cell, G1→G0→G2 order, compact output
+  format). Will report fits/hour and projected finish time after 1 hour, and try
+  `max_concurrent_fits = 4` if throughput isn't meaningfully above ~50/hour.

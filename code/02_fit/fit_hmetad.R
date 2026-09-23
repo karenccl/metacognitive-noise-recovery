@@ -135,7 +135,7 @@ fit_one_hmetad <- function(data,
       k = K, distribution = distribution, metac_absolute = metac_absolute,
       hierarchical_dprime_c = hierarchical_dprime_c,
       hierarchical_thresholds = hierarchical_thresholds,
-      n_units = nrow(agg), seed = seed, elapsed_secs = elapsed
+      n_units = nrow(agg), seed = seed, elapsed_secs = elapsed, agg = agg
     )
   )
 

@@ -41,13 +41,21 @@ g1_cells <- tidyr::expand_grid(
   sigma_c_level = sigma_c_levels
 )
 
+# Run order (2026-09-23, user-directed): G1, then G0, then G2. Encoded
+# here (not in run_grid.R) so it falls out of grid.csv's row order --
+# run_grid.R just processes pending rows in file order.
+generator_run_order <- c("g1", "g0", "g2")
+
 cells <- dplyr::bind_rows(
   dplyr::mutate(g0_g2_cells, generator = "g0", .before = 1),
   dplyr::mutate(g1_cells, generator = "g1", .before = 1),
   dplyr::mutate(g0_g2_cells, generator = "g2", .before = 1)
 ) |>
   tidyr::expand_grid(rep_id = seq_len(n_reps)) |>
-  dplyr::arrange(generator, n_participants, n_trials, dprime_target, sigma_c_level, rep_id) |>
+  dplyr::arrange(
+    factor(generator, levels = generator_run_order),
+    n_participants, n_trials, dprime_target, sigma_c_level, rep_id
+  ) |>
   dplyr::mutate(cell_id = dplyr::row_number())
 
 grid <- cells |>
