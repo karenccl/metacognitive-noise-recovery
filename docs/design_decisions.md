@@ -359,6 +359,51 @@ protocol section 4.4's "focal population parameters" wording. It classifies `pas
 `run_one_cell.R`, which owns the retry/escalation policy and thus the retry history a single
 call to `extract_fit_summary()` can't see.
 
+## 2026-09-23 — Day 2 midday: compute benchmark and replication count
+
+Per protocol section 5 (Day 2 midday). Benchmarked `fit_one_hmetad()` at production sampling
+settings across the N/T corners of the grid (G0 data, `dprime_target=1.5`, `log_M=-1`):
+
+| N | T | elapsed (s), `cores=1` (default before today) |
+|---|---|---|
+| 20 | 100 | 195.1 |
+| 20 | 400 | 140.7 |
+| 40 | 100 | 243.6 |
+| 40 | 400 | 247.1 |
+
+Confirms the expected pattern: fit cost tracks N (hierarchical units after aggregation), not T
+(aggregation collapses each participant's trials to one count row before fitting) — T's small
+effect above is noise/sampler-efficiency variation, not a real cost driver.
+
+**Found and fixed a real inefficiency while benchmarking:** `fit_one_hmetad()` was not passing
+`cores` to `fit_metad()`/`brm()`, so its 4 chains ran on a single core by default. Added a
+`cores` argument (default `= chains`) to `fit_one_hmetad()` and `fit_hmetad.R`'s `fit_metad()`
+call. Re-benchmarking the largest cell (N=40, T=400) with `cores=4`: **247.1s → 123.9s**
+(~2x speedup), identical clean diagnostics (max R-hat 1.004, 0 divergences). This is a pure
+efficiency fix with no effect on the model or estimand.
+
+**Projected total grid cost** (72 unique fit-cells/replication: 12 G0 + 36 G1 + 24 G2
+[12 cells × 2 fit variants]), using the `cores=4` numbers, one fit at a time: ≈2.07 hours per
+full pass over the grid, ≈62 hours (2.6 days) at the target 30 replications/cell if run strictly
+sequentially.
+
+**Decision (user consulted given real machine-time consequences):** add simple concurrent batch
+dispatch rather than reduce replications. `code/02_fit/run_grid.R` was rewritten to launch up to
+`config/design.yml`'s `execution.max_concurrent_fits` (`5`, sized as
+`floor((22 cores - 2 headroom) / 4 cores-per-fit)` for the current machine) `run_one_cell.R`
+subprocesses at once via `processx`, polling and backfilling as each finishes. This keeps the
+full protocol-specified **30 replications/cell** (no Monte Carlo precision compromise) at a
+projected **~12-13 hours** total wall time — feasible as a single unattended run. Verified the
+concurrency logic on a 6-row/max-concurrent-3 smoke grid: pool correctly held at 3, backfilled
+as jobs finished, all 6 completed with correct exit statuses and no crashes.
+
+`config/00_setup/02_create_grid.R` was run to generate the real `config/grid.csv`: 2160 total
+fit rows over 1800 unique simulated-dataset cells (360 G0 + 1080 G1 + 360 G2-cell-reps, the
+latter split into 360 "correct" + 360 "misspecified" fit rows), matching this projection exactly.
+
+**Not yet launched:** the actual full production grid run. `config/grid.csv` is generated and
+ready; `make g0` / `make g1` / `make g2` (or `Rscript code/02_fit/run_grid.R`) will run it.
+
 ## What this project must not claim
 
 See protocol section 1.2. In particular: do not claim `log_M` "recovers" σ_c numerically; do not

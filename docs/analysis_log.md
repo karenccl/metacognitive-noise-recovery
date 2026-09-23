@@ -243,6 +243,47 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   the full fit object to `outputs/reports/g0_baseline_fit_result.rds` (gitignored, local only).
 - **Day 2 morning deliverable complete:** `fit_one_hmetad()`/`extract_fit_summary()` implemented
   and the G0 baseline confirms the whole pipeline (simulate → aggregate → hierarchical fit →
-  diagnose → recover) works end-to-end. Next: Day 2 midday compute benchmark (largest-cell
-  N=40/T=400 timing, repetition-count decision) and grid/batch infrastructure
-  (`config/grid.csv`, `run_one_cell.R`, `run_grid.R`, `Makefile` resumability check).
+  diagnose → recover) works end-to-end.
+
+## 2026-09-23 — Day 2 midday: compute benchmark, batch infrastructure, replication decision
+
+- Benchmarked production-settings fits across all 4 N/T corners (20/40 × 100/400): 195.1s,
+  140.7s, 243.6s, 247.1s respectively. Confirms cost tracks N (hierarchical units), not T
+  (aggregation collapses trials to per-participant counts before fitting).
+- **Found `fit_one_hmetad()` wasn't passing `cores` to `brm()`**, so 4 chains ran single-core by
+  default. Added `cores` arg (default `= chains`). Re-benchmarked the largest cell: 247.1s →
+  123.9s (~2x), same clean diagnostics. Pure efficiency fix, no scientific effect.
+- Full-grid projection: 72 unique fit-cells/rep × ~2.07 hours/pass ≈ 62 hours (2.6 days) at 30
+  reps/cell run strictly sequentially (one fit at a time).
+- **Consulted the user** on replication count vs. compute time, given this is a genuine
+  resource/timeline tradeoff with real Monte Carlo precision consequences (protocol explicitly
+  allows dropping to 20 or 15 reps). Chose: keep 30 reps/cell, add concurrent batch dispatch
+  instead of reducing precision.
+- Implemented `code/00_setup/02_create_grid.R`: builds `config/grid.csv` with `grid_id`,
+  `cell_id` (shared between a G2 cell's two fit-variant rows so they use the *same* simulated
+  dataset, per protocol section 3.3's "two fits per generated dataset"), deterministic
+  `sim_seed`/`fit_seed` derived from `seed_base` + stable row indices. Generated the real
+  grid: 2160 rows over 1800 unique cells (360 G0 + 1080 G1 + 360 G2 cells → 720 G2 fit rows).
+- Implemented `code/02_fit/run_one_cell.R`: resumable (skips existing output), simulates +
+  fits one grid row, with one escalation retry (config's `sampling.escalation` settings) if
+  `extract_fit_summary()` flags `"refit"`, downgrading to `"fail"` if the retry doesn't clear
+  the flags either. Wrapped in `tryCatch()` so simulation/fitting errors (e.g. the known-missing
+  Gumbel-min Stan functions for G2 "correct") are saved as structured `status="error"` records,
+  not crashes. Saves via `qs2::qs_save()` (verified `qs2::qs_save()`/`qs2::qs_read()` are the
+  correct function names — confirmed by listing the package namespace and a round-trip test).
+- Implemented `code/02_fit/run_grid.R`: reads `config/grid.csv`, filters to pending
+  (not-yet-saved) rows, and runs up to `execution.max_concurrent_fits` (`5`) `run_one_cell.R`
+  subprocesses at once via `processx`, polling every 2s and launching a replacement as each
+  slot frees up.
+- **Smoke-tested the full batch pipeline twice** (protocol's Day-2 gate): once sequentially
+  (4 tiny N=3 rows: g0 fail, g1 fail [both expected — hierarchical SDs are barely identifiable
+  at N=3, a small-sample artefact of the deliberately tiny smoke size, not a bug], g2
+  misspecified pass, g2 correct/gumbel **error** with the exact predicted message —
+  `undeclared identifier "gumbel_min_lccdf"` — confirming the documented Day-2 Stan-function
+  gap); once with concurrent dispatch (6 rows, `max-concurrent=3`): pool correctly held at 3,
+  backfilled on completion, all 6 finished with correct statuses, no crashes. All outputs
+  verified readable via `qs2::qs_read()` with sensible metadata. Cleaned up smoke-test
+  artifacts from `data/interim/` afterward (gitignored, but tidied for clarity).
+- **Day 2 midday deliverable complete.** Not yet done: actually launching the full production
+  grid (~12-13 hours projected at 30 reps/cell with 5-way concurrency); the Gumbel-min Stan
+  functions needed before any G2 "correct" fit can succeed.
