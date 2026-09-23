@@ -88,3 +88,20 @@ test_that(".build_metad_formula and .build_metad_priors produce a buildable (emp
   fit <- hmetad::fit_metad(formula, agg, aggregate = FALSE, K = 4, prior = priors, empty = TRUE)
   expect_s3_class(fit, "brmsfit")
 })
+
+test_that("gumbel_min_stanvars() produces Stan code that builds (empty) with distribution='gumbel_min'", {
+  skip_if_not_installed("hmetad")
+  d <- simulate_g0(n_participants = 5, n_trials = 20, dprime_target = 1.5, log_M = -1, seed = 1)
+  agg <- hmetad::aggregate_metad(d, participant, K = 4)
+
+  formula <- .build_metad_formula(4, group = "participant")
+  priors <- .build_metad_priors(4, log_M_prior = "normal(0,1)", metac2_prior = "normal(0,1)")
+
+  fit <- hmetad::fit_metad(
+    formula, agg, aggregate = FALSE, K = 4,
+    distribution = "gumbel_min", prior = priors,
+    stanvars = gumbel_min_stanvars(), empty = TRUE
+  )
+  expect_s3_class(fit, "brmsfit")
+  expect_true(grepl("gumbel_min_lcdf", fit$model, fixed = TRUE))
+})

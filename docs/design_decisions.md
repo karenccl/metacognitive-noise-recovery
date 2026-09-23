@@ -404,6 +404,34 @@ latter split into 360 "correct" + 360 "misspecified" fit rows), matching this pr
 **Not yet launched:** the actual full production grid run. `config/grid.csv` is generated and
 ready; `make g0` / `make g1` / `make g2` (or `Rscript code/02_fit/run_grid.R`) will run it.
 
+## 2026-09-23 — G2 Gumbel-min Stan functions implemented
+
+Closes the dependency flagged when `simulate_g2_gumbel.R` was written. Added `gumbel_min_stanvars()`
+to `code/01_simulate/simulate_g2_gumbel.R`: a `brms::stanvar(block = "functions")` defining
+Stan-side `gumbel_min_lcdf`/`gumbel_min_lccdf`, numerically identical to the R-side functions in
+the same file (same `beta = sqrt(6)/pi`, same `nu = mu + euler_gamma*beta` mean-centering; Stan's
+built-in `log1m_exp()` computes `log(1 - exp(-exp(z)))` directly and stably, matching
+`log1p(-exp(-exp(z)))` on the R side). `code/02_fit/run_one_cell.R` now passes
+`gumbel_min_stanvars()` as `extra_stanvars` whenever `generator == "g2"` and
+`fit_variant == "correct"`.
+
+**Verified end-to-end** on G2-generated data (N=20, T=100, `dprime_target=1.5`, `log_M=-1`,
+reduced settings: 2 chains × 400 draws for speed): the Stan program now compiles and samples
+successfully (previously errored at compile time with "undeclared identifier
+gumbel_min_lccdf" — see the Day-2-midday smoke test above). Recovered `log_M` Intercept ≈ −0.80
+(95% CI [−1.05, −0.58], true −1 near the edge of the interval — expected at this reduced
+2-chain/400-draw test size, not the production configuration). `status="refit"` (R-hat 1.022,
+min ESS 344/404) at this reduced size is also expected; production settings (4 chains,
+1000+1000 warmup/sampling) should resolve it, to be confirmed by the actual grid run.
+
+Added a fast (no-MCMC, `empty=TRUE`) regression test to `tests/test_data_format.R` checking that
+`gumbel_min_stanvars()` produces buildable Stan code containing the expected function name, so a
+future accidental regression in the Stan code string would be caught immediately rather than
+only during a full grid run.
+
+**Day 2 gap now closed.** All three generators (G0, G1, G2 correct + misspecified) have a
+working, tested fitting path. Ready to launch the full production grid.
+
 ## What this project must not claim
 
 See protocol section 1.2. In particular: do not claim `log_M` "recovers" σ_c numerically; do not

@@ -287,3 +287,25 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - **Day 2 midday deliverable complete.** Not yet done: actually launching the full production
   grid (~12-13 hours projected at 30 reps/cell with 5-way concurrency); the Gumbel-min Stan
   functions needed before any G2 "correct" fit can succeed.
+
+## 2026-09-23 — Close G2 gap: Gumbel-min Stan functions
+
+- User chose (given launch-order tradeoffs discussed above): implement the missing Gumbel-min
+  Stan functions before launching the full grid, rather than launching G0/G1 now and G2 later —
+  avoids permanently recording 360 G2-"correct" cells as errored (run_one_cell.R's resumability
+  check is file-existence-based, so a launch-then-fix approach would have required manually
+  deleting those specific output files afterward).
+- Added `gumbel_min_stanvars()` to `code/01_simulate/simulate_g2_gumbel.R`, matching the R-side
+  `gumbel_min_lcdf()`/`gumbel_min_lccdf()` parameterisation exactly (`beta=sqrt(6)/pi`,
+  `nu=mu+euler_gamma*beta`), using Stan's built-in `log1m_exp()`. Wired into
+  `code/02_fit/run_one_cell.R` via `extra_stanvars` for the G2 "correct" fit variant only.
+- Verified end-to-end: previously errored at Stan compile time ("undeclared identifier
+  gumbel_min_lccdf"); now compiles and samples. Test fit (N=20/T=100, `log_M=-1`, reduced
+  2-chain/400-draw settings for speed) recovered `log_M` ≈ −0.80 (95% CI [−1.05,−0.58], true −1
+  near the CI edge — expected at this reduced size). `status="refit"` at this size also
+  expected; production settings should resolve it.
+- Added a fast `empty=TRUE` regression test to `tests/test_data_format.R` for
+  `gumbel_min_stanvars()`. Full suite re-run: all pass.
+- **All three generators now have a working, tested fitting path. Ready to launch the full
+  production grid** (2160 rows, `config/grid.csv`, ~12-13 hours projected with 5-way
+  concurrency). Launching next.

@@ -22,14 +22,13 @@
 # numerically (mean/variance recovered from the CDF, and lcdf+lccdf
 # exponentiate to a valid complementary pair) -- see docs/analysis_log.md.
 #
-# IMPORTANT (Day 2 dependency): fitting the correctly-specified G2 model
-# with fit_metad(..., distribution = "gumbel_min", stanvars = stanvars_metad(K, distribution = "gumbel_min"))
-# additionally requires matching Stan-side `gumbel_min_lcdf`/`gumbel_min_lccdf`
-# function definitions passed via an extra `brms::stanvar(scode = ..., block = "functions")`
-# (per stanvars_metad()'s own documentation: "cumulative distribution
-# functions must be defined in R and in Stan"). Not yet implemented --
-# needed in code/02_fit/fit_hmetad.R before G2 model fitting, using the
-# same nu/beta parameterisation as the R functions below.
+# Fitting the correctly-specified G2 model additionally requires matching
+# Stan-side gumbel_min_lcdf/lccdf function definitions (stanvars_metad()'s
+# own generated code calls them but does not define them -- see
+# docs/design_decisions.md). gumbel_min_stanvars() below supplies them,
+# using the identical nu/beta parameterisation as the R functions in this
+# file; pass it as `extra_stanvars` to fit_one_hmetad() when
+# distribution = "gumbel_min".
 
 gumbel_min_beta <- sqrt(6) / pi
 gumbel_min_euler_gamma <- -digamma(1)
@@ -44,6 +43,33 @@ gumbel_min_lccdf <- function(x, mu, beta = gumbel_min_beta) {
   nu <- mu + gumbel_min_euler_gamma * beta
   z <- (x - nu) / beta
   -exp(z)
+}
+
+# Stan-side twin of the R functions above, using Stan's built-in
+# log1m_exp(y) = log(1 - exp(y)) (accurate for y <= 0, which -exp(z)
+# always is). Must stay numerically identical to gumbel_min_lcdf()/
+# gumbel_min_lccdf() -- beta and euler_gamma are inlined as literals
+# here since Stan functions can't reference R globals.
+gumbel_min_stanvars <- function() {
+  brms::stanvar(
+    scode = "
+  real gumbel_min_lcdf(real x, real mu) {
+    real beta = sqrt(6) / pi();
+    real euler_gamma = 0.5772156649015329;
+    real nu = mu + euler_gamma * beta;
+    real z = (x - nu) / beta;
+    return log1m_exp(-exp(z));
+  }
+  real gumbel_min_lccdf(real x, real mu) {
+    real beta = sqrt(6) / pi();
+    real euler_gamma = 0.5772156649015329;
+    real nu = mu + euler_gamma * beta;
+    real z = (x - nu) / beta;
+    return -exp(z);
+  }
+",
+    block = "functions"
+  )
 }
 
 simulate_g2_gumbel <- function(n_participants,

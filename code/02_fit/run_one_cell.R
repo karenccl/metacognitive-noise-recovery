@@ -75,13 +75,7 @@ simulate_cell <- function(row) {
   }
 }
 
-# extra_stanvars for the G2 "correct" (gumbel_min) fit variant is a
-# known Day-2 gap: fitting under distribution = "gumbel_min" additionally
-# needs matching Stan-side gumbel_min_lcdf/lccdf definitions, not yet
-# implemented (see docs/design_decisions.md). Left NULL here; G2
-# "correct" fits will error until that is added -- caught below and
-# recorded as a structured error, not a crash.
-fit_cell_once <- function(row, data, distribution, seed, adapt_delta, max_treedepth) {
+fit_cell_once <- function(row, data, distribution, seed, adapt_delta, max_treedepth, extra_stanvars) {
   fit_one_hmetad(
     data, K = cfg$confidence$k, group = "participant",
     distribution = distribution, metac_absolute = cfg$fitting$metac_absolute,
@@ -93,17 +87,20 @@ fit_cell_once <- function(row, data, distribution, seed, adapt_delta, max_treede
     adapt_delta = adapt_delta, max_treedepth = max_treedepth,
     rhat_max = cfg$diagnostics$rhat_max, bulk_ess_min = cfg$diagnostics$bulk_ess_min,
     tail_ess_min = cfg$diagnostics$tail_ess_min,
-    seed = seed, extra_stanvars = NULL,
+    seed = seed, extra_stanvars = extra_stanvars,
     metadata = row
   )
 }
 
 fit_cell <- function(row, data) {
-  distribution <- if (row$generator == "g2" && row$fit_variant == "correct") "gumbel_min" else "normal"
+  is_g2_correct <- row$generator == "g2" && row$fit_variant == "correct"
+  distribution <- if (is_g2_correct) "gumbel_min" else "normal"
+  extra_stanvars <- if (is_g2_correct) gumbel_min_stanvars() else NULL
 
   attempt <- fit_cell_once(
     row, data, distribution, seed = row$fit_seed,
-    adapt_delta = cfg$sampling$adapt_delta, max_treedepth = cfg$sampling$max_treedepth
+    adapt_delta = cfg$sampling$adapt_delta, max_treedepth = cfg$sampling$max_treedepth,
+    extra_stanvars = extra_stanvars
   )
   attempt$escalated <- FALSE
 
@@ -111,7 +108,8 @@ fit_cell <- function(row, data) {
     attempt <- fit_cell_once(
       row, data, distribution, seed = row$fit_seed + 1L,
       adapt_delta = cfg$sampling$escalation$adapt_delta,
-      max_treedepth = cfg$sampling$escalation$max_treedepth
+      max_treedepth = cfg$sampling$escalation$max_treedepth,
+      extra_stanvars = extra_stanvars
     )
     attempt$escalated <- TRUE
     if (identical(attempt$status, "refit")) attempt$status <- "fail"
