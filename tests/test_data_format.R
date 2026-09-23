@@ -4,6 +4,8 @@ source(here::here("code", "01_simulate", "discretise_confidence.R"))
 source(here::here("code", "01_simulate", "simulate_g1_ddm.R"))
 source(here::here("code", "01_simulate", "simulate_g0.R"))
 source(here::here("code", "01_simulate", "simulate_g2_gumbel.R"))
+source(here::here("code", "02_fit", "extract_fit_summary.R"))
+source(here::here("code", "02_fit", "fit_hmetad.R"))
 
 check_schema <- function(d) {
   expect_true(all(c("participant", "stimulus", "response", "confidence") %in% names(d)))
@@ -54,4 +56,35 @@ test_that("gumbel_min_lcdf/lccdf form a valid complementary CDF pair", {
   S <- exp(gumbel_min_lccdf(xs, mu))
   expect_equal(F + S, rep(1, length(xs)), tolerance = 1e-10)
   expect_false(is.unsorted(F))
+})
+
+# fit_one_hmetad() input validation (fast, no MCMC -- actual fitting is
+# exercised manually/in the Day 2 G0 baseline, see docs/analysis_log.md,
+# since a single fit takes ~1-2 minutes even at small settings)
+test_that("fit_one_hmetad validates required columns and coding before fitting", {
+  skip_if_not_installed("hmetad")
+  d <- simulate_g0(n_participants = 5, n_trials = 20, dprime_target = 1.5, log_M = -1, seed = 1)
+
+  d_bad_conf <- d
+  d_bad_conf$confidence[1] <- 99L
+  expect_error(fit_one_hmetad(d_bad_conf, K = 4, seed = 1), "confidence")
+
+  d_missing <- d[, setdiff(names(d), "response")]
+  expect_error(fit_one_hmetad(d_missing, K = 4, seed = 1), "missing required column")
+
+  d_bad_stim <- d
+  d_bad_stim$stimulus[1] <- 2L
+  expect_error(fit_one_hmetad(d_bad_stim, K = 4, seed = 1), "stimulus")
+})
+
+test_that(".build_metad_formula and .build_metad_priors produce a buildable (empty) brmsfit", {
+  skip_if_not_installed("hmetad")
+  d <- simulate_g0(n_participants = 5, n_trials = 20, dprime_target = 1.5, log_M = -1, seed = 1)
+  agg <- hmetad::aggregate_metad(d, participant, K = 4)
+
+  formula <- .build_metad_formula(4, group = "participant")
+  priors <- .build_metad_priors(4, log_M_prior = "normal(0,1)", metac2_prior = "normal(0,1)")
+
+  fit <- hmetad::fit_metad(formula, agg, aggregate = FALSE, K = 4, prior = priors, empty = TRUE)
+  expect_s3_class(fit, "brmsfit")
 })

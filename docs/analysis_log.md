@@ -190,3 +190,45 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   (`discretise_confidence`, `simulate_g1_ddm`, `simulate_g0`, `simulate_g2_gumbel`) implemented,
   calibrated where required, and tested. Remaining before the full grid: the Day 2 fit wrapper
   (`fit_one_hmetad()`), including the Gumbel-min Stan-side function definitions noted above.
+
+## 2026-09-23 — Day 2 morning: fit_one_hmetad(), extract_fit_summary(), G0 baseline
+
+- Spent significant exploration time on two undocumented `hmetad`/`brms` gotchas before writing
+  the wrapper (full detail in `docs/design_decisions.md`): (1) `fit_metad(aggregate=TRUE)`'s
+  dots-forwarding is unreliable for specifying a grouping column, so the wrapper aggregates
+  explicitly via `aggregate_metad()` and fits with `aggregate=FALSE`; (2) a dpar's prior-class
+  spec (`class="<name>"` vs. `class="Intercept", dpar="<name>"`) silently depends on whether
+  that dpar has an explicit formula in `bf()`, discovered by trial and error via
+  `brms::get_prior()` comparisons since the error message ("priors do not correspond to any
+  model parameter") gives no hint which form is expected.
+- Implemented `fit_one_hmetad()` (`code/02_fit/fit_hmetad.R`): input validation, a hierarchical
+  formula (`(1|participant)` on `mu`/log_M always, on `dprime`+`c` by default, pooled confidence
+  thresholds by default — all three configurable), prior construction, `tryCatch`+
+  `withCallingHandlers`-wrapped fitting that captures warnings without letting them abort the
+  run, and a compact return record (status/elapsed/diagnostics/fit) whether the fit
+  succeeds or errors.
+- Implemented `extract_fit_summary()` (`code/02_fit/extract_fit_summary.R`): R-hat/ESS restricted
+  to population-level (`b_*`) and random-effect-SD (`sd_*`) parameters (excluding the numerous
+  per-participant `r_participant[...]` deviations), divergence and max-treedepth-hit counts, and
+  a `pass`/`refit` classification (`fail` is deliberately left to the not-yet-built
+  `run_one_cell.R`, which owns the escalation/retry history).
+- Verified end-to-end on a small/fast config (G0, N=20/T=100, 2 chains × 375 draws,
+  `adapt_delta=0.95`): 0 divergences (vs. 3 at brms's default `adapt_delta=0.8` in an earlier
+  exploratory run — confirms the locked `0.95` setting matters), `log_M` Intercept ≈ −1.08 (true
+  −1), `dprime` ≈ 1.53 (true 1.5), `c` ≈ 0.004 (true 0), correctly flagged `status="refit"` for
+  one low-ESS random-effect SD (expected at this tiny smoke-test size). Verified all three
+  input-validation error paths (bad confidence code, missing column, bad stimulus code) reject
+  before any Stan compilation.
+- Added fast (non-MCMC) tests to `tests/test_data_format.R`: `fit_one_hmetad()` validation
+  errors, and an `empty=TRUE` build check for `.build_metad_formula()`/`.build_metad_priors()`.
+  Deliberately did *not* add a full MCMC-fitting test to the automated suite (a single fit takes
+  1-2+ minutes even at reduced settings) — the G0 baseline fit itself is this step's real
+  correctness check, run manually and logged here, per the protocol's own Day 2 morning wording
+  ("do not overinterpret one fit").
+- Updated `config/design.yml`: `fitting.aggregate` corrected to `false` (was stale from the
+  original `aggregate=TRUE` plan); added `fitting.hierarchical_dprime_c` (`true`) and
+  `fitting.hierarchical_thresholds` (`false`).
+- Launched the actual Day-2 G0 baseline fit at full production settings (4 chains, 1000+1000
+  warmup/sampling, `adapt_delta=0.95`, `max_treedepth=12`) on N=20/T=100, `dprime_target=1.5`,
+  `log_M=-1` — result to follow in the next log entry once it completes (~10 min expected based
+  on the small-config timing above).

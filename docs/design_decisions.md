@@ -304,6 +304,61 @@ stages only (no readout-noise-dependent quantity affects `q`), so the same `q` r
 reused across the whole `σ_c` sweep — an intentional, documented variance-reduction choice, not
 a shortcut that changes what's being measured.
 
+## 2026-09-23 — Day 2: fit_one_hmetad() implementation and hierarchical model structure
+
+`code/02_fit/fit_hmetad.R` implements `fit_one_hmetad()` plus two internal helpers,
+`.build_metad_formula()` and `.build_metad_priors()`. Two more `brms`/`hmetad` gotchas were
+found empirically while building this (neither documented in the package's help pages):
+
+**1. Aggregation route revised.** `fit_metad(..., aggregate = TRUE)` forwards its own `...` dots
+to both `brm()` (sampler args) and, per its documented approximate equivalence, to
+`aggregate_metad()` (grouping columns) — the same dots serving two purposes is an unreliable
+way to pass a grouping variable. This wrapper instead calls
+`hmetad::aggregate_metad(data, <group>, K)` itself and fits on the pre-aggregated data with
+`fit_metad(..., aggregate = FALSE)`, which the package's own documentation explicitly endorses
+("may often be easier to use the more explicit version"). `config/design.yml`'s
+`fitting.aggregate` is now `false` to reflect this (was `true`).
+
+**2. Prior-class registration depends on whether a dpar has an explicit formula.** When a dpar
+(`dprime`, `c`, or a `metac2_parameters()` gap) is left at the family's implicit default (no
+formula given to `bf()`), its prior is set with the bare form `class = "<dpar_name>"`. As soon
+as that dpar is given *any* explicit formula — even just `~1`, let alone `~1 + (1|participant)`
+— brms switches to registering it as a standard distributional parameter, and the correct prior
+form becomes `class = "Intercept", dpar = "<dpar_name>"`. Using the wrong form raises "priors do
+not correspond to any model parameter" with no hint about which form is expected. Verified via
+`brms::get_prior()` on both formula styles side by side.
+`.build_metad_priors()` always uses the `dpar=` form because `.build_metad_formula()` always
+gives every dpar (mu/`N`, `dprime`+`c` combined, and the threshold gaps combined) an explicit
+formula — combining multiple dpar names on one formula's LHS with `+` (`dprime + c ~ ...`),
+matching the syntax in `fit_metad()`'s own condition-level-effects example, since separate
+individual formulas per dpar were tested and do NOT reliably register (same symptom).
+
+**Hierarchical model structure (locked, `config/design.yml` `fitting:`):** `(1|participant)` on
+the primary `mu`/log_M parameter (always) and on `dprime`+`c` (`hierarchical_dprime_c = TRUE`,
+matching classic hierarchical HMeta-d practice of letting individual sensitivity/bias vary).
+Confidence-threshold gaps are pooled (not hierarchical) by default
+(`hierarchical_thresholds = FALSE`) to bound model complexity/runtime — both are exposed as
+`fit_one_hmetad()` arguments so the Day 2 compute benchmark can revisit this if the full
+hierarchical-thresholds version is affordable.
+
+**Verified on a small/fast configuration** (G0 data, `N=20, T=100`, 2 chains × 375 post-warmup
+draws, `adapt_delta=0.95`): 0 divergent transitions (3 divergences appeared at brms's own
+default `adapt_delta=0.8`, confirming the locked `0.95` matters), all population-level
+parameters recovered near their generating values (`log_M` Intercept ≈ −1.08 vs. true −1,
+`dprime` ≈ 1.53 vs. true 1.5, `c` ≈ 0.004 vs. true 0), and `extract_fit_summary()` correctly
+flagged `status = "refit"` due to one random-effect SD parameter's ESS falling short of 400 —
+expected at this deliberately small smoke-test sample size, not the production configuration.
+Also verified `fit_one_hmetad()`'s input validation rejects out-of-range confidence codes,
+missing columns, and non-0/1 stimulus/response coding before any Stan compilation is attempted.
+
+`extract_fit_summary()` (`code/02_fit/extract_fit_summary.R`) restricts its focal-parameter
+R-hat/ESS check to population-level effects (`^b_`) and random-effect SDs (`^sd_`), explicitly
+excluding the numerous per-participant deviation terms (`r_participant[...]`) — consistent with
+protocol section 4.4's "focal population parameters" wording. It classifies `pass`/`refit` only;
+`fail` (an escalated refit that still doesn't pass) is a decision for the not-yet-implemented
+`run_one_cell.R`, which owns the retry/escalation policy and thus the retry history a single
+call to `extract_fit_summary()` can't see.
+
 ## What this project must not claim
 
 See protocol section 1.2. In particular: do not claim `log_M` "recovers" σ_c numerically; do not
