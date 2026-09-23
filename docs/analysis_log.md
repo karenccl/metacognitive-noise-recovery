@@ -230,5 +230,19 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   `fitting.hierarchical_thresholds` (`false`).
 - Launched the actual Day-2 G0 baseline fit at full production settings (4 chains, 1000+1000
   warmup/sampling, `adapt_delta=0.95`, `max_treedepth=12`) on N=20/T=100, `dprime_target=1.5`,
-  `log_M=-1` — result to follow in the next log entry once it completes (~10 min expected based
-  on the small-config timing above).
+  `log_M=-1`.
+- **Result: clean pass.** Elapsed 195.1s (~3.25 min) — much faster than the small-config
+  smoke-test timing suggested, and a useful first data point for the Day 2 midday compute
+  benchmark (aggregation collapses each participant's trials to one count row, so cost scales
+  mainly with N-participants/hierarchical units, not directly with T-trials). Diagnostics:
+  `status="pass"`, max R-hat 1.006, min ESS(bulk/tail) 1357/1862, 0 divergent transitions, max
+  treedepth used 6 (well under the 12 limit), no warnings. Recovery: `log_M` Intercept −0.864
+  (95% CI [−1.241, −0.561], known truth −1 inside the interval), `dprime` 1.506 (true 1.5), `c`
+  −0.018 (true 0), all six threshold-gap intercepts near their generating −1. Consistent with a
+  single illustrative run per the protocol's own caution not to overinterpret one fit. Saved
+  the full fit object to `outputs/reports/g0_baseline_fit_result.rds` (gitignored, local only).
+- **Day 2 morning deliverable complete:** `fit_one_hmetad()`/`extract_fit_summary()` implemented
+  and the G0 baseline confirms the whole pipeline (simulate → aggregate → hierarchical fit →
+  diagnose → recover) works end-to-end. Next: Day 2 midday compute benchmark (largest-cell
+  N=40/T=400 timing, repetition-count decision) and grid/batch infrastructure
+  (`config/grid.csv`, `run_one_cell.R`, `run_grid.R`, `Makefile` resumability check).
