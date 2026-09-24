@@ -357,3 +357,46 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - **Relaunching** the full grid now (1440 rows, 20 reps/cell, G1→G0→G2 order, compact output
   format). Will report fits/hour and projected finish time after 1 hour, and try
   `max_concurrent_fits = 4` if throughput isn't meaningfully above ~50/hour.
+- Launched 2026-09-23 19:21:46. Shortly after, a process-tree check (to compute the 1-hour
+  throughput report) showed 19 R processes and briefly looked like a duplicate orchestrator was
+  running from the earlier (user-)stopped launch. Traced it fully before taking any action: it
+  was one legitimate `run_grid.R` plus its expected process tree
+  (orchestrator → 5 concurrent `run_one_cell.R` → 4 `cores` workers each); the apparent
+  "second orchestrator" was a `powershell → Rscript → cmd → Rscript` wrapper chain for the same
+  single background task, invisible as a single unit in an `Rscript.exe`-only process filter.
+  No process was killed; throughput was confirmed healthy from file timestamps (ground truth)
+  rather than process state. Recorded here as a reminder that process-tree diagnosis on Windows
+  through nested shell wrappers needs the full parent chain, not a name-filtered process list,
+  before concluding something is duplicated.
+- Checked in periodically through the run (file count + `qs2::qs_read()` status tally + process
+  count): throughput held in a 56-63 fits/hour band throughout (thermal-throttled somewhat below
+  the raw benchmark's ~145/hour theoretical rate at 5-way concurrency, but consistently well
+  above the ~50/hour decision threshold, so `max_concurrent_fits` was never changed from 5).
+
+## 2026-09-24 — Production grid run complete
+
+- **Finished 2026-09-24 21:28:53** (last file written). Total wall time from launch: **~26.1
+  hours** (vs. the ~12-13 hour best-case projection from the `cores=4` benchmark — the gap is
+  thermal throttling under sustained 5-way-concurrent load, not a bug; throughput was checked
+  repeatedly during the run and never dropped below ~56/hour, so no intervention was made).
+  Average throughput over the full run: 1440 fits / 26.12 hours ≈ 55.1 fits/hour.
+- **Final tally: 1440/1440 grid rows completed. 1437 `pass`, 3 `fail`, 0 `error`.**
+  - G0: 240/240 (239 pass, 1 fail)
+  - G1: 720/720 (720 pass, 0 fail) — the primary-question generator completed with a perfect
+    pass rate
+  - G2: 480/480 (478 pass, 2 fail)
+  - 154/1440 (10.7%) needed the escalation retry (adapt_delta 0.99, max_treedepth 14) before
+    reaching their final status.
+  - Elapsed time per fit: median 265.8s, mean 268.1s, max 1514.3s (one outlier, not
+    investigated further here — a candidate for the Day-3/4 diagnostics summary to flag by
+    condition).
+- Per the pre-registered failed-fit rule (above): the 3 `fail` rows stay in the primary analysis,
+  flagged; a pass-only sensitivity analysis will check whether they change any conclusion. Zero
+  `error` rows means there is nothing to fold into the RQ3 convergence-failure tabulation beyond
+  these 3 flagged fits (a very low failure rate at N≥20, consistent with the G0 baseline's clean
+  behavior on Day 2).
+- Confirmed 0 lingering R processes after completion (clean shutdown, no orphaned workers).
+- **Not yet done:** compiling/aggregating the 1440 individual `data/interim/*.qs2` result files
+  into the compact processed products in `data/processed/` (protocol's Day 3 morning task,
+  `code/03_recovery_analysis/compile_results.R`, not yet implemented) — that is the next step
+  before any recovery metrics, figures, or the report can be produced.
