@@ -156,12 +156,27 @@ robustness_table <- tibble::tibble(
     sprintf("%.0f%% (%d/%d reps)", ordering_holds_k6 * 100, round(ordering_holds_k6 * nrow(g1_ordering_k6)), nrow(g1_ordering_k6))
   ),
   direction = c(
-    if (mean(abs(g0_comparison$diff_median)) < 0.1) "Consistent" else "Shifted",
+    sprintf(
+      "%s (mean |diff|=%.3f, max |diff|=%.3f, %d/%d CIs overlap)",
+      if (mean(abs(g0_comparison$diff_median)) < 0.1) "Consistent" else "Point estimates vary",
+      mean(abs(g0_comparison$diff_median)), max(abs(g0_comparison$diff_median)),
+      sum(g0_comparison$both_overlap_ci), nrow(g0_comparison)
+    ),
     if (ordering_holds_k4 == ordering_holds_k6) "Consistent" else "Shifted"
   ),
   interpretation = c(
-    "log_M estimates are not materially sensitive to confidence-bin count at this design",
-    "The primary G1 ordinal-recovery finding is not an artefact of the K=4 discretisation choice"
+    sprintf(
+      paste(
+        "Individual log_M point estimates shift by up to %.2f between K=4/K=6 (mean |diff|",
+        "%.2f, comparable to a single fit's posterior SD ~0.09-0.1), but all %d/%d K=4/K=6",
+        "pairs have overlapping 95%% CIs -- consistent with ordinary estimation noise across",
+        "different discretisations of the same continuous data, not a detectable systematic",
+        "K-dependent bias, though n=%d reps has limited power to rule one out definitively."
+      ),
+      max(abs(g0_comparison$diff_median)), mean(abs(g0_comparison$diff_median)),
+      sum(g0_comparison$both_overlap_ci), nrow(g0_comparison), nrow(g0_comparison)
+    ),
+    "The primary G1 ordinal-recovery finding (RQ1) is not an artefact of the K=4 discretisation choice"
   )
 )
 

@@ -622,3 +622,46 @@ or contradict the aggregate 12-condition bias pattern — only the properly-aver
 prior-sensitivity paragraph should state the shrinkage-direction conclusion only, not lean on the
 figure's absolute bias-looking position as evidence about the aggregate bias's magnitude or
 direction.
+
+## 2026-09-25 — Day 5 midday: K=6 confidence-binning sensitivity analysis
+
+- Implemented `code/03_recovery_analysis/sensitivity_binning.R`: reruns a small representative
+  subset (G0: N=40/T=200/`d′=1.5`, 5 reps; G1: same design, all 3 `σ_c` levels, 5 reps/level —
+  20 fits total, 1.4% of the full grid) at `K=6` instead of the production `K=4`, holding the
+  underlying continuous evidence identical (same `sim_seed`) so only the discretisation
+  granularity changes, and compares against the existing K=4 production results for the same
+  `grid_id`s.
+- **Found and fixed a real bug while implementing this** (protocol section 1.4's own reason for
+  needing this check): `simulate_g0()`/`simulate_g2_gumbel()` never overrode
+  `sim_metad_participant()`'s `r_z_c2_0`/`r_z_c2_1` correlation-matrix arguments, so they only
+  worked at `K=4` by coincidence (hmetad's own hardcoded `diag(3)` default happened to match
+  `K=4`'s 3 threshold gaps). `K=6` (5 gaps) immediately hit a `cov_matrix()` dimension-mismatch
+  error on the very first fit — caught before any of the 20 fits' compute was wasted. Fixed by
+  passing `r_z_c2_0 = r_z_c2_1 = diag(k - 1)` explicitly in both generators; verified `K=6` now
+  works and `K=4` still recovers `M = exp(log_M)` exactly (regression check), full test suite
+  re-run clean. Committed as its own fix (`c99333d`) before relaunching the 20-fit run.
+- **Results:**
+  - **G1 ordering accuracy is identical at K=4 and K=6: 100% (5/5 matched reps) both ways** —
+    the primary RQ1 ordinal-recovery finding is not an artefact of the locked K=4 discretisation.
+  - **G0 individual point-estimate differences are non-trivial**: up to 0.38 on the `log_M`
+    scale between a cell's K=4 and K=6 fit (mean |diff| = 0.21 across the 5 reps), comparable to
+    a single fit's own posterior SD (~0.09-0.1). However, **all 5/5 K=4/K=6 pairs have
+    overlapping 95% credible intervals** — consistent with ordinary estimation noise from
+    different discretisations of the same continuous data, not a detectable systematic
+    K-dependent bias, though n=5 gives limited power to fully rule one out.
+  - **Caught and fixed a second issue before it became misleading**: the script's first draft
+    computed a data-driven `direction` flag correctly but paired it with a **hardcoded**
+    `interpretation` string ("not materially sensitive") that didn't actually reflect the
+    computed result (which showed sizeable individual-level shifts). Rewrote the interpretation
+    text to be generated from the actual numbers (max/mean |diff|, CI-overlap count) rather than
+    an assumption written before seeing the data — exactly the "no sensitivity analysis silently
+    becomes the headline result" failure mode protocol section 5 warns against, caught here
+    before it reached the report. Regenerated `robustness_table.csv` from the already-saved
+    comparison data (no need to redo the 20 fits).
+- Wrote `data/processed/sensitivity_binning_comparison.csv` (20 rows) and
+  `data/processed/robustness_table.csv` (the one-page robustness summary).
+- **Bottom line for the report:** the K=4 discretisation choice does not threaten the primary
+  RQ1 conclusion (G1 ordering accuracy unchanged). G0's point-estimate sensitivity to bin count
+  is present at the individual-fit level but not distinguishable from ordinary posterior
+  uncertainty given the credible-interval overlap — reported honestly as "not conclusively
+  resolved at n=5," not overclaimed as "no sensitivity" in either direction.
