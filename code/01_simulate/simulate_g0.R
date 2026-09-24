@@ -40,6 +40,7 @@ simulate_g0 <- function(n_participants,
       mean_M = log_M, sd_M = 0,
       mean_z_c2_0 = rep(mean_z_c2, z_len), sd_z_c2_0 = rep(sd_z_c2, z_len),
       mean_z_c2_1 = rep(mean_z_c2, z_len), sd_z_c2_1 = rep(sd_z_c2, z_len),
+      r_z_c2_0 = diag(z_len), r_z_c2_1 = diag(z_len),
       metac_absolute = metac_absolute,
       allow_negative_values = allow_negative_values,
       summarize = FALSE
