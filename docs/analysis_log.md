@@ -437,3 +437,53 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   `compile_results.R` is a standalone analysis script, consistent with the project's existing
   practice of not unit-testing the batch/analysis-orchestration scripts, only the generator and
   fitting functions they call).
+
+## 2026-09-24 — Day 3 afternoon: compute_primary_metrics.R — RQ1 result
+
+- Implemented `code/03_recovery_analysis/compute_primary_metrics.R`, scoped to G1's ordinal-
+  recovery estimands (G0's bias/RMSE/coverage already live in `compile_results.R`).
+- **Verified the `agg$N` column-indexing logic before trusting it at scale**: re-simulated one
+  G0 cell with its exact grid seed, computed hit/FA rate directly from trial-level `stimulus`/
+  `response` columns, and compared against the same quantities derived from
+  `aggregate_metad()`'s matrix-column layout (`N_0_1..N_0_8`, `N_1_1..N_1_8`, per the package's
+  documented `[R=0,C=K..1; R=1,C=1..K]` ordering per stimulus). Exact match (hit=0.668, FA=0.372
+  both ways) before running on all 720 G1 files.
+- **Empirical `d′` check**: pooled across all G1 replications, empirical `d′` = 0.743 (target
+  0.75, SD 0.036) and 1.50 (target 1.5, SD 0.038) — confirms the DDM generator's calibration
+  (locked 2026-09-23) held up consistently across the full production grid, not just the
+  original pilot sample.
+- Fixed one bug found on first run: a `dplyr::left_join()` with an accidentally-duplicated
+  `dprime_target` column selection; corrected and reran clean.
+- **G1 primary result (RQ1) — strong, clean support for ordinal recovery**, across all 12
+  N×T×`d′` conditions (n=60 replications per condition, 20 per `σ_c` level):
+  - **12/12 conditions show the expected negative slope** of `log_M` on `σ_c`
+    (range −0.50 to −0.63, all `p` < 1e-21).
+  - Spearman `ρ` between `σ_c` and posterior median `log_M`: −0.92 to −0.94 in every condition.
+  - **Ordering accuracy** (paired by `rep_id` — note: `σ_c` levels do NOT share simulation
+    seeds in this grid, each `(N,T,d′,σ_c,rep)` cell has its own independent `sim_seed`, so this
+    is an independent-replicate comparison, not a common-random-numbers one): **11/12 conditions
+    at 100%** (20/20 matched reps in perfect `log_M(low) > log_M(medium) > log_M(high)` order),
+    one at 95% (19/20).
+  - **Separation probabilities** (Mann-Whitney-style, using all replicate pairs rather than only
+    matched `rep_id`s): ≥0.965 for every adjacent contrast in every condition, mostly exactly
+    1.0.
+  - Primary (pass+fail) and pass-only sensitivity results are **identical**, since G1 had a
+    100% pass rate (0 fails, 0 errors) across all 720 fits — the flagged-vs-pass-only question
+    the pre-registered rule anticipated turned out not to matter for G1.
+- Confidence-category marginals confirmed ~25%/category as expected by construction (not a
+  degeneracy diagnostic, per the Day-1 design decision); per-replicate tie/cut-point diagnostics
+  were not persisted in the compact output format and were not re-audited here (documented
+  limitation, validated instead at the Day-1 pilot stage).
+- Wrote `data/processed/g1_failure_rates.csv`, `g1_empirical_dprime_check.csv`,
+  `g1_primary_metrics.csv`, `g1_sensitivity_metrics.csv`.
+- **Bottom line for the report's Results section:** under the specified DDM-type generator,
+  estimated static `log_M` declined monotonically as confidence-readout noise increased, with
+  near-perfect ordinal recovery — consistent with (but not yet cross-checked against) adequate
+  generative fit; that check is the Day 5 PPC task, still pending. Per protocol section 6.2's
+  interpretation template, the ordinal-recovery claim alone does **not** yet establish that the
+  fitted static meta-d′ model is a generatively adequate account of the full response-confidence
+  distribution. G1's `run_one_cell.R` records don't carry PPC precursors (only G2 rows compute
+  `loo`/`epred_summary`, per the 2026-09-23 output-format decision) — G1's own posterior
+  predictive check (protocol's "G1 low-noise pass" / "G1 high-noise pass/failure" representative
+  fits) is a Day 5 task requiring a fresh `epred_draws_metad()` call on a handful of saved fits,
+  not yet done.
