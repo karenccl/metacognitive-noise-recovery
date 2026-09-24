@@ -487,3 +487,48 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   predictive check (protocol's "G1 low-noise pass" / "G1 high-noise pass/failure" representative
   fits) is a Day 5 task requiring a fresh `epred_draws_metad()` call on a handful of saved fits,
   not yet done.
+
+## 2026-09-24 — Day 4: G2 LOO/ELPD comparison
+
+- Implemented `code/04_ppc_and_comparison/loo_comparison.R`. Verified before trusting it at
+  scale: `loo::loo_compare()` on one manually-loaded correct/misspecified pair worked correctly,
+  and `dim(loo_object$pointwise) = [20, 5]` for an N=20 fit confirms (again) that one LOO
+  observation is one participant's aggregated count vector (5 = the standard `pointwise` columns
+  `elpd_loo`/`mcse_elpd_loo`/`p_loo`/`looic`/`influence_pareto_k`, 20 = participants) — stated
+  explicitly in the script's own header per protocol's requirement to document the LOO unit
+  before interpreting it.
+- Paired all 240 G2 cells' `correct`/`misspecified` fits by `(cell_id, rep_id)` — valid because
+  both variants of a cell were fit to the **identical** simulated dataset (shared `sim_seed`,
+  locked in `code/00_setup/02_create_grid.R`), satisfying `loo_compare()`'s same-data requirement.
+- **Pareto k caveat (report prominently, do not paper over):** 12.0% of `correct`-model LOO
+  observations and 8.2% of `misspecified`-model observations have `k > 0.7` (PSIS unreliable).
+  Mean max-k per fit: 0.79 (correct) / 0.76 (misspecified). No remedy (moment-matching, exact
+  K-fold refit of flagged observations) was implemented — this is a stated limitation, not
+  silently absorbed into the headline ELPD numbers. The directional conclusion below is treated
+  as robust to this (it holds in the overwhelming majority of pairs, not just the reliable
+  subset), but exact ELPD magnitudes should be read as approximate.
+- **ELPD result: the correctly-specified (Gumbel-min) model is preferred over the misspecified
+  (Gaussian) model in 96.2% of all 240 paired comparisons** (72.9% at a >2SE margin). Mean ELPD
+  advantage for the correct model grows sharply with more data — from +2.2 (SE 2.7, essentially
+  undetectable) at the smallest condition (N=20/T=100/d′=0.75) to +83.1 (SE 11.3, overwhelming)
+  at the largest (N=40/T=400/d′=1.5) — the expected pattern: more data both sharpens estimation
+  and amplifies a real model-misfit signal.
+- **log_M recovery reveals a clean, opposite-direction bias pattern:** the correctly-specified
+  model has a small **negative** bias in all 12 conditions (−0.007 to −0.092), matching the same
+  direction and rough magnitude already seen in G0 (flagged 2026-09-24 for the Day 4
+  prior-sensitivity check) — consistent with this being a general prior/hierarchical-shrinkage
+  property of the fitting pipeline, not something specific to G2's distribution. The
+  **misspecified** Gaussian fit instead shows a **positive** bias in all 12 conditions (+0.064 to
+  +0.195) and uniformly higher RMSE than the correct fit — Gaussian misspecification makes
+  subjects look *more* metacognitively efficient than the Gumbel-min-generating truth, the
+  opposite direction from the correct model's own small residual bias.
+- Wrote `data/processed/g2_pareto_k_by_fit.csv`, `g2_pareto_k_summary.csv`,
+  `g2_elpd_comparison.csv` (240 pairs), `g2_elpd_summary.csv` (by condition),
+  `g2_log_M_recovery.csv` (24 rows: 12 conditions × 2 variants).
+- **Bottom line for the report:** G2 supports the protocol's misspecification-sensitivity
+  question clearly — LOO correctly and increasingly favors the true generative distribution as
+  data accumulate, and point-estimate bias under misspecification is systematic, sizeable, and
+  in a specific (efficiency-inflating) direction, not just noisier. Scale caveat applies as
+  locked: this compares `log_M` *within* hmetad's own parameterisation across two fitted
+  families on the same data, not a claim that Gaussian- and Gumbel-scale `log_M` are
+  substantively identical in general.
