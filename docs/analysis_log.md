@@ -532,3 +532,58 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   locked: this compares `log_M` *within* hmetad's own parameterisation across two fitted
   families on the same data, not a claim that Gaussian- and Gumbel-scale `log_M` are
   substantively identical in general.
+
+## 2026-09-24 — Day 4 midday: prior sensitivity, and revisiting the negative-bias question
+
+- Implemented `code/03_recovery_analysis/prior_sensitivity.R`: refits one representative G0 and
+  one representative G1 dataset (N=40, T=200, `d′=1.5`; G1: `σ_c=medium`; rep 1 of each) under
+  the three predeclared `log_M` priors (`normal(0,0.5)`, `normal(0,1)`, `normal(0,2)`), using
+  the SAME `fit_seed` across all three refits of a generator to isolate the prior's effect from
+  sampler RNG noise, and regenerating the identical trial-level dataset from the grid row's own
+  `sim_seed` (rather than trying to reuse the compact-format `agg`, which `fit_one_hmetad()`
+  can't accept directly since it always aggregates from trial-level data itself).
+- Fixed one bug on first run (all 6 fits succeeded, but post-processing crashed): the script
+  assumed `fit_one_hmetad()`'s return value has a `draws_b_sd` field, but that extraction is
+  actually done by `run_one_cell.R`'s compact-record wrapper, not by `fit_one_hmetad()` itself —
+  calling `fit_one_hmetad()` directly (as this script does, bypassing `run_one_cell.R`) returns
+  the full `$fit` with no `draws_b_sd`. Fixed by extracting draws directly via
+  `posterior::as_draws_df(f$fit)$b_Intercept`. Had to redo all 6 fits (~20 min) since the
+  process had already exited after the crash.
+- **Results (posterior mean `log_M`, G0 known truth = −1):**
+
+  | Prior | G0 mean | G0 95% CI | G1 mean | G1 95% CI |
+  |---|---|---|---|---|
+  | `normal(0, 0.5)` | −0.939 | [−1.123, −0.770] | −0.722 | [−0.865, −0.588] |
+  | `normal(0, 1)` (production) | −0.958 | [−1.148, −0.794] | −0.733 | [−0.874, −0.607] |
+  | `normal(0, 2)` | −0.966 | [−1.172, −0.791] | −0.736 | [−0.882, −0.604] |
+
+  Both generators show the **same monotonic, textbook-shrinkage pattern**: the tighter the
+  prior, the more the posterior mean is pulled toward the prior's own mean of 0 (i.e. *less*
+  negative). The three priors span only a modest range (G0: −0.939 to −0.966, a 0.027 spread;
+  G1: −0.722 to −0.736, a 0.014 spread) relative to the posterior SD (~0.09/0.07) — at N=40/T=200
+  the likelihood is reasonably, but not overwhelmingly, informative relative to any of these
+  three prior widths. Per protocol's instruction to treat this as an identifiability finding,
+  not a defect: this is a normal, expected degree of prior sensitivity, not a warning sign.
+
+- **This corrects/narrows the 2026-09-24 "negative bias, opposite direction from shrinkage" flag
+  from the G0-compilation step.** That flag was right that the *direction* is not what naive
+  shrinkage-toward-0 alone would produce — and this sweep confirms exactly why: shrinkage toward
+  a `normal(·, sd)` prior centered at 0 can only ever pull a posterior mean *toward* 0 (i.e. make
+  a true `log_M=-1` estimate *less* negative, which is what all three priors do here relative to
+  each other). So the small **negative** aggregate bias seen across G0's 12 conditions
+  (−0.007 to −0.092 per condition, in `g0_recovery_summary.csv`/`g2_log_M_recovery.csv`) is not
+  something the production `normal(0,1)` prior is *causing* — if anything, moving to an even
+  wider (less informative) prior made the single representative G0 fit here *more* negative
+  (−0.966 at `sd=2` vs −0.939 at `sd=0.5`), suggesting the underlying likelihood-driven signal
+  itself leans slightly negative of truth at this design, and the production prior's mild
+  shrinkage toward 0 is *attenuating* that tendency somewhat, not creating it.
+  **Not fully explained by this sweep** (a single representative replicate can't resolve a
+  small-magnitude, 12-condition-consistent aggregate effect — protocol's own caution against
+  overinterpreting one illustrative run applies here too): the residual small negative bias's
+  ultimate source (candidates include posterior-mean-of-a-nonlinear-log-link-transform effects,
+  or hierarchical partial-pooling behavior on the `sd_participant` components) is left as a
+  documented open question / limitation for the final report, not chased further within the
+  remaining project timeline.
+- Wrote `data/processed/prior_sensitivity_summary.csv` and `outputs/figures/prior_sensitivity.png`
+  (violin + posterior median/95% CI by prior, faceted by generator, with the G0 truth line shown
+  only on the G0 facet since G1 has no single true `log_M` by construction).
