@@ -400,3 +400,40 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   into the compact processed products in `data/processed/` (protocol's Day 3 morning task,
   `code/03_recovery_analysis/compile_results.R`, not yet implemented) — that is the next step
   before any recovery metrics, figures, or the report can be produced.
+
+## 2026-09-24 — Day 3 morning: compile_results.R and G0 recovery summary
+
+- Implemented `code/03_recovery_analysis/compile_results.R`: reads every `data/interim/*.qs2`
+  file, extracts a compact per-row summary (grid metadata, status/diagnostics, and a `log_M`
+  posterior point summary — mean/median/sd/95% CI — from the compact `draws_b_sd$b_Intercept`
+  saved by `run_one_cell.R`), cross-checks the result set against `config/grid.csv` for
+  completeness (missing/duplicate/unexpected `grid_id`s — from structured status fields, not
+  file presence alone, per protocol section 5), and computes G0 bias/RMSE/coverage/interval-width
+  per condition plus a pooled-across-cells coverage estimate (the plan locked when replications
+  were revised to 20 — see the 2026-09-23 reps-30→20 entry above).
+- **Completeness: perfect.** All 1440 intended grid rows present exactly once; 0 missing, 0
+  duplicate, 0 unexpected. Status tally from the compiled table matches the earlier live-progress
+  tallies exactly (G0: 239 pass/1 fail; G1: 720 pass/0 fail; G2: 478 pass/2 fail).
+- Wrote `data/processed/compiled_results.csv` (1440 rows — the table every downstream script
+  should read from now on, instead of re-reading all 1440 `.qs2` files), `g0_recovery_summary.csv`
+  (per-condition bias/RMSE/coverage/CI-width, 12 rows), and `g0_pooled_coverage.csv`.
+- **G0 recovery results:** RMSE shrinks monotonically with more data within each `d′` level, as
+  expected (e.g. `d′=1.5`: 0.173 at N=20/T=100 down to 0.069 at N=40/T=400). **Pooled coverage
+  across all 240 G0 replications: 95.8% (95% CI [92.5%, 97.7%]), MCSE 1.3%** — close to the
+  nominal 95%, and precise enough to trust (unlike any single cell's coverage, which ranges
+  80-100% across the 12 conditions with wide individual CIs, exactly the imprecision problem the
+  pooling plan was designed to route around).
+- **Observation flagged for the Day 4 prior-sensitivity check, not investigated further now:**
+  bias is negative in **all 12 G0 conditions** (range −0.025 to −0.177 on the `log_M` scale,
+  i.e. `log_M` is consistently *underestimated* — the model reads subjects as slightly less
+  metacognitively efficient than the generating truth). This is the opposite direction from
+  simple shrinkage toward the `normal(0,1)` prior's mean of 0 (which would pull estimates of a
+  true `log_M=-1` *up*, toward 0, i.e. produce *positive* bias) — so it isn't just prior
+  shrinkage, and is worth a closer look when the Day 4 prior-sensitivity sweep runs (comparing
+  `normal(0,0.5)`, `normal(0,1)`, `normal(0,2)` should reveal whether the direction/magnitude of
+  this bias tracks the prior's width, which would confirm or rule out shrinkage as the
+  explanation).
+- Full `testthat` suite not re-run for this step (no new sourced functions land in `tests/` —
+  `compile_results.R` is a standalone analysis script, consistent with the project's existing
+  practice of not unit-testing the batch/analysis-orchestration scripts, only the generator and
+  fitting functions they call).
