@@ -587,3 +587,38 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - Wrote `data/processed/prior_sensitivity_summary.csv` and `outputs/figures/prior_sensitivity.png`
   (violin + posterior median/95% CI by prior, faceted by generator, with the G0 truth line shown
   only on the G0 facet since G1 has no single true `log_M` by construction).
+
+## 2026-09-25 — Verification: prior_sensitivity.R reuses the exact original grid data/fit
+
+User asked (correctly) to verify whether `prior_sensitivity.R`'s two "representative rows" are
+freshly-generated data under a new/different seed, or a reproduction of the exact data/fit
+already in the production grid — because the answer changes what the figure's absolute distance
+from the truth line is allowed to mean.
+
+**Verified empirically, not just by re-reading the code:** compared the script's
+`normal(0, 1)` refit (matching the production prior) for G0's representative row (`grid_id=901`)
+against the original production result already in `compiled_results.csv` for that same
+`grid_id`. `log_M_mean`, `log_M_median`, `log_M_sd`, `log_M_q025`, `log_M_q975` all matched to
+full floating-point precision (e.g. `log_M_mean = -0.95794097676536` both times) — a
+byte-for-byte reproduction, confirming `prior_sensitivity.R` does reuse the grid row's own
+`sim_seed` (same simulated dataset) and `fit_seed` (same sampler trajectory), not fresh
+generator/sampler noise.
+
+**Consequence for interpretation (this is the "case 2" scenario, in the terms the check was
+framed in):** this specific replicate's own recorded bias is retrievable and meaningful:
+`log_M_mean - (-1) = +0.042` (positive direction) for `grid_id=901` alone — consistent with the
+figure showing that point sitting above the truth line. But `grid_id=901` is only 1 of 20
+replicates for the (N=40, T=200, `d′=1.5`) condition; the **condition-level** bias (averaged
+over all 20, in `g0_recovery_summary.csv`) is `-0.033` (negative direction) — the opposite sign.
+Not a contradiction: per-fit posterior SD (~0.092) is much larger than this ±0.03-0.04 signal, so
+individual replicates scatter around the small aggregate bias in both directions.
+
+**Locked interpretation rule for the report:** the prior-sensitivity figure's *within-replicate*
+comparison (same data held fixed, only the prior varies → the monotonic shrinkage-direction
+pattern across `sd=0.5/1/2`) is valid and report-safe on its own. Its *absolute* position
+relative to the truth line, for any single prior/replicate, must **not** be used to characterize
+or contradict the aggregate 12-condition bias pattern — only the properly-averaged
+`g0_recovery_summary.csv`/`g2_log_M_recovery.csv` tables may be cited for that claim. The report's
+prior-sensitivity paragraph should state the shrinkage-direction conclusion only, not lean on the
+figure's absolute bias-looking position as evidence about the aggregate bias's magnitude or
+direction.
