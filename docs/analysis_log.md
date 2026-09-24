@@ -665,3 +665,45 @@ direction.
   is present at the individual-fit level but not distinguishable from ordinary posterior
   uncertainty given the credible-interval overlap — reported honestly as "not conclusively
   resolved at n=5," not overclaimed as "no sensitivity" in either direction.
+
+## 2026-09-25 — Day 5 morning: posterior predictive checks
+
+- Implemented `code/04_ppc_and_comparison/ppc_joint_counts.R` for the 5 protocol-prespecified
+  representative categories: G0 typical pass, G1 low-noise pass, G1 high-noise pass, G2 correct
+  (Gumbel-min), G2 misspecified (Gaussian). **G1 "high-noise failure" does not exist to show** —
+  all 720 G1 production fits passed (documented, not substituted with a cherry-picked worse
+  fit). All 5 use the SAME representative condition (N=40, T=200, `d′=1.5`) already used for
+  `prior_sensitivity.R`/`sensitivity_binning.R`, and all have `rep_id ≤ 2` so the full `brmsfit`
+  is available without refitting.
+- Unpacked `aggregate_metad()`'s `N` matrix into observed joint counts (reusing the column-layout
+  verification already done for `compute_primary_metrics.R`) and used `hmetad::epred_draws_metad()`
+  for posterior-predicted joint response probabilities, weighting each participant's predicted
+  probability by their own stimulus-conditional trial count before pooling, so observed and
+  predicted proportions are on the same basis (conditional on stimulus, summing to 1 over the 8
+  response×confidence cells per stimulus).
+- Fixed one bug on first run: `epred_draws_metad()` on the G2 "correct" (Gumbel-min) fit failed
+  with `object 'gumbel_min_lcdf' not found` — `hmetad`'s `posterior_epred()` for a custom
+  distribution looks up the R-side CDF functions by name in the calling environment, not just the
+  compiled Stan model, so `code/01_simulate/simulate_g2_gumbel.R` (which defines
+  `gumbel_min_lcdf`/`lccdf`) must be sourced even when no new Gumbel data is being simulated.
+  Fixed by adding the `source()` call; reran clean.
+- **Discrepancy results — all 5 fits show small overall PPC discrepancy** (max |discrepancy|
+  0.004-0.013 across the 16 cells, RMSE 0.0024-0.0072): a static meta-d′ model fit at K=4 tracks
+  the joint stimulus×response×confidence proportions closely for representative fits across
+  every generator and both G2 variants — including the misspecified one.
+- **Notable finding for the report's Discussion:** G2's misspecified (Gaussian) fit has both the
+  largest *overall* discrepancy (RMSE 0.0072, ~3x the correctly-specified fit's 0.0038) **and** a
+  distinctive *pattern* the correct fit doesn't show — its two largest single-cell discrepancies
+  are both at the extreme (highest) confidence category (`S0R0C4`: −0.013; `S1R1C4`: +0.012),
+  consistent with a genuine distributional-shape misfit concentrated in the tails (exactly where
+  Gumbel-min and Gaussian differ most). This nuances the LOO/ELPD result from `loo_comparison.R`:
+  **raw PPC discrepancy on its own is a fairly insensitive detector of this particular
+  misspecification** (all 5 fits "look fine" by max/mean discrepancy alone), but LOO reliably
+  distinguishes the models, and PPC's per-cell *pattern* (not just its magnitude) still carries
+  the signal if inspected specifically at the confidence extremes. Directly actionable for
+  protocol section 6.2's interpretation template: ordinal/point-estimate agreement (or, here,
+  superficially small PPC discrepancy) does not by itself establish generative adequacy —
+  corroborating diagnostics (LOO; cell-level PPC pattern, not just aggregate magnitude) matter.
+- Wrote `data/processed/ppc_joint_counts.csv` (80 rows: 5 fits × 16 cells),
+  `data/processed/ppc_discrepancy_summary.csv`, `outputs/figures/ppc_scatter.png`, and
+  `outputs/figures/ppc_discrepancy.png`.
