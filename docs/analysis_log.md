@@ -774,3 +774,31 @@ identifiability discussion and the "open question" framing are unchanged), and G
 if anything *larger* than the number quoted, so the "small but consistently negative" description
 still holds. Recording it here rather than editing the earlier entry, to keep the audit trail.
 The report uses the verified table above.
+
+## 2026-09-25 — Day 6: report, README, Makefile
+
+- Wrote `manuscript/report.md` (structured abstract, methods, results, discussion, limitations,
+  reproducibility statement) and `manuscript/references.bib` (six methods references plus the
+  `hmetad` package). **Every number in the report was re-derived from `data/processed/*.csv`**
+  (`report_numbers.R` scratch check), which is what exposed the misattributed bias range
+  corrected above. A line-by-line check of the draft against the data then caught and fixed
+  three statements before commit: an incorrect "least informative cell" for the G0 maximum RMSE
+  (0.326 is N=20/T=200, and RMSE is not strictly monotone in T at d′=0.75), a "rules out" claim
+  about prior shrinkage that a single-replicate sweep cannot support (now "argues against"), and a
+  "no between-participant variability" statement that ignored the small threshold spread in the
+  G0/G2 generators.
+- Rewrote `README.md` (question, design, headline results, repo map, install, reproduction,
+  failure policy). It states plainly what regenerates from tracked files alone (the figures —
+  verified with `git ls-files` that every figure input is tracked) versus what needs the
+  git-ignored `data/interim/` grid output (compile/primary-metrics/LOO/PPC scripts).
+- Makefile: `all` now follows the production order (G1, G0, G2) and includes a new `analyse`
+  target; the two long refit-based checks are in a separate `robustness` target (kept out of
+  `all`). **`make` is not installed on this machine, so the Makefile was not syntax-checked or
+  run** — the recipes are the same `Rscript` commands that were run by hand.
+- `CITATION.cff` repository URL set to the real remote. Unit tests re-run: all pass.
+- **References are unverified**: entered from memory; the `.bib` and README both say to check
+  them before release. The `hmetad` entry has no author list (not established from the package).
+- **Not done / needs the author:** release tag and public release (not created — publishing is
+  the author's call), `manuscript/supplementary_methods.md` (still a stub), a pasted
+  `sessioninfo` in `docs/computational_environment.md`, CV bullet/plain-language summary, and the
+  optional JAGS and open-data checks (reported as limitations, per the protocol's stop rule).

@@ -1,8 +1,10 @@
-.PHONY: all setup grid g0 g1 g2 compile figures test clean
+.PHONY: all setup grid g0 g1 g2 compile analyse robustness figures test clean
 
 RSCRIPT := Rscript
 
-all: setup grid g0 g1 g2 compile figures
+# run order matches the production run (G1 first); `robustness` is long-running
+# (~20 min prior sweep + ~75 min K=6 refits) and is kept out of `all`.
+all: setup grid g1 g0 g2 compile analyse figures
 
 setup:
 	$(RSCRIPT) code/00_setup/00_packages.R
@@ -24,6 +26,17 @@ g2:
 
 compile:
 	$(RSCRIPT) code/03_recovery_analysis/compile_results.R
+
+analyse:
+	$(RSCRIPT) code/03_recovery_analysis/compute_primary_metrics.R
+	$(RSCRIPT) code/04_ppc_and_comparison/loo_comparison.R
+	$(RSCRIPT) code/04_ppc_and_comparison/diagnostics_summary.R
+	$(RSCRIPT) code/04_ppc_and_comparison/ppc_joint_counts.R
+
+# Refits (need CmdStan): prior-width sweep and K=6 binning check.
+robustness:
+	$(RSCRIPT) code/03_recovery_analysis/prior_sensitivity.R
+	$(RSCRIPT) code/03_recovery_analysis/sensitivity_binning.R
 
 figures:
 	$(RSCRIPT) code/05_figures/fig_1_design.R
