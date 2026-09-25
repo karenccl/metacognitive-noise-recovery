@@ -707,3 +707,31 @@ direction.
 - Wrote `data/processed/ppc_joint_counts.csv` (80 rows: 5 fits × 16 cells),
   `data/processed/ppc_discrepancy_summary.csv`, `outputs/figures/ppc_scatter.png`, and
   `outputs/figures/ppc_discrepancy.png`.
+
+## 2026-09-25 — Day 6 (start): five headline figures, and a PPC wording correction
+
+- Implemented all five `code/05_figures/fig_*.R` scripts (colour-blind-safe Okabe-Ito palette;
+  every replication shown as a raw point; failed fits kept and marked `x`, never dropped; N, T,
+  fit counts and replication counts stated in subtitle/caption; each caption names generator,
+  fitted model, estimand and uncertainty display): `fig_1_design` (schematic, numbers read from
+  `design.yml`/`grid.csv` so it cannot drift from what was run), `fig_2_g0_validation`
+  (per-replicate error + per-condition coverage with Wilson CIs and pooled coverage),
+  `fig_3_g1_ordinal_recovery` (the RQ1 headline: all 720 points, log_M falling with σ_c in every
+  N×T panel), `fig_4_g2_misspecification` (paired ELPD + per-replicate log_M error by variant,
+  Pareto-k caveat in the caption), `fig_5_ppc`.
+- Layout defects found by actually looking at the rendered PNGs and fixed before committing:
+  fig 1's fitted-model text overflowed its box; fig 2's subtitle was clipped and its pooled-
+  coverage label overlapped data. (Fig 3/4/5 rendered cleanly.)
+- **Correction to the 2026-09-25 PPC entry above.** That entry (and an earlier draft of fig 5's
+  subtitle) described the misspecified G2 fit's extreme-confidence discrepancy pattern without
+  stating it comes from **one replicate per fit** (rep 1 of each representative condition). Checked
+  directly against `ppc_joint_counts.csv`: in that replicate the misspecified fit's four largest
+  |discrepancies| are all at confidence level 4 (−0.0133, +0.0119, +0.0118, −0.0105), whereas
+  the other fits' largest are spread over levels 1-3 (G2 correct: levels 1,1,4,4). That is a
+  real observation but **n = 1 per fit, so it is suggestive, not established** — fig 5's subtitle
+  now says so, and the report must not present it as a demonstrated tail-misfit mechanism. The
+  LOO result (240 paired datasets) remains the well-powered evidence for misspecification
+  detection; a proper test of the C4 pattern would need the PPC summary computed across many G2
+  replicates (the per-fit `epred_summary` is already saved for all 480 G2 rows, so this is cheap
+  and is the natural follow-up if time allows).
+- Not yet done: README rewrite, `manuscript/report.md`, `diagnostics_summary.R`, CITATION/tag.
