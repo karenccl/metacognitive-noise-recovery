@@ -735,3 +735,23 @@ direction.
   replicates (the per-fit `epred_summary` is already saved for all 480 G2 rows, so this is cheap
   and is the natural follow-up if time allows).
 - Not yet done: README rewrite, `manuscript/report.md`, `diagnostics_summary.R`, CITATION/tag.
+
+## 2026-09-25 — Day 6: diagnostics summary (RQ3 material)
+
+- Implemented `code/04_ppc_and_comparison/diagnostics_summary.R` →
+  `data/processed/diagnostics_overall.csv` (by generator/variant) and `diagnostics_by_cell.csv`.
+  Stated in the script and here: all diagnostics/`elapsed_secs` describe each row's **final
+  attempt only**; escalated rows' first-attempt diagnostics and time were not retained, so
+  elapsed time understates compute for the ~11% of rows that were escalated.
+- **Convergence failures are rare and structured.** Failure rate: G0 0.4% (1/240), G1 0.0%
+  (0/720), G2-correct 0.8% (2/240), G2-misspecified 0.0% (0/240); 0 `error` rows anywhere.
+  All 3 fails sit at d′=0.75 (G0 N=40/T=400; G2-correct at T=100 for both N=20 and N=40). Both
+  G2-correct fails were divergence-driven (2 divergences in total); no fit in the whole grid hit
+  max treedepth; worst final-attempt R-hat 1.012, worst min bulk/tail ESS 620/408.
+  (Refines the earlier tally: the 2 G2 fails are both in the *correct* Gumbel-min variant.)
+- **Escalation (a softer difficulty signal) is far more patterned than failure:** overall 7.5–12.5%
+  by variant, but up to 55% in low-information / high-noise cells (G0 N=20/T=100/d′=0.75; G1
+  σ_c=high at d′=0.75, T=100/200, and at N=20/T=100/d′=1.5). Sampler difficulty therefore tracks
+  low d′, short T and high readout noise — the regime where the meta-d′ likelihood is least
+  informative — rather than being random.
+- Remaining: README rewrite, `manuscript/report.md`, CITATION/release tag.
