@@ -802,3 +802,38 @@ The report uses the verified table above.
   the author's call), `manuscript/supplementary_methods.md` (still a stub), a pasted
   `sessioninfo` in `docs/computational_environment.md`, CV bullet/plain-language summary, and the
   optional JAGS and open-data checks (reported as limitations, per the protocol's stop rule).
+
+## 2026-09-25 — Day 6: supplementary methods, environment record, and two corrections
+
+- Wrote `manuscript/supplementary_methods.md` (S1–S13: sampler, G1 equations, calibration,
+  generators, discretisation, model, diagnostics, seeds/grid, metric definitions, robustness
+  checks, storage, protocol deviations, errata) and replaced `docs/computational_environment.md`
+  with real session info, hardware (Core Ultra 7 155H, 16 cores/22 threads, 31.4 GB) and the
+  package/backend table. Details were taken from code, config and CSVs, not memory.
+- **Correction 1 — the sampler was `rstan`, not CmdStan.** The session-info capture showed
+  `getOption("brms.backend")` is `NULL`. Reading `fit$backend` from saved production fits
+  (grid_ids 901, 561, 1321) confirmed `rstan` (`stanfit`; rstan/StanHeaders 2.36.0.9000).
+  `options(brms.backend = "cmdstanr")` was only ever in a commented-out line
+  (`code/00_setup/00_packages.R`) and in the README, so `brms` used its default. The Day-0
+  "backend verified" entry above tested `cmdstanr` directly on a bundled example and never
+  exercised the `brms` path. (The PSOCK worker processes loading `rstan` that I noticed during the
+  first chain-parallel benchmark were this evidence, and I did not follow it up then.) Same Stan
+  version and model, so the statistical results are not in question, but draws are not
+  bit-identical across backends. Fixed in the environment doc, README (install section), report
+  §3.1, supplement S1, the Makefile comment and the `00_packages.R` comment. **Not done:** pinning
+  `backend = "rstan"` inside `fit_one_hmetad()`; that would change fitting code after the results
+  were generated, so it is left as a recommendation for the author.
+- **Correction 2 — calibration table in `design_decisions.md`.** Its hit-rate, false-alarm-rate and
+  mean-RT cells (0.702/0.298, 0.836/0.164, ~1.1 s, ~0.75 s) and "d′ = 1.500" had been entered
+  without the CSV in view. From `ddm_calibration.csv`: hit/FA 0.644/0.358 and 0.771/0.226; mean RT
+  0.875 s and 0.827 s; empirical d′ 0.7332 and 1.4954 (errors 0.017 and 0.005, both inside ±0.02).
+  The "agree exactly" claim is now "agree to within 0.0001". Corrected in place, with a note, and
+  in the `design.yml` comment; the earlier "1.500" in the 2026-09-23 log entry is left as written
+  and superseded by this note. The σ_c pilot figures quoted in the same section were re-checked
+  against `sigma_c_pilot.csv` and are right.
+- **Also verified while writing:** the Gumbel-min mean/variance check. A ±4 integration grid gave
+  variance 0.92–0.96 (left-tail truncation); on a ±20 grid the mean equals μ and the variance is
+  1.0000, so the earlier "≈1" was right for the reason the design claims. And stated the
+  50,000-step non-decision guard honestly as un-audited rather than "not observed".
+- Still open: release tag (author's call), CV bullet and plain-language summary (not requested
+  yet), verifying `references.bib`, optional JAGS and open-data checks.

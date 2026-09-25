@@ -23,7 +23,7 @@ Design decisions were written to `docs/design_decisions.md` before production ru
 ## 3. Methods
 
 ### 3.1 Software and reproducibility
-R 4.5.0, CmdStan 2.36.0, `hmetad` 0.2.1, `brms` 2.23.0; all package versions are locked in `renv.lock`. Every simulation and fit has a deterministic seed derived from a base seed and a stable grid index (`config/grid.csv`, `config/design.yml`).
+R 4.5.0, `hmetad` 0.2.1, `brms` 2.23.0, sampled with `brms`'s default `rstan` backend (rstan 2.36.0.9000, the Stan 2.36 series; confirmed from the saved fits). CmdStan 2.36.0 was installed and smoke-tested but did not run any model. All package versions are locked in `renv.lock`; see `docs/computational_environment.md`. Every simulation and fit has a deterministic seed derived from a base seed and a stable grid index (`config/grid.csv`, `config/design.yml`).
 
 ### 3.2 Data-generating processes
 **Design grid.** N ∈ {20, 40} participants × T ∈ {100, 200, 400} trials × target first-order d′ ∈ {0.75, 1.5}; G1 adds three σ_c levels; 20 replications per cell. Confidence has K = 4 categories.

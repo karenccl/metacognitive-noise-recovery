@@ -271,11 +271,15 @@ bisection is stable):
 
 | `d′` target | `v` | empirical `d′` (H/FA formula) | empirical `d′` (2·Φ⁻¹(p_correct)) | hit rate | FA rate | mean RT |
 |---|---|---|---|---|---|---|
-| 0.75 | 0.388 | 0.733 | 0.733 | 0.702 | 0.298 | ~1.1 s |
-| 1.5 | 0.797 | 1.500 | 1.500 | 0.836 | 0.164 | ~0.75 s |
+| 0.75 | 0.388 | 0.7332 | 0.7332 | 0.644 | 0.358 | 0.875 s |
+| 1.5 | 0.797 | 1.4954 | 1.4955 | 0.771 | 0.226 | 0.827 s |
 
-Both `d′` targets reached within the ±0.02 tolerance. The two empirical `d′` formulas agree
-**exactly** for both targets (max disagreement = 0), confirming no detectable response bias —
+*(Corrected 2026-09-25 from `outputs/tables/ddm_calibration.csv`; the hit/FA/RT cells and the
+`1.500` in an earlier version of this table had been entered without the CSV in front of me and
+were wrong. See `docs/analysis_log.md`.)*
+
+Both `d′` targets reached within the ±0.02 tolerance (errors 0.017 and 0.005). The two empirical
+`d′` formulas agree to within 0.0001 for both targets, confirming no detectable response bias —
 a shared `a = 1.5, t0 = 0.3s` works for both target levels, so no per-target `a`/`t0`
 deviation was needed.
 

@@ -33,7 +33,7 @@ analyse:
 	$(RSCRIPT) code/04_ppc_and_comparison/diagnostics_summary.R
 	$(RSCRIPT) code/04_ppc_and_comparison/ppc_joint_counts.R
 
-# Refits (need CmdStan): prior-width sweep and K=6 binning check.
+# Refits (need rstan and a C++ toolchain): prior-width sweep and K=6 binning check.
 robustness:
 	$(RSCRIPT) code/03_recovery_analysis/prior_sensitivity.R
 	$(RSCRIPT) code/03_recovery_analysis/sensitivity_binning.R

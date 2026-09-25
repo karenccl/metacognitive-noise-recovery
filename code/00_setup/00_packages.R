@@ -14,6 +14,10 @@
 #   "testthat", "devtools"
 # ))
 #
+# NOTE (corrected 2026-09-25): the two lines below were the original plan but
+# were never run. brms.backend was never set, so every production fit used
+# brms's default rstan backend (confirmed from fit$backend). To reproduce the
+# published results, do NOT set brms.backend = "cmdstanr".
 # options(brms.backend = "cmdstanr")
 # stopifnot(!is.null(cmdstanr::cmdstan_version()))
 # renv::snapshot()

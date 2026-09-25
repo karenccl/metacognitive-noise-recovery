@@ -51,13 +51,13 @@ manuscript/                  report, references, supplementary methods
 
 ## Installation
 
-Requires R 4.5.0 and a working CmdStan (2.36.0 was used) through `cmdstanr`. `hmetad` 0.2.1 comes from the metacoglab r-universe, `cmdstanr` from the bbsbayes r-universe.
+Requires R 4.5.0 and a C++ toolchain for `rstan`. `hmetad` 0.2.1 comes from the metacoglab r-universe, `rstan`/`StanHeaders` 2.36.0.9000 from the stan-dev r-universe.
 
 ```r
 renv::restore()
-options(brms.backend = "cmdstanr")
-stopifnot(!is.null(cmdstanr::cmdstan_version()))
 ```
+
+**Sampler:** all results were produced with `brms`'s default **`rstan`** backend. Leave `brms.backend` unset (or `"rstan"`); setting it to `"cmdstanr"` would use a different sampler and will not reproduce the published draws bit-for-bit. CmdStan is not needed. (An earlier version of this README, and of the environment notes, wrongly said CmdStan was used; see `docs/computational_environment.md`.)
 
 ## Reproduction
 

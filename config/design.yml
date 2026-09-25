@@ -40,7 +40,7 @@ ddm:
   # outputs/tables/ddm_calibration.csv and docs/design_decisions.md.
   v_by_dprime_target:
     "0.75": 0.388   # empirical d' = 0.733 (target 0.75, within tolerance)
-    "1.5": 0.797    # empirical d' = 1.500 (target 1.5, within tolerance)
+    "1.5": 0.797    # empirical d' = 1.495 (target 1.5, within tolerance)
   # sigma_c pilot (N=20,000 trials, calibrated v for d'=1.5, a=1.5, tau=0.3):
   # SD(q) = 0.5811. Chosen as the candidates whose Spearman
   # cor(confidence, correct) is closest to 3 targets spanning the observed
