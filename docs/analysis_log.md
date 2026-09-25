@@ -755,3 +755,22 @@ direction.
   low d′, short T and high readout noise — the regime where the meta-d′ likelihood is least
   informative — rather than being random.
 - Remaining: README rewrite, `manuscript/report.md`, CITATION/release tag.
+
+## 2026-09-25 — Correction: a bias range in the prior-sensitivity entry was misattributed
+
+While drafting the report I re-derived every cited number from `data/processed/*.csv`. The
+2026-09-24 prior-sensitivity entry says the negative aggregate bias across "G0's 12 conditions"
+ranges "−0.007 to −0.092 per condition". That range belongs to the **G2 correctly-specified**
+fit (`g2_log_M_recovery.csv`). The verified figures are:
+
+| Fit | log_M bias range across 12 conditions | Negative in | RMSE range |
+|---|---|---|---|
+| G0 (`g0_recovery_summary.csv`) | −0.177 to −0.025 | 12/12 | 0.069–0.326 |
+| G2 correct (Gumbel-min) | −0.092 to −0.007 | 12/12 | 0.042–0.272 |
+| G2 misspecified (Gaussian) | +0.064 to +0.195 | 0/12 | 0.105–0.299 |
+
+Nothing else in that entry depends on the wrong range (the shrinkage-direction conclusion, the
+identifiability discussion and the "open question" framing are unchanged), and G0's true bias is
+if anything *larger* than the number quoted, so the "small but consistently negative" description
+still holds. Recording it here rather than editing the earlier entry, to keep the audit trail.
+The report uses the verified table above.
