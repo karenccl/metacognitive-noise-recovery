@@ -557,46 +557,66 @@ of a cell, with n_s the participant's trial count for that stimulus.
 1. **Aggregate RMSE (primary, same as v1).** Pool observed and predicted counts over participants
    into the 16 stimulus × response × confidence cells, convert to proportions within stimulus, and
    take the RMSE of observed − predicted. This is the v1 definition in `ppc_joint_counts.R`.
-2. **Highest-confidence discrepancy.** Mean absolute observed − predicted proportion over the four
-   confidence = 4 cells of statistic 1. It targets the pattern seen in the v1 replicate.
+2. **Highest-confidence discrepancy (secondary, v1-motivated).** Mean absolute observed − predicted
+   proportion over the four confidence = 4 cells of statistic 1. It was chosen because of the pattern
+   seen in the single v1 replicate, so it is secondary: it does not enter Kept or Reversed, but it
+   does trigger Qualified (see the decision rule).
 3. **Participant-level Pearson X².** Σ over participant × cell of (n − n_s p̂)² / (n_s p̂), divided by
    the number of participant × stimulus cells minus the number of participant × stimulus
    constraints (N × 16 − N × 2). This is scaled by sampling noise and so is comparable across N and T,
    unlike statistics 1–2. It ignores posterior uncertainty in p̂ (a small anticonservative effect,
-   shared by both families).
+   shared by both families). **Small expected counts:** at T = 100 there are about 50 trials per
+   stimulus over 8 cells, so many expected counts are below 5. No cells are pooled. The statistic is
+   used only as a discrepancy measure calibrated against the correct-family fits of the same cell and
+   is never referred to a χ² distribution, so an unreliable χ² approximation does not bias the
+   comparison. For every fit the proportion of participant × cell entries with n_s p̂ < 5 (and < 1) is
+   reported beside the statistic.
 
 **Comparisons.**
 
-- **Paired (240 datasets):** misspecified − correct difference in each statistic; the proportion of
-  pairs in which the misspecified fit is worse; median and 90% range of the difference, by cell.
+- **Paired (240 datasets):** misspecified − correct difference in each statistic, and the ratio
+  misspecified / correct; the proportion of pairs in which the misspecified fit is worse; median and
+  90% range of the difference and of the ratio, by cell.
 - **Calibrated detection (the analyst's view, who sees one model only):** for each of the 12
-  N × T × d′ cells, the threshold is the 95th percentile of the correct-family fits' statistic in that
-  cell (20 values, so the threshold is crude; also reported pooled across cells for statistic 3).
-  Detection rate = proportion of misspecified fits above it. Reported with a Wilson 95% interval and
-  set beside LOO's > 2 SE preference rate for the same cell.
+  N × T × d′ cells, the threshold is the 19th order statistic of the 20 correct-family values in that
+  cell (equivalently `quantile(x, 0.95, type = 1)`). A misspecified fit is detected if its statistic
+  is strictly greater than the threshold, so the false-alarm rate among correct fits is exactly
+  1/20. Detection rate = proportion of the cell's misspecified fits detected, with a Wilson 95%
+  interval, set beside LOO's > 2 SE preference rate for the same cell.
+- **Pooled detection** = the mean of the 12 per-cell detection rates, each using its own
+  cell-specific threshold. For statistic 3 only, a secondary view uses one threshold pooled over all
+  240 correct fits (`quantile(x, 0.95, type = 7)`); it does not enter the decision rule.
+- **Oracle threshold.** The threshold comes from the correct model's own reference distribution,
+  which a real analyst would not know. Detection rates are therefore an optimistic upper bound on
+  what PPC would achieve in practice: a low rate here means practical detection is lower still.
 - **Trend:** detection rate and paired difference against N, T and d′ (descriptive; no p-values on
   replicates, as in v1).
 
 **Predictions.**
 
-- P1. In most pairs (> 50%) the misspecified fit has the larger aggregate RMSE, but the median paired
-  difference is small (< 0.005 on the proportion scale).
+- P1. In most pairs (> 50%) the misspecified fit has the larger aggregate RMSE, and the median ratio
+  misspecified / correct aggregate RMSE is < 1.5. (An earlier draft stated an absolute bound,
+  median difference < 0.005; since v1 RMSEs are only 0.0024–0.0072 that bound was almost certain to
+  hold and tested little, so it was replaced by the ratio before any statistic was computed.)
 - P2. The highest-confidence discrepancy shows the difference more clearly than the aggregate RMSE
   (higher paired proportion).
 - P3. The calibrated detection rate for the aggregate RMSE is well below LOO's > 2 SE rate in most
   cells and rises with T and N.
 
-**Decision rule for the report's claim (fixed now).**
+**Decision rule for the report's claim (fixed now).** Categories are evaluated in order: Reversed,
+then Qualified, then Kept; the first that applies is the verdict. Otherwise the result is Mixed.
 
-- **Kept:** detection rate for statistics 1 and 3, pooled over cells, is < 50%, and below LOO's > 2 SE
-  rate in at least 10 of 12 cells. The report keeps "aggregate PPC does not reveal the
-  misspecification", now supported by 240 pairs.
-- **Qualified:** any cell has detection ≥ 80% for any statistic. The claim is restricted to the
-  cells where detection is low, and the report names the statistic and conditions under which PPC
-  does detect it.
-- **Reversed:** pooled detection ≥ 80% for statistic 1. The v1 claim is withdrawn and the limitations
-  section says the v1 single replicate was unrepresentative.
-- Anything else is reported as mixed, cell by cell, without choosing the favourable statistic.
+1. **Reversed:** pooled detection ≥ 80% for statistic 1. The v1 claim is withdrawn and the limitations
+   section says the v1 single replicate was unrepresentative.
+2. **Qualified:** any single cell has detection ≥ 80% for statistic 1, 2 or 3. The claim is
+   restricted to the cells where detection is low, and the report names the statistic and conditions
+   under which PPC does detect it. Statistic 2 is secondary and v1-motivated: it does not enter Kept
+   or Reversed, but it does trigger Qualified. If it reaches ≥ 80% detection in any cell, the report
+   must name it and restrict the "aggregate PPC does not reveal" claim accordingly.
+3. **Kept:** pooled detection < 50% for both statistic 1 and statistic 3, and statistic 1's
+   detection is below LOO's > 2 SE rate in at least 10 of 12 cells. The report keeps "aggregate PPC
+   does not reveal the misspecification", now supported by 240 pairs.
+4. **Mixed:** none of the above. Reported cell by cell, without choosing the favourable statistic.
 
 **Inclusion.** Pre-specified failed-fit rule applies: primary analysis uses `pass` and `fail` fits
 (flagged); a pass-only sensitivity analysis is reported. A pair enters the paired analysis only if
@@ -611,6 +631,14 @@ results are seen. Any extra analysis is logged as exploratory in `docs/analysis_
 **Planned outputs.** `code/04_ppc_and_comparison/g2_ppc_all.R`;
 `data/processed/v2/g2_ppc_by_fit.csv`, `g2_ppc_paired.csv`, `g2_ppc_detection_by_cell.csv`;
 `outputs/figures/v2/fig_g2_ppc_all.png`.
+
+**Revision log (all before any v2 statistic was computed).** First version committed in `4785b35`.
+Revised after a design review, same day: decision categories ordered and made exclusive (Mixed as
+the remainder); pooled detection defined as the mean of per-cell rates, with a pooled threshold for
+statistic 3 as a secondary view only; threshold fixed as the 19th order statistic with strict
+exceedance; the oracle nature of the threshold stated; P1 changed from an absolute to a ratio bound;
+handling of small expected counts in statistic 3 stated; statistic 2 marked secondary and
+v1-motivated, excluded from Kept and Reversed but able to trigger Qualified.
 
 ## What this project must not claim
 
