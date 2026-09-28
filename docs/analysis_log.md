@@ -860,3 +860,22 @@ The report uses the verified table above.
   SD ~0.07-0.09" drafted here was wrong, actual K=4 interval half-widths are 0.08-0.51, and was
   replaced). Regenerated `robustness_table.csv` and `sensitivity_binning_comparison.csv` without refitting.
 - Report (Methods, Results, Limitations vi), README and supplement S10 corrected accordingly.
+
+## 2026-09-28 — Review items 11-13: bias, G2 coverage, nuisance recovery (no refitting)
+
+- Added `code/03_recovery_analysis/bias_diagnostics.R` (in `make analyse`); reads the 720 G0/G2
+  compact draws. Exploratory, added after the results were seen; report section 4.7 says so.
+- (11) Bias, posterior mean/median: G0 -0.075/-0.056, G2-correct -0.044/-0.035, G2-misspecified
+  +0.132/+0.144. Negative in 66% of G0 and G2-correct fits; shrinks with N and T. Signed error vs the
+  fit's posterior between-participant SD of log_M (true SD = 0): Pearson -0.48 (G0), -0.33 (G2-correct),
+  -0.21 (misspecified); median within-cell -0.54/-0.33/-0.41. Interpretation kept modest: consistent
+  with a prior/hierarchy effect, cause not tested (no alternative SD prior was fit).
+- (12) G2 coverage of true log_M: correct 233/240 = 97.1% (Wilson 94.1-98.6), misspecified 195/240 =
+  81.2% (75.8-85.7); worst cell N40/T400/d0.75 = 45%. Per-cell tables in `g2_coverage.csv`.
+- (13) Correct fit: d' bias 0.001 (RMSE 0.039), c bias -0.002 (0.020). Misspecified: d' +0.073 (cov 51%),
+  c -0.113 (cov 7%), gap +0.077 (cov 0.4%). Gumbel and Gaussian latent scales differ, so the
+  misspecified rows measure compensation, not estimation error. Gap intercepts: assumed truth -1
+  (= mean_z_c2) was covered only 87-88% even under G0/correct, so the assumption about the gap
+  parameterisation is unverified and those rows are descriptive.
+- Outputs: bias_fit_level.csv, bias_diagnosis_summary.csv, bias_by_sample_size.csv, g2_coverage.csv,
+  g2_nuisance_recovery.csv. Report Limitation (iv) reworded from "unexplained" to "partly characterised".
