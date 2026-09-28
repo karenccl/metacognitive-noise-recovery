@@ -837,3 +837,26 @@ The report uses the verified table above.
   50,000-step non-decision guard honestly as un-audited rather than "not observed".
 - Still open: release tag (author's call), CV bullet and plain-language summary (not requested
   yet), verifying `references.bib`, optional JAGS and open-data checks.
+
+## 2026-09-28 — Correction: the G0 half of the K=6 check was not a re-binning
+
+- The 2026-09-25 entry above (and the report, README and supplement) said K=6 kept "the
+  underlying continuous evidence identical (same `sim_seed`) so only the discretisation
+  granularity changes". That is true for **G1** (continuous `y` is generated first and binned
+  afterwards; verified identical `y` and responses at K=4 vs K=6) but **false for G0**:
+  `simulate_g0()` draws discrete confidence directly from hmetad's generative model, so K=6
+  is a different model and random stream. With the same seed, only the stimulus sequence is
+  shared; in the checked cell (`sim_seed` 20261824) responses agree on 95.1% of trials, mean
+  accuracy differs (0.7706 vs 0.7725), and the K=6 x K=4 confidence table is not block-structured.
+- Consequence: the G0 K=4/K=6 differences (mean |diff| 0.21, max 0.38) confound binning with a
+  different dataset and are NOT evidence about bin-count sensitivity. The earlier statement that
+  they were "consistent with ordinary estimation noise from different discretisations of the same
+  continuous data" is withdrawn. Sensitivity of G0 to bin count is untested.
+- Valid evidence stays as before, and is unaffected: G1 ordering accuracy 100% (5/5) at both K;
+  G1 mean |diff| 0.027, max 0.099, 15/15 intervals overlap.
+- Rewrote `sensitivity_binning.R`: header states the distinction; it reuses the saved comparison
+  by default (`--refit` redoes the 20 fits); adds `valid_rebinning`; the G0 row is labelled
+  "NOT a re-binning"; the G1 interpretation text is generated from the data (an inline "posterior
+  SD ~0.07-0.09" drafted here was wrong, actual K=4 interval half-widths are 0.08-0.51, and was
+  replaced). Regenerated `robustness_table.csv` and `sensitivity_binning_comparison.csv` without refitting.
+- Report (Methods, Results, Limitations vi), README and supplement S10 corrected accordingly.

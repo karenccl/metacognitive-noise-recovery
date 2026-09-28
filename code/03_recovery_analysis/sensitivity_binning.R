@@ -1,21 +1,31 @@
-# Preplanned confidence-binning sensitivity analysis (K=6, holding the
-# underlying continuous evidence identical via the SAME sim_seed as the
-# K=4 production run -- only the discretisation granularity changes) on
-# a small representative subset, not the full grid (protocol sections
-# 1.4, 5 Day 5 midday).
+# Confidence-binning sensitivity analysis: K=4 (production) vs K=6, on a
+# small representative subset (N=40, T=200, d'=1.5; 20 of 1,440 fits).
 #
-# Subset: G0 at N=40, T=200, d'=1.5 (5 reps); G1 at the same N/T/d'
-# across all three sigma_c levels (5 reps each, 15 fits) -- small enough
-# to stay a sensitivity check (20/1440 = 1.4% of the full grid) while
-# still letting the G1 ordering pattern (the primary RQ1 result) be
-# checked, not just point estimates.
+# WHAT IS AND IS NOT A RE-BINNING (corrected 2026-09-28; an earlier
+# version of this script and the report claimed both halves were):
+#   * G1 IS a valid re-binning. simulate_g1_ddm() generates continuous
+#     evidence y first and bins it afterwards, so K=4 and K=6 with the
+#     same sim_seed share y and the same responses; only the number of
+#     bins changes. (Checked: identical y and identical responses.)
+#   * G0 is NOT. simulate_g0() draws discrete confidence directly from
+#     hmetad's generative model, so K=6 is a different generative model
+#     and a different random stream. With the same seed it shares only
+#     the stimulus sequence (in the checked cell, responses agree on
+#     95.1% of trials and the K=6 x K=4 confidence table is not
+#     block-structured). Differences between the G0 K=4 and K=6 fits
+#     therefore confound binning with a different dataset. They are
+#     reported for completeness and support no inference about binning.
 #
-# Produces a one-page robustness table (design change / data subset /
-# estimand / result direction / interpretation) plus the underlying
-# per-fit comparison against the existing K=4 production results for
-# the SAME grid rows (matched by grid_id).
+# The valid evidence is therefore G1: (a) paired change in posterior
+# median log_M and whether credible intervals overlap, (b) whether the
+# low > medium > high ordering (the RQ1 result) survives K=6.
 #
-# Run from the project root: Rscript code/03_recovery_analysis/sensitivity_binning.R
+# Fits are expensive (~75 min). By default this script REUSES the saved
+# comparison (data/processed/sensitivity_binning_comparison.csv) and only
+# rebuilds the tables; pass --refit to redo the 20 fits.
+#
+# Run from the project root:
+#   Rscript code/03_recovery_analysis/sensitivity_binning.R [--refit]
 
 suppressPackageStartupMessages(library(dplyr))
 
@@ -31,6 +41,8 @@ compiled <- readr::read_csv(here::here("data", "processed", "compiled_results.cs
 log_M_ground_truth <- -1
 K_SENSITIVITY <- 6
 N_REPS <- 5
+comparison_path <- here::here("data", "processed", "sensitivity_binning_comparison.csv")
+REFIT <- "--refit" %in% commandArgs(trailingOnly = TRUE) || !file.exists(comparison_path)
 
 g0_rows <- grid |>
   dplyr::filter(generator == "g0", n_participants == 40, n_trials == 200,
@@ -39,8 +51,6 @@ g1_rows <- grid |>
   dplyr::filter(generator == "g1", n_participants == 40, n_trials == 200,
                 dprime_target == 1.5, rep_id <= N_REPS)
 stopifnot(nrow(g0_rows) == N_REPS, nrow(g1_rows) == N_REPS * 3)
-
-cat("G0 rows:", nrow(g0_rows), "| G1 rows:", nrow(g1_rows), "\n")
 
 refit_k6 <- function(row) {
   if (row$generator == "g0") {
@@ -75,113 +85,105 @@ refit_k6 <- function(row) {
   )
 }
 
-all_rows <- dplyr::bind_rows(g0_rows, g1_rows)
-k6_results <- vector("list", nrow(all_rows))
-for (i in seq_len(nrow(all_rows))) {
-  row <- all_rows[i, ]
-  cat(sprintf("[%d/%d] Fitting %s grid_id=%d at K=%d...\n", i, nrow(all_rows), row$generator, row$grid_id, K_SENSITIVITY))
-  k6_results[[i]] <- refit_k6(row)
+if (REFIT) {
+  all_rows <- dplyr::bind_rows(g0_rows, g1_rows)
+  k6_results <- vector("list", nrow(all_rows))
+  for (i in seq_len(nrow(all_rows))) {
+    row <- all_rows[i, ]
+    cat(sprintf("[%d/%d] Fitting %s grid_id=%d at K=%d...\n", i, nrow(all_rows), row$generator, row$grid_id, K_SENSITIVITY))
+    k6_results[[i]] <- refit_k6(row)
+  }
+
+  k6_summary <- purrr::map_dfr(k6_results, function(f) {
+    draws <- posterior::as_draws_df(f$fit)$b_Intercept
+    tibble::tibble(
+      grid_id = f$grid_id, generator = f$generator, n_participants = f$n_participants,
+      n_trials = f$n_trials, dprime_target = f$dprime_target, sigma_c_level = f$sigma_c_level,
+      rep_id = f$rep_id, status_k6 = f$status,
+      log_M_mean_k6 = mean(draws), log_M_median_k6 = stats::median(draws),
+      log_M_q025_k6 = stats::quantile(draws, 0.025, names = FALSE),
+      log_M_q975_k6 = stats::quantile(draws, 0.975, names = FALSE)
+    )
+  })
+
+  k4_matched <- compiled |>
+    dplyr::filter(grid_id %in% k6_summary$grid_id) |>
+    dplyr::select(grid_id, status_k4 = status, log_M_mean_k4 = log_M_mean,
+                  log_M_median_k4 = log_M_median, log_M_q025_k4 = log_M_q025,
+                  log_M_q975_k4 = log_M_q975)
+
+  comparison <- dplyr::left_join(k6_summary, k4_matched, by = "grid_id") |>
+    dplyr::mutate(
+      diff_median = log_M_median_k6 - log_M_median_k4,
+      both_overlap_ci = pmax(log_M_q025_k4, log_M_q025_k6) <= pmin(log_M_q975_k4, log_M_q975_k6)
+    )
+  readr::write_csv(comparison, comparison_path)
+} else {
+  cat("Reusing saved comparison (pass --refit to redo the 20 fits).\n")
+  comparison <- readr::read_csv(comparison_path, show_col_types = FALSE)
 }
 
-k6_summary <- purrr::map_dfr(k6_results, function(f) {
-  draws <- posterior::as_draws_df(f$fit)$b_Intercept
-  tibble::tibble(
-    grid_id = f$grid_id, generator = f$generator, n_participants = f$n_participants,
-    n_trials = f$n_trials, dprime_target = f$dprime_target, sigma_c_level = f$sigma_c_level,
-    rep_id = f$rep_id, status_k6 = f$status,
-    log_M_mean_k6 = mean(draws), log_M_median_k6 = stats::median(draws),
-    log_M_q025_k6 = stats::quantile(draws, 0.025, names = FALSE),
-    log_M_q975_k6 = stats::quantile(draws, 0.975, names = FALSE)
-  )
-})
+# Only G1 is a valid re-binning (see header).
+comparison <- comparison |> dplyr::mutate(valid_rebinning = generator == "g1")
+readr::write_csv(comparison, comparison_path)
 
-# --- Compare against the existing K=4 production results (same grid_id) ---
+# --- G0: how different are the K=4 and K=6 *datasets* for one cell? --------
+g0_a <- simulate_g0(g0_rows$n_participants[1], g0_rows$n_trials[1], g0_rows$dprime_target[1],
+                    log_M_ground_truth, k = 4, seed = g0_rows$sim_seed[1])
+g0_b <- simulate_g0(g0_rows$n_participants[1], g0_rows$n_trials[1], g0_rows$dprime_target[1],
+                    log_M_ground_truth, k = K_SENSITIVITY, seed = g0_rows$sim_seed[1])
+g0_response_agreement <- mean(g0_a$response == g0_b$response)
+cat(sprintf("\nG0 same-seed K=4 vs K=6: stimulus identical = %s; response agreement = %.3f\n",
+            identical(g0_a$stimulus, g0_b$stimulus), g0_response_agreement))
 
-k4_matched <- compiled |>
-  dplyr::filter(grid_id %in% k6_summary$grid_id) |>
-  dplyr::select(grid_id, status_k4 = status, log_M_mean_k4 = log_M_mean,
-                log_M_median_k4 = log_M_median, log_M_q025_k4 = log_M_q025,
-                log_M_q975_k4 = log_M_q975)
+g1c <- comparison |> dplyr::filter(generator == "g1")
+g0c <- comparison |> dplyr::filter(generator == "g0")
 
-comparison <- dplyr::left_join(k6_summary, k4_matched, by = "grid_id") |>
-  dplyr::mutate(
-    diff_median = log_M_median_k6 - log_M_median_k4,
-    both_overlap_ci = pmax(log_M_q025_k4, log_M_q025_k6) <= pmin(log_M_q975_k4, log_M_q975_k6)
-  )
+ordering_of <- function(df, col) {
+  w <- df |> dplyr::select(rep_id, sigma_c_level, value = dplyr::all_of(col)) |>
+    tidyr::pivot_wider(names_from = sigma_c_level, values_from = value)
+  list(acc = mean(w$low > w$medium & w$medium > w$high), n = nrow(w))
+}
+ord4 <- ordering_of(g1c, "log_M_median_k4")
+ord6 <- ordering_of(g1c, "log_M_median_k6")
 
-readr::write_csv(comparison, here::here("data", "processed", "sensitivity_binning_comparison.csv"))
-cat("\n=== K=4 vs K=6 comparison (same simulated data, same fit_seed) ===\n")
-print(comparison |> dplyr::select(generator, sigma_c_level, rep_id, log_M_median_k4, log_M_median_k6, diff_median, both_overlap_ci), n = Inf)
-
-# --- G1 ordering check at K=6 (does low > medium > high still hold?) -------
-
-g1_ordering_k6 <- comparison |>
-  dplyr::filter(generator == "g1") |>
-  dplyr::select(rep_id, sigma_c_level, log_M_median_k6) |>
-  tidyr::pivot_wider(names_from = sigma_c_level, values_from = log_M_median_k6)
-
-ordering_holds_k6 <- mean(g1_ordering_k6$low > g1_ordering_k6$medium & g1_ordering_k6$medium > g1_ordering_k6$high)
-cat("\nG1 ordering accuracy at K=6 (n =", nrow(g1_ordering_k6), "matched reps):", ordering_holds_k6, "\n")
-
-g1_ordering_k4 <- compiled |>
-  dplyr::filter(grid_id %in% g1_rows$grid_id) |>
-  dplyr::select(rep_id, sigma_c_level, log_M_median) |>
-  tidyr::pivot_wider(names_from = sigma_c_level, values_from = log_M_median)
-ordering_holds_k4 <- mean(g1_ordering_k4$low > g1_ordering_k4$medium & g1_ordering_k4$medium > g1_ordering_k4$high)
-cat("G1 ordering accuracy at K=4 (same reps, production):", ordering_holds_k4, "\n")
-
-# --- One-page robustness table ---------------------------------------------
-
-g0_comparison <- comparison |> dplyr::filter(generator == "g0")
+cat("\n=== G1 (valid re-binning): K=4 vs K=6 ===\n")
+print(g1c |> dplyr::select(sigma_c_level, rep_id, log_M_median_k4, log_M_median_k6, diff_median, both_overlap_ci), n = Inf)
+cat(sprintf("\nG1 ordering accuracy: K=4 %.0f%% (%d/%d), K=6 %.0f%% (%d/%d)\n",
+            ord4$acc * 100, round(ord4$acc * ord4$n), ord4$n, ord6$acc * 100, round(ord6$acc * ord6$n), ord6$n))
 
 robustness_table <- tibble::tibble(
-  design_change = c(
-    "K=4 -> K=6 confidence bins",
-    "K=4 -> K=6 confidence bins"
-  ),
+  check = c("G1 re-binning: point estimates", "G1 re-binning: ordering (RQ1)", "G0 K=4 vs K=6 (NOT a re-binning)"),
+  valid_binning_test = c(TRUE, TRUE, FALSE),
   data_subset = c(
-    sprintf("G0, N=40/T=200/d'=1.5, %d reps", nrow(g0_comparison)),
-    sprintf("G1, N=40/T=200/d'=1.5, all 3 sigma_c levels, %d reps/level", N_REPS)
+    sprintf("G1, N=40/T=200/d'=1.5, 3 sigma_c levels x %d reps (n=%d)", N_REPS, nrow(g1c)),
+    sprintf("G1, N=40/T=200/d'=1.5, %d matched replications", ord4$n),
+    sprintf("G0, N=40/T=200/d'=1.5, %d reps; different simulated data (response agreement %.3f in the checked cell)", nrow(g0c), g0_response_agreement)
   ),
   estimand = c(
-    "log_M posterior median (known truth = -1)",
-    "Ordering accuracy: log_M(low) > log_M(medium) > log_M(high)"
+    "paired change in posterior median log_M (K=6 minus K=4)",
+    "share of replications with log_M(low) > log_M(medium) > log_M(high)",
+    "change in posterior median log_M between two different datasets"
   ),
-  result_k4 = c(
-    sprintf("mean median = %.3f", mean(compiled$log_M_median[compiled$grid_id %in% g0_rows$grid_id])),
-    sprintf("%.0f%% (%d/%d reps)", ordering_holds_k4 * 100, round(ordering_holds_k4 * nrow(g1_ordering_k4)), nrow(g1_ordering_k4))
-  ),
-  result_k6 = c(
-    sprintf("mean median = %.3f", mean(g0_comparison$log_M_median_k6)),
-    sprintf("%.0f%% (%d/%d reps)", ordering_holds_k6 * 100, round(ordering_holds_k6 * nrow(g1_ordering_k6)), nrow(g1_ordering_k6))
-  ),
-  direction = c(
-    sprintf(
-      "%s (mean |diff|=%.3f, max |diff|=%.3f, %d/%d CIs overlap)",
-      if (mean(abs(g0_comparison$diff_median)) < 0.1) "Consistent" else "Point estimates vary",
-      mean(abs(g0_comparison$diff_median)), max(abs(g0_comparison$diff_median)),
-      sum(g0_comparison$both_overlap_ci), nrow(g0_comparison)
-    ),
-    if (ordering_holds_k4 == ordering_holds_k6) "Consistent" else "Shifted"
+  result = c(
+    sprintf("mean |diff| = %.3f, max |diff| = %.3f, %d/%d CIs overlap", mean(abs(g1c$diff_median)), max(abs(g1c$diff_median)), sum(g1c$both_overlap_ci), nrow(g1c)),
+    sprintf("K=4: %.0f%%; K=6: %.0f%%", ord4$acc * 100, ord6$acc * 100),
+    sprintf("mean |diff| = %.3f, max |diff| = %.3f, %d/%d CIs overlap", mean(abs(g0c$diff_median)), max(abs(g0c$diff_median)), sum(g0c$both_overlap_ci), nrow(g0c))
   ),
   interpretation = c(
-    sprintf(
-      paste(
-        "Individual log_M point estimates shift by up to %.2f between K=4/K=6 (mean |diff|",
-        "%.2f, comparable to a single fit's posterior SD ~0.09-0.1), but all %d/%d K=4/K=6",
-        "pairs have overlapping 95%% CIs -- consistent with ordinary estimation noise across",
-        "different discretisations of the same continuous data, not a detectable systematic",
-        "K-dependent bias, though n=%d reps has limited power to rule one out definitively."
-      ),
-      max(abs(g0_comparison$diff_median)), mean(abs(g0_comparison$diff_median)),
-      sum(g0_comparison$both_overlap_ci), nrow(g0_comparison), nrow(g0_comparison)
-    ),
-    "The primary G1 ordinal-recovery finding (RQ1) is not an artefact of the K=4 discretisation choice"
+    sprintf("G1 estimates barely move with bin count: mean |diff| %.3f against K=4 interval half-widths of about %.2f-%.2f; %s.",
+            mean(abs(g1c$diff_median)),
+            min((g1c$log_M_q975_k4 - g1c$log_M_q025_k4) / 2), max((g1c$log_M_q975_k4 - g1c$log_M_q025_k4) / 2),
+            if (all(g1c$both_overlap_ci)) "all intervals overlap" else "not all intervals overlap"),
+    if (ord4$acc == ord6$acc) "The RQ1 ordering result does not depend on the K=4 choice." else "The ordering result changed between K=4 and K=6.",
+    "Confounds binning with a different dataset and generative model; supports no conclusion about binning. Differences here reflect between-dataset variability."
   )
 )
 
 readr::write_csv(robustness_table, here::here("data", "processed", "robustness_table.csv"))
-cat("\n=== One-page robustness table ===\n")
-print(robustness_table, width = Inf)
-
+cat("\n=== Robustness table ===\n")
+for (i in seq_len(nrow(robustness_table))) {
+  cat("\n[", i, "]\n", sep = "")
+  for (col in names(robustness_table)) cat(sprintf("  %-18s %s\n", col, robustness_table[[col]][i]))
+}
 cat("\nDone. Wrote sensitivity_binning_comparison.csv and robustness_table.csv\n")

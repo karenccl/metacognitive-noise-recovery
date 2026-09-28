@@ -177,8 +177,12 @@ exists).
   three priors. Verified byte-identical to the production result at the production prior
   (`grid_id = 901`: posterior mean −0.95794097676536 both times).
 - **K = 6.** The same N = 40, T = 200, d′ = 1.5 cell, 5 G0 reps and 5 reps × 3 σ_c levels for G1,
-  with the same `sim_seed` (so only the binning differs) and `fit_seed`, compared with the K = 4
-  results for the same `grid_id`s.
+  with the same `sim_seed` and `fit_seed`, compared with the K = 4 results for the same
+  `grid_id`s. *Correction (2026-09-28):* only G1 is a re-binning (continuous `y` and responses are
+  identical across K). G0 draws discrete confidence directly, so K = 6 is a different generative
+  model; the same seed shares only the stimulus sequence (responses agree on 95.1% of trials, and
+  the K = 6 × K = 4 confidence table is not block-structured). The G0 rows are retained but
+  flagged `valid_rebinning = FALSE` and support no inference about binning.
 
 ## S11. Stored outputs
 

@@ -29,7 +29,7 @@ Grid per cell: N ∈ {20, 40} participants × T ∈ {100, 200, 400} trials × d�
 - **Model adequacy:** posterior predictive discrepancy was small for all five representative fits, including the misspecified one, so small PPC error did not flag the misspecification. (Fig. 5; one replicate per fit)
 - **Failures:** 1,437 pass, 3 fail, 0 error out of 1,440; failures confined to d′ = 0.75 cells.
 
-Results are conditional on the simulated processes. Limitations are listed in the report (Section 5); the main ones are that RQ1 is a comparatively favourable test, the small negative bias is unexplained, the K = 6 / prior / PPC checks are small, and there is no JAGS cross-check or real-data illustration.
+Results are conditional on the simulated processes. Limitations are listed in the report (Section 5); the main ones are that RQ1 is a comparatively favourable test, the small negative bias is unexplained, the K = 6 (G1 only) / prior / PPC checks are small, and there is no JAGS cross-check or real-data illustration.
 
 ## Repository map
 
@@ -37,7 +37,7 @@ Results are conditional on the simulated processes. Limitations are listed in th
 code/00_setup/               config loading, grid construction
 code/01_simulate/            G0/G1/G2 generators, confidence discretisation, DDM calibration
 code/02_fit/                 fit wrapper, diagnostics, per-cell runner, concurrent grid runner
-code/03_recovery_analysis/   compile results, G1 primary metrics, prior and K=6 sensitivity
+code/03_recovery_analysis/   compile results, G1 primary metrics, prior and K=6 (G1 re-binning) sensitivity
 code/04_ppc_and_comparison/  LOO comparison, PPCs, diagnostics summary
 code/05_figures/             the five headline figures
 config/                      design.yml (all constants), grid.csv (1,440 rows)
