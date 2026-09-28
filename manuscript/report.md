@@ -37,6 +37,8 @@ R 4.5.0, `hmetad` 0.2.1, `brms` 2.23.0, sampled with `brms`'s default `rstan` ba
 ### 3.3 Fitted models and priors
 All fits use a hierarchical `hmetad` model with participant-level random intercepts on `log_M`, d′ and criterion, pooled confidence-threshold gaps, absolute type-2 criterion, a `normal(0, 1)` prior on population `log_M` and `normal(0, 1)` on the threshold gaps, K = 4, and an aggregated multinomial likelihood. Sampling: 4 chains × (1,000 warm-up + 1,000 draws), adapt_delta 0.95, max treedepth 12. G2 was fitted under the correct `gumbel_min` family (with matching Stan-side CDF functions) and under the default Gaussian family.
 
+**Default priors.** Only the two priors above were set by us. `prior_summary()` of the stored fits (`outputs/tables/prior_summary.csv`; identical for G0 and both G2 fits) shows that the remaining parameters used brms defaults: the population d′ and criterion intercepts have flat (improper) priors, and all participant-level standard deviations (`log_M`, d′, criterion) have `student_t(3, 0, 2.5)` (half-t, lower-bounded at 0). The wide default on the `log_M` standard deviation is a candidate contributor to the small negative `log_M` bias (§4.7), which was not tested.
+
 ### 3.4 Diagnostics, refit and failure policy
 A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no divergences or maximum-treedepth hits, judged on population-level effects and random-effect SDs. A flagged fit is refitted once (adapt_delta 0.99, treedepth 14). If it is still flagged it is labelled `fail`. **Pre-registered rule:** the primary analysis includes `pass` and `fail` fits (failures flagged); the sensitivity analysis uses `pass` only; `error` rows would be excluded from estimation and counted as convergence failures.
 

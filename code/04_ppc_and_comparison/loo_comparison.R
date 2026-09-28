@@ -136,7 +136,7 @@ cat(sprintf(
 # distributions' log_M are on an identical substantive scale more
 # generally (protocol's scale caveat).
 
-log_M_ground_truth <- -1
+log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 g2_recovery <- g2_meta |>
   dplyr::filter(status %in% c("pass", "fail")) |>

@@ -28,7 +28,7 @@ grid <- readr::read_csv(here::here("config", "grid.csv"), show_col_types = FALSE
 # Locked constant duplicated from code/02_fit/run_one_cell.R (not stored
 # per-row in the saved results since it never varies across the grid).
 # TODO: centralise into config/design.yml so the two can't drift.
-log_M_ground_truth <- -1
+log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 interim_dir <- here::here("data", "interim")
 interim_files <- list.files(interim_dir, pattern = "\\.qs2$", full.names = TRUE)

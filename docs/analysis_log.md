@@ -904,3 +904,26 @@ The report uses the verified table above.
   the stored G2 `epred_summary` objects were computed with the old R form and were not regenerated
   (differences would arise only in extreme lower tails).
 - 54 tests pass; Fig 1 and Fig 3 regenerated.
+
+## 2026-09-28 — Review items 15-23, 26-28: priors, Fig 4 coverage, config, docs
+
+- **15 (default priors).** New `prior_summary.R` reads `prior_summary()` from stored fits (G0, G2
+  correct, G2 misspecified; identical priors) into `outputs/tables/prior_summary.csv`. Finding not
+  previously stated anywhere: only `log_M` and the threshold-gap intercepts had priors we set
+  (`normal(0,1)`); the d' and criterion intercepts are flat (improper) and every participant-level SD
+  is `student_t(3, 0, 2.5)`. Added to the report (§3.3) and supplement. Nothing refit; the wide
+  default SD prior is named as an untested candidate for the small negative bias.
+- **16.** Fig 4 gets panel C: per-condition coverage of true `log_M` with Wilson intervals, from
+  `g2_coverage.csv` (so `bias_diagnostics.R` must run first; it does in `make analyse`).
+- **17-18.** `make analyse` now also runs `bias_diagnostics.R` and `prior_summary.R`.
+  `00_packages.R` checks required packages (no installation; use `renv::restore()`), and
+  `01_config.R` validates `design.yml`, so `make setup` does real work. Both were run.
+- **19.** Generating truths moved into `config/design.yml` (`truth:` block: log_M, c, mean_z_c2);
+  the eight scripts that hard-coded -1 now read it. Values are unchanged, so no results changed.
+  (The generator function defaults still carry `mean_z_c2 = -1`; run_one_cell passes log_M from config.)
+- **21-22.** `design_decisions.md` now says the protocol document is not in the repo, and marks the
+  original "all fits use `aggregate = TRUE`" decision as superseded by the explicit-aggregation wrapper.
+- **23.** Fig 1 now says confidence-threshold gaps are pooled, matching `hierarchical_thresholds: false`.
+- **26-28.** Fig 2 subtitle grammar; Fig 3 legend (done earlier); Fig 5 title no longer claims all fits
+  "track the joint counts closely" (now: discrepancies are small for every fit, including the misspecified one).
+- 24 (README compute-time note) was already present.

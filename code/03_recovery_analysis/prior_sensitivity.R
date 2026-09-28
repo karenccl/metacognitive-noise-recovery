@@ -25,7 +25,7 @@ source(here::here("code", "02_fit", "fit_hmetad.R"))
 
 cfg <- yaml::read_yaml(here::here("config", "design.yml"))
 grid <- readr::read_csv(here::here("config", "grid.csv"), show_col_types = FALSE)
-log_M_ground_truth <- -1
+log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 # --- Representative conditions: N=40, T=200, dprime_target=1.5, rep 1 ------
 

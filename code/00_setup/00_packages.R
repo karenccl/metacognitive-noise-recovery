@@ -1,23 +1,25 @@
-# Install and load required packages; set brms/cmdstanr backend.
-# Run once per environment. See docs/computational_environment.md for
-# the versions this project was verified against.
+# Check that the packages the pipeline needs are installed (run by
+# `make setup`). It does not install anything: restore the pinned
+# environment with `renv::restore()` (see README and
+# docs/computational_environment.md).
 #
-# Note: the protocol's original package list names "qs" for atomic
-# result storage, but qs is archived on CRAN for current R. Use qs2
-# (same author, maintained successor) instead: qs2::qs_save() /
-# qs2::qs_read(), with a .qs2 extension on interim files.
+# Backend note (corrected 2026-09-25): brms.backend was never set, so every
+# production fit used brms's default rstan backend, not cmdstanr. Do NOT set
+# options(brms.backend = "cmdstanr") if you want to reproduce the published
+# results. The original protocol plan named "qs"; it is archived on CRAN, so
+# qs2 is used instead.
 
-# renv::init()
-# install.packages(c(
-#   "hmetad", "brms", "cmdstanr", "posterior", "bayesplot",
-#   "loo", "tidyverse", "tidybayes", "yaml", "here", "qs2",
-#   "testthat", "devtools"
-# ))
-#
-# NOTE (corrected 2026-09-25): the two lines below were the original plan but
-# were never run. brms.backend was never set, so every production fit used
-# brms's default rstan backend (confirmed from fit$backend). To reproduce the
-# published results, do NOT set brms.backend = "cmdstanr".
-# options(brms.backend = "cmdstanr")
-# stopifnot(!is.null(cmdstanr::cmdstan_version()))
-# renv::snapshot()
+required <- c(
+  "hmetad", "brms", "rstan", "StanHeaders", "posterior", "loo", "dplyr", "tidyr",
+  "purrr", "tibble", "readr", "ggplot2", "gridExtra", "yaml", "here", "qs2",
+  "processx", "testthat"
+)
+missing <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing)) {
+  stop("Missing packages: ", paste(missing, collapse = ", "),
+       ". Run renv::restore() from the project root.", call. = FALSE)
+}
+ver <- vapply(required, function(p) as.character(utils::packageVersion(p)), "")
+cat("R", format(getRversion()), "- all", length(required), "required packages present:\n")
+print(data.frame(package = required, version = unname(ver)), row.names = FALSE)
+cat("brms backend option:", getOption("brms.backend", default = "(unset -> rstan)"), "\n")

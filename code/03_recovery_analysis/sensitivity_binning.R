@@ -38,7 +38,7 @@ source(here::here("code", "02_fit", "fit_hmetad.R"))
 cfg <- yaml::read_yaml(here::here("config", "design.yml"))
 grid <- readr::read_csv(here::here("config", "grid.csv"), show_col_types = FALSE)
 compiled <- readr::read_csv(here::here("data", "processed", "compiled_results.csv"), show_col_types = FALSE)
-log_M_ground_truth <- -1
+log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 K_SENSITIVITY <- 6
 N_REPS <- 5
 comparison_path <- here::here("data", "processed", "sensitivity_binning_comparison.csv")

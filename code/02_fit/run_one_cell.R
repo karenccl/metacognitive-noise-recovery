@@ -46,7 +46,7 @@ row <- as.list(row)
 
 # Known-truth ground for G0/G2's known-parameter recovery check
 # (protocol section 3.1; not part of the grid since it never varies).
-log_M_ground_truth <- -1
+log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 out_dir <- here::here("data", "interim")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)

@@ -96,6 +96,12 @@ fitting:
   hierarchical_dprime_c: true    # participant-level (1|participant) on dprime and c
   hierarchical_thresholds: false # confidence-threshold gaps pooled (not per-participant)
 
+# Known generating values shared by G0/G2 and every analysis script.
+truth:
+  log_M: -1        # log-scale meta-d'/d' ratio (M = exp(-1) ~ 0.37)
+  c: 0
+  mean_z_c2: -1    # metacognitive-gap generating mean passed to sim_metad_participant
+
 priors:
   log_M_production: "normal(0, 1)"        # used for all G0/G1/G2 production fits
   log_M_sensitivity: ["normal(0, 0.5)", "normal(0, 1)", "normal(0, 2)"]  # Day-4 prior sensitivity sweep

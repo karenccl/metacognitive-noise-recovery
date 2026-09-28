@@ -15,7 +15,7 @@ suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
 
 okabe <- c(correct = "#009E73", misspecified = "#D55E00")
-log_M_truth <- -1
+log_M_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 elpd <- readr::read_csv(here::here("data", "processed", "g2_elpd_comparison.csv"), show_col_types = FALSE)
 compiled <- readr::read_csv(here::here("data", "processed", "compiled_results.csv"), show_col_types = FALSE)
@@ -76,6 +76,31 @@ pB <- ggplot(err, aes(x = condition, y = error, color = fit_variant)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom",
         plot.caption = element_text(hjust = 0, size = 7.5))
 
-g <- gridExtra::arrangeGrob(pA, pB, ncol = 1, heights = c(1, 1.15))
-ggsave(here::here("outputs", "figures", "fig_4_g2_misspecification.png"), g, width = 10, height = 10, dpi = 200)
+cov_all <- readr::read_csv(here::here("data", "processed", "g2_coverage.csv"), show_col_types = FALSE)
+pooled <- dplyr::filter(cov_all, cell == "POOLED")
+cov <- cov_all |>
+  dplyr::filter(cell != "POOLED") |>
+  dplyr::mutate(
+    condition = factor(cond_label(as.integer(sub("^N([0-9]+)_.*", "\\1", cell)),
+                                  as.integer(sub("^N[0-9]+_T([0-9]+)_.*", "\\1", cell)),
+                                  sub(".*_d", "", cell)), levels = cond_levels),
+    fit_variant = factor(fit_variant, levels = c("correct", "misspecified"))
+  )
+stopifnot(!anyNA(cov$condition))
+pC <- ggplot(cov, aes(x = condition, y = coverage, color = fit_variant)) +
+  geom_hline(yintercept = 0.95, linetype = "dashed", color = "grey40") +
+  geom_pointrange(aes(ymin = ci_lo, ymax = ci_hi), position = position_dodge(width = 0.5), size = 0.35) +
+  scale_color_manual(values = c(correct = okabe[["correct"]], misspecified = okabe[["misspecified"]]), guide = "none") +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(
+    subtitle = sprintf("C. Coverage of true log_M by the 95%% credible interval (Wilson 95%% CI, n = 20 per point; dashed = nominal).\nPooled: correct %.1f%%, misspecified %.1f%%.",
+                       pooled$coverage[pooled$fit_variant == "correct"] * 100,
+                       pooled$coverage[pooled$fit_variant == "misspecified"] * 100),
+    x = NULL, y = "Coverage"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+g <- gridExtra::arrangeGrob(pA, pB, pC, ncol = 1, heights = c(1, 1.15, 0.85))
+ggsave(here::here("outputs", "figures", "fig_4_g2_misspecification.png"), g, width = 10, height = 13, dpi = 200)
 cat("Wrote outputs/figures/fig_4_g2_misspecification.png\n")

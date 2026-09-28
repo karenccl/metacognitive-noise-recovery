@@ -27,8 +27,8 @@
 
 suppressPackageStartupMessages(library(dplyr))
 
-LOG_M_TRUE <- -1
-GAP_TRUE <- -1
+LOG_M_TRUE <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
+GAP_TRUE <- yaml::read_yaml(here::here("config", "design.yml"))$truth$mean_z_c2
 files <- list.files(here::here("data", "interim"), pattern = "\\.qs2$", full.names = TRUE)
 files <- files[grepl("^g[02]_", basename(files))]
 

@@ -12,7 +12,7 @@ suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
 
 okabe <- c(orange = "#E69F00", sky = "#56B4E9", green = "#009E73", blue = "#0072B2", vermillion = "#D55E00")
-log_M_truth <- -1
+log_M_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 compiled <- readr::read_csv(here::here("data", "processed", "compiled_results.csv"), show_col_types = FALSE)
 cov_summary <- readr::read_csv(here::here("data", "processed", "g0_recovery_summary.csv"), show_col_types = FALSE)
@@ -47,7 +47,7 @@ p_bias <- ggplot(g0, aes(x = condition, y = error)) +
   scale_shape_manual(values = c(pass = 16, fail = 4), drop = FALSE) +
   labs(
     title = "G0 recovery of known log_M (truth = -1)",
-    subtitle = sprintf("Per-replicate posterior-mean error, 20 replications per condition (black bar = mean).\n%d of 240 fits flagged 'fail' are kept and shown as x.", n_fail),
+    subtitle = sprintf("Per-replicate posterior-mean error, 20 replications per condition (black bar = mean).\nFits flagged 'fail' (%d of 240) are kept and shown as x.", n_fail),
     x = NULL, y = "Error: posterior mean log_M - truth", shape = "Fit status"
   ) +
   theme_minimal() +

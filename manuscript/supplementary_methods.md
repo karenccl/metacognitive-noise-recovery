@@ -117,7 +117,7 @@ dprime + c ~ 1 + (1 | participant)             # first-order sensitivity and bia
 metac2zero1diff + ... + metac2one3diff ~ 1     # confidence-threshold log-gaps, pooled
 ```
 
-Priors: `normal(0, 1)` on the population `log_M` intercept and on each threshold-gap intercept
+Priors: `normal(0, 1)` on the population `log_M` intercept and on each threshold-gap intercept (all other parameters use brms defaults: flat priors on the d′ and criterion intercepts, `student_t(3, 0, 2.5)` on every participant-level SD; see `outputs/tables/prior_summary.csv`)
 (sensitivity sweep: `normal(0, 0.5)`, `normal(0, 2)`). **Prior-class quirk:** a parameter with no
 explicit formula takes its prior via `class = "<name>"`, but once it has any explicit formula the
 same prior must be given as `class = "Intercept", dpar = "<name>"`; the wrong form fails with

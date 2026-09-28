@@ -32,7 +32,7 @@ p <- ggplot(ppc, aes(x = predicted_prop, y = observed_prop)) +
   scale_color_manual(values = c("Highest confidence (C4)" = "#D55E00", "Other confidence levels" = "#0072B2")) +
   scale_shape_manual(values = c("0" = 16, "1" = 17), labels = c("Stimulus 0", "Stimulus 1")) +
   labs(
-    title = "Posterior predictive checks: all fits track the joint counts closely",
+    title = "Posterior predictive discrepancies are small for every fit, including the misspecified one",
     subtitle = "Each point is one stimulus x response x confidence cell (proportion conditional on stimulus). Dashed line = perfect fit.\nIn these single replicates, only the misspecified G2 fit has its four largest errors all at the highest confidence category (suggestive, n = 1 per fit).",
     x = "Posterior-predicted proportion (hmetad::epred_draws_metad)", y = "Observed proportion",
     color = NULL, shape = NULL,

@@ -1,7 +1,8 @@
 # Design Decisions
 
-Locked decisions per the project protocol (`docs/../publication_ready_hmetad_project_protocol.md`
-supplied by the user). Record any justified deviation below with a date; do not silently alter
+Locked decisions per the project protocol. The protocol document ("Publication-ready hmetad project
+protocol", supplied by the project owner) is not included in this repository, so the "protocol section
+X" references below cannot be followed from the repo alone. Record any justified deviation below with a date; do not silently alter
 the core scientific question.
 
 ## Status
@@ -94,9 +95,9 @@ written against this package. Key facts established empirically (see
   data with `stimulus`, `response`, `confidence` (+ any grouping columns in the formula) and
   internally calls `aggregate_metad()` to build the multinomial sufficient-statistic
   representation (`N_0`, `N_1`, and a `N_0_1..N_0_K, N_1_1..N_1_K`-style count matrix — `4*K`
-  cells per group). **Locked decision:** all fits use `aggregate = TRUE` on trial-level input;
-  no script calls `aggregate_metad()` directly except for diagnostics
-  (`validate_generators.R`, category-occupancy checks). This is precisely why the likelihood is
+  cells per group). **Initial decision (SUPERSEDED, see "Aggregation route revised" in the 2026-09-23 Day 2 fit_one_hmetad()
+  entry below):** all fits use `aggregate = TRUE` on trial-level input. In the final pipeline
+  `fit_one_hmetad()` calls `aggregate_metad()` itself and fits with `aggregate = FALSE`. This is precisely why the likelihood is
   aggregated-count-based and why LOO must be interpreted at the subject/cell level, not the
   trial level (protocol section 4, understanding check 5).
 
