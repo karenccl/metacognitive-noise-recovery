@@ -589,7 +589,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 
 ## 2026-09-25 — Verification: prior_sensitivity.R reuses the exact original grid data/fit
 
-User asked (correctly) to verify whether `prior_sensitivity.R`'s two "representative rows" are
+Checked whether `prior_sensitivity.R`'s two "representative rows" are
 freshly-generated data under a new/different seed, or a reproduction of the exact data/fit
 already in the production grid — because the answer changes what the figure's absolute distance
 from the truth line is allowed to mean.
@@ -797,8 +797,7 @@ The report uses the verified table above.
 - `CITATION.cff` repository URL set to the real remote. Unit tests re-run: all pass.
 - **References are unverified**: entered from memory; the `.bib` and README both say to check
   them before release. The `hmetad` entry has no author list (not established from the package).
-- **Not done / needs the author:** release tag and public release (not created — publishing is
-  the author's call), `manuscript/supplementary_methods.md` (still a stub), a pasted
+- **Not done:** release tag and public release (not created), `manuscript/supplementary_methods.md` (still a stub), a pasted
   `sessioninfo` in `docs/computational_environment.md`, CV bullet/plain-language summary, and the
   optional JAGS and open-data checks (reported as limitations, per the design's stop rule).
 
@@ -821,7 +820,7 @@ The report uses the verified table above.
   bit-identical across backends. Fixed in the environment doc, README (install section), report
   §3.1, supplement S1, the Makefile comment and the `00_packages.R` comment. **Not done:** pinning
   `backend = "rstan"` inside `fit_one_hmetad()`; that would change fitting code after the results
-  were generated, so it is left as a recommendation for the author.
+  were generated, so it is left as a recommendation.
 - **Correction 2 — calibration table in `design_decisions.md`.** Its hit-rate, false-alarm-rate and
   mean-RT cells (0.702/0.298, 0.836/0.164, ~1.1 s, ~0.75 s) and "d′ = 1.500" had been entered
   without the CSV in view. From `ddm_calibration.csv`: hit/FA 0.644/0.358 and 0.771/0.226; mean RT
@@ -834,8 +833,7 @@ The report uses the verified table above.
   variance 0.92–0.96 (left-tail truncation); on a ±20 grid the mean equals μ and the variance is
   1.0000, so the earlier "≈1" was right for the reason the design claims. And stated the
   50,000-step non-decision guard honestly as un-audited rather than "not observed".
-- Still open: release tag (author's call), CV bullet and plain-language summary (not requested
-  yet), verifying `references.bib`, optional JAGS and open-data checks.
+- Still open: release tag, CV bullet and plain-language summary, verifying `references.bib`, optional JAGS and open-data checks.
 
 ## 2026-09-28 — Correction: the G0 half of the K=6 check was not a re-binning
 
@@ -941,7 +939,7 @@ The report uses the verified table above.
   that figs 2-4 used unseeded jitter, so reruns changed the PNG bytes; `set.seed(20260923)` added and
   two consecutive runs now produce identical files. The full pipeline (renv::restore, fits) was not
   re-run from a clone.
-- Not done: v1.0.0 tag (awaiting sign-off), Zenodo/OSF archive (optional), verification of
+- Not done: release tag (not created), Zenodo/OSF archive (optional), verification of
   `references.bib`.
 
 ## 2026-09-28 - References verified

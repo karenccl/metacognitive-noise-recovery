@@ -273,7 +273,7 @@ bisection is stable):
 | 1.5 | 0.797 | 1.4954 | 1.4955 | 0.771 | 0.226 | 0.827 s |
 
 *(Corrected 2026-09-25 from `outputs/tables/ddm_calibration.csv`; the hit/FA/RT cells and the
-`1.500` in an earlier version of this table had been entered without the CSV in front of the author and
+`1.500` in an earlier version of this table had been entered without checking against the CSV and
 were wrong. See `docs/analysis_log.md`.)*
 
 Both `d′` targets reached within the ±0.02 tolerance (errors 0.017 and 0.005). The two empirical
