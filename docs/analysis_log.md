@@ -927,3 +927,20 @@ The report uses the verified table above.
 - **26-28.** Fig 2 subtitle grammar; Fig 3 legend (done earlier); Fig 5 title no longer claims all fits
   "track the joint counts closely" (now: discrepancies are small for every fit, including the misspecified one).
 - 24 (README compute-time note) was already present.
+
+## 2026-09-28 — Review items 29-37 (partial): framing, checklist, clone check
+
+- Report and README reframed: RQ1 is a validity check (readout noise removes information, so a working
+  model should register it); RQ2 (misspecification visible to LOO and in `log_M`, not in aggregate PPC)
+  is presented as the main finding. Abstract conclusion, RQ labels and Discussion ("Framing" paragraph)
+  changed after seeing all results; noted here rather than presented as pre-planned.
+- Limitations extended: unvaried brms default priors (xi); one seed base/environment/backend (xii);
+  next steps now include varying the SD prior. Reproducibility statement lists all corrected errors.
+- Added `docs/deliverables_checklist.md` (with open items: reference check, full-pipeline reproduction,
+  tag, archive) and `docs/summaries.md` (CV line, ~100-word summary, caveats).
+- Fresh-clone check: a clean `git clone` rebuilds all five figures from tracked files alone. It exposed
+  that figs 2-4 used unseeded jitter, so reruns changed the PNG bytes; `set.seed(20260923)` added and
+  two consecutive runs now produce identical files. The full pipeline (renv::restore, fits) was not
+  re-run from a clone.
+- Not done: v1.0.0 tag (awaiting the project owner), Zenodo/OSF archive (optional), verification of
+  `references.bib`.

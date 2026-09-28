@@ -10,6 +10,7 @@
 
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
+set.seed(20260923)  # jitter positions are reproducible
 
 okabe <- c(orange = "#E69F00", sky = "#56B4E9", green = "#009E73", blue = "#0072B2", vermillion = "#D55E00")
 log_M_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M

@@ -11,6 +11,7 @@
 
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
+set.seed(20260923)  # jitter positions are reproducible
 
 okabe <- c(orange = "#E69F00", blue = "#0072B2")
 cfg <- yaml::read_yaml(here::here("config", "design.yml"))
