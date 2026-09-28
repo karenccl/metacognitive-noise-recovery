@@ -640,6 +640,12 @@ exceedance; the oracle nature of the threshold stated; P1 changed from an absolu
 handling of small expected counts in statistic 3 stated; statistic 2 marked secondary and
 v1-motivated, excluded from Kept and Reversed but able to trigger Qualified.
 
+**Deviation (2026-09-28, after the analysis).** The Reversed rule required the limitations to say that
+the v1 single replicate was unrepresentative. The data do not support that: its misspecified/correct
+RMSE ratio (1.9) lies within the range observed across the 240 pairs. The report instead states that
+the replicate was not unusual and that its interpretation ("small, so not flagged") was wrong. The
+verdict itself (Reversed) is unchanged.
+
 ## What this project must not claim
 
 In particular: do not claim `log_M` "recovers" σ_c numerically; do not

@@ -1010,9 +1010,10 @@ Design locked in `4785b35` and `37bed3d` (`design_decisions.md`, "v2 extension 1
   Expected counts < 5: median 14.7% of participant x cell entries (range 0-50%).
 - **Verdict (pre-specified rule): Reversed** (pooled stat 1 detection 0.875 >= 0.8). Pass-only
   sensitivity: also Reversed (stat 1 0.874). Per the rule, the v1 claim "aggregate PPC does not
-  reveal the misspecification" is withdrawn, and the limitations must say the v1 single replicate
-  was unrepresentative of how it was read. Note the v1 replicate itself had a ratio of 1.9; what
-  failed was reading "small in absolute terms" as "not revealed".
+  reveal the misspecification" is withdrawn, and the rule's wording that the v1 replicate was
+  unrepresentative is not followed, because its ratio (1.9) lies within the observed range; what
+  failed was reading "small in absolute terms" as "not revealed". Logged as a dated deviation in
+  `docs/design_decisions.md` (v2 extension 1).
 - **Predictions.** P1 not supported (proportion worse 96.7% > 50% held, but median ratio 2.64 > 1.5).
   P2 not supported as worded (paired proportion 95.8% vs 96.7%), although stat 2 had the larger
   ratio and higher detection. P3 not supported (stat 1 detection is not below LOO in any cell); the
