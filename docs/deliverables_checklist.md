@@ -14,7 +14,7 @@ Status as of 2026-09-28. "Done" means produced and committed; it does not mean e
 | Five headline figures | `outputs/figures/` | Done |
 | Report | `manuscript/report.md` | Draft |
 | Supplementary methods | `manuscript/supplementary_methods.md` | Draft |
-| References | `manuscript/references.bib` | **Unverified** (entered from memory) |
+| References | `manuscript/references.bib` | Verified against Crossref 2026-09-28 (one page range unconfirmed) |
 | Prior record | `outputs/tables/prior_summary.csv` | Done |
 | Fresh-clone check (figures only) | n/a | Done 2026-09-28: all five figures rebuild from a clean clone; full-pipeline reproduction (renv::restore + fits) not done |
 | `make` targets run end to end | `Makefile` | Not run (`make` not installed); scripts run individually |

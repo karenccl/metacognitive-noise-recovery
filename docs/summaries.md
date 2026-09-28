@@ -12,4 +12,4 @@ I built a fully scripted simulation study of the hmetad package. Confidence rati
 
 ## Caveats to keep with any summary
 
-Simulation only, with no human data; the report has not been peer reviewed; the reference list needs verification; and results are conditional on the generators chosen.
+Simulation only, with no human data; the report has not been peer reviewed; the reference list was checked only against Crossref metadata; and results are conditional on the generators chosen.

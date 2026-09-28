@@ -3,7 +3,7 @@
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
 A reproducible R/Stan simulation study (no human data). Draft report: [manuscript/report.md](manuscript/report.md).
 
-**Status (2026-09-28):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed. The report is a draft awaiting a reference check (`references.bib` was entered from memory) and has not been peer reviewed. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2 (misspecification is visible to LOO and biases `log_M`, but not to aggregate PPC); RQ1 is a validity check.
+**Status (2026-09-28):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2 (misspecification is visible to LOO and biases `log_M`, but not to aggregate PPC); RQ1 is a validity check.
 
 ## Question
 
@@ -88,4 +88,4 @@ A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no di
 
 ## Licence and citation
 
-MIT licence (`LICENSE`). Citation metadata is in `CITATION.cff`. Reference details in `manuscript/references.bib` were entered from memory and should be verified before release.
+MIT licence (`LICENSE`). Citation metadata is in `CITATION.cff`. Reference details in `manuscript/references.bib` were checked against Crossref on 2026-09-28 (the Bürkner page range was not returned by Crossref; see the file header).

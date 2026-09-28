@@ -1,6 +1,6 @@
 # Does a static meta-d′ model track dynamic confidence? A simulation study of `hmetad` under post-decisional noise and distributional misspecification
 
-*Draft for author review. All numbers are taken from `data/processed/*.csv` (1,440 fits). Reference details in `references.bib` should be checked against the sources before release.*
+*Draft for author review. All numbers are taken from `data/processed/*.csv` (1,440 fits). Reference details in `references.bib` were checked against Crossref on 2026-09-28 (see the file header for the one exception).*
 
 ## Abstract
 
@@ -94,4 +94,4 @@ Code, configuration, seeds, compact per-fit results (`data/processed/`), figures
 
 ## 7. References
 
-See `references.bib`. Cited: Maniscalco & Lau (2012); Fleming (2017); Pleskac & Busemeyer (2010); Bürkner (2017); Morris et al. (2019); Vehtari et al. (2017) for LOO/Pareto-k.
+See `references.bib`. Cited: Maniscalco & Lau (2012); Fleming (2017); Pleskac & Busemeyer (2010); Bürkner (2017); Morris et al. (2019); Vehtari et al. (2017) for LOO/Pareto-k; O'Neill & Fleming (2026) for the `hmetad` package (version 0.2.1).

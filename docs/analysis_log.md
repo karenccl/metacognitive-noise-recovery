@@ -944,3 +944,16 @@ The report uses the verified table above.
   re-run from a clone.
 - Not done: v1.0.0 tag (awaiting the project owner), Zenodo/OSF archive (optional), verification of
   `references.bib`.
+
+## 2026-09-28 - References verified
+
+- Checked all six published references in `references.bib` against Crossref by DOI: authors, title,
+  journal, volume, issue, pages and year all matched the from-memory entries. Corrections/additions:
+  DOIs added to all; Vehtari et al. issue number (5) was missing; the `hmetad` entry was a placeholder
+  and is now filled from `citation("hmetad")` (O'Neill & Fleming, 2026, version 0.2.1; key renamed
+  `hmetad2026`) and cited in the report.
+- A title search for Pleskac & Busemeyer first returned the 2011 erratum (Psychol. Rev. 118, 56), not
+  the article; the entry was verified by DOI (10.1037/a0019737) and is the original 2010 article.
+- Not confirmed from a source: the Buerkner (2017) page range 1-28 (Crossref returns no pages for JSS).
+- Only bibliographic metadata was checked. I did not re-read the papers to confirm that each supports the
+  sentence citing it in the report.
