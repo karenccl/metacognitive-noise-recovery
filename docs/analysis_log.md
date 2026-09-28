@@ -987,3 +987,39 @@ The report uses the verified table above.
   deviation from the Gumbel-min generating value, not recovery of a Gaussian parameter. One LOO
   observation is one participant's aggregated count vector.
 - `CITATION.cff` version 1.0.1. Tagged `v1.0.1`; `v1.0.0` left where it was.
+
+## 2026-09-28 - v2 extension 1: PPC on all 480 G2 fits (result)
+
+Design locked in `4785b35` and `37bed3d` (`design_decisions.md`, "v2 extension 1"). Script
+`code/04_ppc_and_comparison/g2_ppc_all.R`; outputs in `data/processed/v2/` and
+`outputs/figures/v2/fig_g2_ppc_all.png`. No refitting.
+
+- **Runs.** First run stopped inside the helper that builds participant x cell counts (a `tibble()`
+  data-mask bug) before any statistic was computed; fixed and rerun. The figure subtitles were then
+  wrapped (layout only) and the script rerun; `g2_ppc_summary.csv` was byte-identical.
+- **Check before use.** Statistic 1 for grid 1321/1322 reproduced `ppc_discrepancy_summary.csv`
+  (max abs diff 1.1e-17).
+- **Inclusion.** 480/480 fits have `epred_summary`; 478 pass, 2 fail; 240 pairs.
+- **Paired.** Misspecified worse in 96.7% (stat 1), 95.8% (stat 2), 94.6% (stat 3) of pairs. Median
+  ratio misspecified / correct: 2.64 (stat 1; 90% range 1.09-7.88), 6.82 (stat 2), 1.09 (stat 3).
+  Descriptively, median stat 1 was 0.0031 (correct) vs 0.0086 (misspecified): small in absolute
+  terms, but systematic.
+- **Oracle-calibrated detection.** Pooled (mean of 12 cells): stat 1 0.875, stat 2 0.933, stat 3 0.487.
+  Stat 1 detection was >= LOO's > 2 SE rate in all 12 cells (0 of 12 below). Lowest cell: N = 20,
+  T = 100, d' = 0.75 (stat 1 0.15, LOO 0.10). Stat 3 single pooled threshold (secondary): 0.30.
+  Expected counts < 5: median 14.7% of participant x cell entries (range 0-50%).
+- **Verdict (pre-specified rule): Reversed** (pooled stat 1 detection 0.875 >= 0.8). Pass-only
+  sensitivity: also Reversed (stat 1 0.874). Per the rule, the v1 claim "aggregate PPC does not
+  reveal the misspecification" is withdrawn, and the limitations must say the v1 single replicate
+  was unrepresentative of how it was read. Note the v1 replicate itself had a ratio of 1.9; what
+  failed was reading "small in absolute terms" as "not revealed".
+- **Predictions.** P1 not supported (proportion worse 96.7% > 50% held, but median ratio 2.64 > 1.5).
+  P2 not supported as worded (paired proportion 95.8% vs 96.7%), although stat 2 had the larger
+  ratio and higher detection. P3 not supported (stat 1 detection is not below LOO in any cell); the
+  rise with T and N held.
+- **Caveat that stays.** Detection uses an oracle threshold from the correct model's own
+  distribution, which an analyst would not have. A low rate would have been an upper bound; a high
+  rate says the discrepancy is systematic and detectable given a reference, not that an analyst
+  eyeballing absolute RMSE ~0.009 would notice it. Participant-level X2 (stat 3), which is scaled by
+  sampling noise, detected it far less often (0.49).
+- **Not yet done.** `manuscript/report.md` not changed; revision planned for v1.1.
