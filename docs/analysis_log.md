@@ -860,7 +860,7 @@ The report uses the verified table above.
   replaced). Regenerated `robustness_table.csv` and `sensitivity_binning_comparison.csv` without refitting.
 - Report (Methods, Results, Limitations vi), README and supplement S10 corrected accordingly.
 
-## 2026-09-28 — Review items 11-13: bias, G2 coverage, nuisance recovery (no refitting)
+## 2026-09-28 — Post-hoc diagnostics: bias, G2 coverage, nuisance recovery (no refitting)
 
 - Added `code/03_recovery_analysis/bias_diagnostics.R` (in `make analyse`); reads the 720 G0/G2
   compact draws. Exploratory, added after the results were seen; report section 4.7 says so.
@@ -879,9 +879,9 @@ The report uses the verified table above.
 - Outputs: bias_fit_level.csv, bias_diagnosis_summary.csv, bias_by_sample_size.csv, g2_coverage.csv,
   g2_nuisance_recovery.csv. Report Limitation (iv) reworded from "unexplained" to "partly characterised".
 
-## 2026-09-28 — Review items 6-10: G1 summary, point estimate, R-hat boundary, Gumbel CDF
+## 2026-09-28 — G1 summary, point estimate, R-hat boundary, Gumbel CDF
 
-- **6-7 (G1 summary).** `compute_primary_metrics.R` no longer fits a linear slope of `log_M` on
+- **G1 summary.** `compute_primary_metrics.R` no longer fits a linear slope of `log_M` on
   sigma_c or reports its p-values: the three calibrated levels are not equally spaced on any
   natural scale, and p-values on simulation replicates reflect only the replication count. It now
   reports, per N x T x d' cell, per-level means, SDs and MC SEs, adjacent and low-high differences
@@ -890,44 +890,44 @@ The report uses the verified table above.
   -0.30..-0.18 / -0.84..-0.66 / -1.93..-1.71; differences 0.46-0.57 and 0.88-1.20; smallest
   adjacent gap 7.2 MC SEs). Report abstract, RQ1 prediction, methods, results and README reworded;
   the RQ1 prediction text was changed after seeing the data (it named the slope), which is noted here.
-- **9 (point estimate).** G0/G2 bias and RMSE used the posterior mean while G1 used the median.
+- **Point estimate.** G0/G2 bias and RMSE used the posterior mean while G1 used the median.
   G1 now uses the posterior mean; the median version is kept as a sensitivity
   (`g1_primary_metrics_median.csv`): ordering accuracy 0.95-1.00 and 12/12 direction check both ways.
   Fig 3 now plots posterior means; its subtitle no longer clips and the empty fail/error legend
   entries are gone.
-- **8 (R-hat boundary).** `extract_fit_summary.R` now flags `max_rhat > rhat_max` instead of `>=`.
+- **R-hat boundary.** `extract_fit_summary.R` now flags `max_rhat > rhat_max` instead of `>=`.
   Fits with max R-hat exactly 1.01: 0 of 1,440, so no fit would be reclassified and nothing was refit.
   (One fit has max R-hat 1.0124 and was already flagged.)
-- **10 (Gumbel CDF).** R-side `gumbel_min_lcdf` now uses `log(-expm1(-exp(z)))`, which keeps
+- **Gumbel CDF.** R-side `gumbel_min_lcdf` now uses `log(-expm1(-exp(z)))`, which keeps
   precision when exp(z) is small. The Stan twin already used `log1m_exp`, so no fit is affected;
   the stored G2 `epred_summary` objects were computed with the old R form and were not regenerated
   (differences would arise only in extreme lower tails).
 - 54 tests pass; Fig 1 and Fig 3 regenerated.
 
-## 2026-09-28 — Review items 15-23, 26-28: priors, Fig 4 coverage, config, docs
+## 2026-09-28 — Priors record, Fig 4 coverage, config, docs, figure polish
 
-- **15 (default priors).** New `prior_summary.R` reads `prior_summary()` from stored fits (G0, G2
+- **Default priors.** New `prior_summary.R` reads `prior_summary()` from stored fits (G0, G2
   correct, G2 misspecified; identical priors) into `outputs/tables/prior_summary.csv`. Finding not
   previously stated anywhere: only `log_M` and the threshold-gap intercepts had priors we set
   (`normal(0,1)`); the d' and criterion intercepts are flat (improper) and every participant-level SD
   is `student_t(3, 0, 2.5)`. Added to the report (§3.3) and supplement. Nothing refit; the wide
   default SD prior is named as an untested candidate for the small negative bias.
-- **16.** Fig 4 gets panel C: per-condition coverage of true `log_M` with Wilson intervals, from
+- **Fig 4 coverage.** Fig 4 gets panel C: per-condition coverage of true `log_M` with Wilson intervals, from
   `g2_coverage.csv` (so `bias_diagnostics.R` must run first; it does in `make analyse`).
-- **17-18.** `make analyse` now also runs `bias_diagnostics.R` and `prior_summary.R`.
+- **Setup and Makefile.** `make analyse` now also runs `bias_diagnostics.R` and `prior_summary.R`.
   `00_packages.R` checks required packages (no installation; use `renv::restore()`), and
   `01_config.R` validates `design.yml`, so `make setup` does real work. Both were run.
-- **19.** Generating truths moved into `config/design.yml` (`truth:` block: log_M, c, mean_z_c2);
+- **Ground truth in config.** Generating truths moved into `config/design.yml` (`truth:` block: log_M, c, mean_z_c2);
   the eight scripts that hard-coded -1 now read it. Values are unchanged, so no results changed.
   (The generator function defaults still carry `mean_z_c2 = -1`; run_one_cell passes log_M from config.)
-- **21-22.** `design_decisions.md` now marks the
+- **Design-decisions document.** `design_decisions.md` now marks the
   original "all fits use `aggregate = TRUE`" decision as superseded by the explicit-aggregation wrapper.
-- **23.** Fig 1 now says confidence-threshold gaps are pooled, matching `hierarchical_thresholds: false`.
-- **26-28.** Fig 2 subtitle grammar; Fig 3 legend (done earlier); Fig 5 title no longer claims all fits
+- **Fig 1 wording.** Fig 1 now says confidence-threshold gaps are pooled, matching `hierarchical_thresholds: false`.
+- **Figure polish.** Fig 2 subtitle grammar; Fig 3 legend (done earlier); Fig 5 title no longer claims all fits
   "track the joint counts closely" (now: discrepancies are small for every fit, including the misspecified one).
-- 24 (README compute-time note) was already present.
+- The README compute-time note was already present.
 
-## 2026-09-28 — Review items 29-37 (partial): framing, checklist, clone check
+## 2026-09-28 — Framing, checklist, clone check
 
 - Report and README reframed: RQ1 is a validity check (readout noise removes information, so a working
   model should register it); RQ2 (misspecification visible to LOO and in `log_M`, not in aggregate PPC)

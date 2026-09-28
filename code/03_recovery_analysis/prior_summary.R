@@ -1,5 +1,5 @@
 # Record every prior actually used by the production fits, including the
-# brms/hmetad defaults that design.yml does not mention (review item 15).
+# brms/hmetad defaults that design.yml does not mention.
 # Reads the stored brmsfit of one G0 and one G2-correct fit (replication 1;
 # full fits are kept only for rep_id <= 2) and writes
 # outputs/tables/prior_summary.csv (one row per prior line, with the
