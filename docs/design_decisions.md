@@ -276,7 +276,7 @@ bisection is stable):
 | 1.5 | 0.797 | 1.4954 | 1.4955 | 0.771 | 0.226 | 0.827 s |
 
 *(Corrected 2026-09-25 from `outputs/tables/ddm_calibration.csv`; the hit/FA/RT cells and the
-`1.500` in an earlier version of this table had been entered without the CSV in front of me and
+`1.500` in an earlier version of this table had been entered without the CSV in front of the author and
 were wrong. See `docs/analysis_log.md`.)*
 
 Both `d′` targets reached within the ±0.02 tolerance (errors 0.017 and 0.005). The two empirical
@@ -439,7 +439,7 @@ working, tested fitting path. Ready to launch the full production grid.
 
 ## 2026-09-23 — Production run stopped and revised before relaunch
 
-The first full-grid launch (2160 rows, 30 reps/cell) was stopped by the user after producing 16
+The first full-grid launch (2160 rows, 30 reps/cell) was stopped manually after producing 16
 results, to make several changes before committing real compute to it. Each change below is a
 locked decision (updates the "locked decisions" list where relevant); rationale is recorded here
 per the reproducibility-log requirement (protocol section 2.2).

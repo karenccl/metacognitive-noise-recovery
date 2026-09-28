@@ -255,7 +255,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   123.9s (~2x), same clean diagnostics. Pure efficiency fix, no scientific effect.
 - Full-grid projection: 72 unique fit-cells/rep × ~2.07 hours/pass ≈ 62 hours (2.6 days) at 30
   reps/cell run strictly sequentially (one fit at a time).
-- **Consulted the user** on replication count vs. compute time, given this is a genuine
+- **Consulted the project lead** on replication count vs. compute time, given this is a genuine
   resource/timeline tradeoff with real Monte Carlo precision consequences (protocol explicitly
   allows dropping to 20 or 15 reps). Chose: keep 30 reps/cell, add concurrent batch dispatch
   instead of reducing precision.
@@ -758,7 +758,7 @@ direction.
 
 ## 2026-09-25 — Correction: a bias range in the prior-sensitivity entry was misattributed
 
-While drafting the report I re-derived every cited number from `data/processed/*.csv`. The
+While drafting the report, every cited number was re-derived from `data/processed/*.csv`. The
 2026-09-24 prior-sensitivity entry says the negative aggregate bias across "G0's 12 conditions"
 ranges "−0.007 to −0.092 per condition". That range belongs to the **G2 correctly-specified**
 fit (`g2_log_M_recovery.csv`). The verified figures are:
@@ -816,8 +816,8 @@ The report uses the verified table above.
   `options(brms.backend = "cmdstanr")` was only ever in a commented-out line
   (`code/00_setup/00_packages.R`) and in the README, so `brms` used its default. The Day-0
   "backend verified" entry above tested `cmdstanr` directly on a bundled example and never
-  exercised the `brms` path. (The PSOCK worker processes loading `rstan` that I noticed during the
-  first chain-parallel benchmark were this evidence, and I did not follow it up then.) Same Stan
+  exercised the `brms` path. (The PSOCK worker processes loading `rstan` that were noticed during the
+  first chain-parallel benchmark were this evidence, and it was not followed up then.) Same Stan
   version and model, so the statistical results are not in question, but draws are not
   bit-identical across backends. Fixed in the environment doc, README (install section), report
   §3.1, supplement S1, the Makefile comment and the `00_packages.R` comment. **Not done:** pinning
@@ -942,7 +942,7 @@ The report uses the verified table above.
   that figs 2-4 used unseeded jitter, so reruns changed the PNG bytes; `set.seed(20260923)` added and
   two consecutive runs now produce identical files. The full pipeline (renv::restore, fits) was not
   re-run from a clone.
-- Not done: v1.0.0 tag (awaiting the project owner), Zenodo/OSF archive (optional), verification of
+- Not done: v1.0.0 tag (awaiting sign-off), Zenodo/OSF archive (optional), verification of
   `references.bib`.
 
 ## 2026-09-28 - References verified
@@ -955,5 +955,5 @@ The report uses the verified table above.
 - A title search for Pleskac & Busemeyer first returned the 2011 erratum (Psychol. Rev. 118, 56), not
   the article; the entry was verified by DOI (10.1037/a0019737) and is the original 2010 article.
 - Not confirmed from a source: the Buerkner (2017) page range 1-28 (Crossref returns no pages for JSS).
-- Only bibliographic metadata was checked. I did not re-read the papers to confirm that each supports the
+- Only bibliographic metadata was checked. The papers were not re-read to confirm that each supports the
   sentence citing it in the report.

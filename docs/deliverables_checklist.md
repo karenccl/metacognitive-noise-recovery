@@ -18,6 +18,6 @@ Status as of 2026-09-28. "Done" means produced and committed; it does not mean e
 | Prior record | `outputs/tables/prior_summary.csv` | Done |
 | Fresh-clone check (figures only) | n/a | Done 2026-09-28: all five figures rebuild from a clean clone; full-pipeline reproduction (renv::restore + fits) not done |
 | `make` targets run end to end | `Makefile` | Not run (`make` not installed); scripts run individually |
-| Release tag (v1.0.0) | n/a | Not done, awaiting the project owner |
+| Release tag (v1.0.0) | n/a | Not done, awaiting sign-off |
 | Archive (Zenodo/OSF) | n/a | Optional, not done |
 | Protocol document | n/a | Not in the repository |
