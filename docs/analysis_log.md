@@ -990,7 +990,7 @@ The report uses the verified table above.
 
 ## 2026-09-28 - v2 extension 1: PPC on all 480 G2 fits (result)
 
-Design locked in `4785b35` and `37bed3d` (`design_decisions.md`, "v2 extension 1"). Script
+Design locked in `3cc7e71` and `01d1b9c` (`design_decisions.md`, "v2 extension 1"). Script
 `code/04_ppc_and_comparison/g2_ppc_all.R`; outputs in `data/processed/v2/` and
 `outputs/figures/v2/fig_g2_ppc_all.png`. No refitting.
 
@@ -1027,10 +1027,18 @@ Design locked in `4785b35` and `37bed3d` (`design_decisions.md`, "v2 extension 1
 
 ## 2026-09-28 - v1.1.0 release preparation
 
-- Report revised (`4faac0e`): §3.5 methods, §4.4 results (Fig. 6), abstract, discussion,
+- Report revised (`e7f0511`): §3.5 methods, §4.4 results (Fig. 6), abstract, discussion,
   limitations (vi), next steps and reproducibility statement now carry the reversed PPC conclusion.
 - `fig_5_ppc.R`: title no longer says discrepancies are small "including the misspecified one";
   subtitle and caption point to the all-G2 result (Fig. 6). Figure regenerated.
 - README status, headline and limitation bullets, repository map; supplement S9 (PPC method) and
   S13 errata 5-6 updated. Makefile `analyse` target now also runs `g2_ppc_all.R`.
 - `CITATION.cff` version 1.1.0.
+
+## 2026-09-29 — Commit messages rewritten
+
+- Removed attribution trailers from the messages of the commits after `9f3fb50`. File contents are
+  unchanged, but every later commit hash changed (tags `v1.0.1` and `v1.1.0` moved with them).
+  Hash references in this log, `design_decisions.md` and `g2_ppc_all.R` were updated:
+  `4785b35` → `3cc7e71`, `37bed3d` → `01d1b9c`, `4faac0e` → `e7f0511`. Commit dates, and so the
+  order "design before analysis", are preserved.

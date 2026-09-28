@@ -632,7 +632,7 @@ results are seen. Any extra analysis is logged as exploratory in `docs/analysis_
 `data/processed/v2/g2_ppc_by_fit.csv`, `g2_ppc_paired.csv`, `g2_ppc_detection_by_cell.csv`;
 `outputs/figures/v2/fig_g2_ppc_all.png`.
 
-**Revision log (all before any v2 statistic was computed).** First version committed in `4785b35`.
+**Revision log (all before any v2 statistic was computed).** First version committed in `3cc7e71`.
 Revised after a design review, same day: decision categories ordered and made exclusive (Mixed as
 the remainder); pooled detection defined as the mean of per-cell rates, with a pooled threshold for
 statistic 3 as a secondary view only; threshold fixed as the 19th order statistic with strict

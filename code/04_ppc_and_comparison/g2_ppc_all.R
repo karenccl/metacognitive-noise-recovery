@@ -1,6 +1,6 @@
 # v2 extension 1: posterior predictive checks on all 480 G2 fits
-# (docs/design_decisions.md, "v2 extension 1"; design locked in 4785b35 and
-# 37bed3d before any statistic below was computed). NO refitting: uses the
+# (docs/design_decisions.md, "v2 extension 1"; design locked in 3cc7e71 and
+# 01d1b9c before any statistic below was computed). NO refitting: uses the
 # per-cell posterior-mean predictions saved in each result's epred_summary
 # and the observed counts in agg.
 #
