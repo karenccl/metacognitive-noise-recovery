@@ -1,6 +1,6 @@
 # Does a static meta-d′ model track dynamic confidence? A simulation study of `hmetad` under post-decisional noise and distributional misspecification
 
-*Draft for author review. All numbers are taken from `data/processed/*.csv` (1,440 fits). Reference details in `references.bib` were checked against Crossref on 2026-09-28 (see the file header for the one exception).*
+*Draft. All numbers are taken from `data/processed/*.csv` (1,440 fits). Reference details in `references.bib` were checked against Crossref on 2026-09-28 (see the file header for the one exception).*
 
 ## Abstract
 
@@ -12,7 +12,7 @@ Metacognitive efficiency is commonly estimated as the M-ratio, meta-d′/d′, f
 
 Simulation is required because real data contain no known noise parameter, so recovery cannot be assessed on them. We therefore ask what a particular estimator does under explicitly stated generating processes (Morris et al., 2019). The study cannot show that human confidence arises from the simulated mechanism, and it does not estimate any literal neural "metacognitive noise".
 
-## 2. Research questions and preregistered-style predictions
+## 2. Research questions and pre-specified predictions
 
 Design decisions were written to `docs/design_decisions.md` before production runs and any deviation is dated there and in `docs/analysis_log.md`.
 
@@ -40,7 +40,7 @@ All fits use a hierarchical `hmetad` model with participant-level random interce
 **Default priors.** Only the two priors above were set by us. `prior_summary()` of the stored fits (`outputs/tables/prior_summary.csv`; identical for G0 and both G2 fits) shows that the remaining parameters used brms defaults: the population d′ and criterion intercepts have flat (improper) priors, and all participant-level standard deviations (`log_M`, d′, criterion) have `student_t(3, 0, 2.5)` (half-t, lower-bounded at 0). The wide default on the `log_M` standard deviation is a candidate contributor to the small negative `log_M` bias (§4.7), which was not tested.
 
 ### 3.4 Diagnostics, refit and failure policy
-A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no divergences or maximum-treedepth hits, judged on population-level effects and random-effect SDs. A flagged fit is refitted once (adapt_delta 0.99, treedepth 14). If it is still flagged it is labelled `fail`. **Pre-registered rule:** the primary analysis includes `pass` and `fail` fits (failures flagged); the sensitivity analysis uses `pass` only; `error` rows would be excluded from estimation and counted as convergence failures.
+A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no divergences or maximum-treedepth hits, judged on population-level effects and random-effect SDs. A flagged fit is refitted once (adapt_delta 0.99, treedepth 14). If it is still flagged it is labelled `fail`. **Pre-specified rule:** the primary analysis includes `pass` and `fail` fits (failures flagged); the sensitivity analysis uses `pass` only; `error` rows would be excluded from estimation and counted as convergence failures.
 
 ### 3.5 Metrics
 G0: bias, RMSE, 95% credible-interval coverage (Wilson intervals; pooled across cells because per-cell coverage is imprecise at 20 replications). G1: per-cell means of posterior-mean `log_M` at each σ_c level, adjacent-level differences with Monte Carlo SEs, Spearman correlation, ordering accuracy (paired by replication index; σ_c levels do not share simulation seeds), and Mann–Whitney-style separation probabilities. G2: paired ELPD difference (correct − misspecified) from LOO, whose observation unit is one *participant's* aggregated count vector, and `log_M` bias/RMSE for each family. Robustness: prior width, K = 6 re-binning of the G1 data (G0 cannot be re-binned; see Limitations), and posterior predictive checks.
@@ -66,7 +66,7 @@ Across 1,440 fits: 1,437 pass, 3 fail (G0 N = 40/T = 400/d′ = 0.75; two G2-cor
 Refitting one G0 and one G1 dataset under `normal(0, 0.5)`, `normal(0, 1)` and `normal(0, 2)` shifted the posterior mean monotonically toward zero as the prior tightened (G0: −0.939, −0.958, −0.966; G1: −0.722, −0.733, −0.736), a modest range relative to posterior SDs of about 0.07–0.09. This argues against shrinkage from the `log_M` prior toward zero as the *cause* of the negative bias in 4.1 and 4.3 (the priors on the participant-level SDs were not varied), because shrinkage toward zero would push a true −1 toward less negative values; but one replicate per generator cannot resolve a bias of this size, and the source of the small negative bias is not established here.
 
 ### 4.7 Post-hoc diagnostics of bias and coverage (exploratory)
-These analyses were added after the main results (2026-09-28) and use only the saved posterior draws (`code/03_recovery_analysis/bias_diagnostics.R`); they are not part of the pre-registered-style plan.
+These analyses were added after the main results (2026-09-28) and use only the saved posterior draws (`code/03_recovery_analysis/bias_diagnostics.R`); they are not part of the pre-specified plan.
 
 *Bias.* Pooled over fits, the `log_M` bias of the posterior mean was −0.075 (G0) and −0.044 (G2-correct), and −0.056 and −0.035 for the posterior median; it was negative in about two thirds of fits (66%) and shrank with more data (G0: −0.10 at N = 20, T = 200 vs −0.05 at N = 40, T = 400). The signed error was negatively correlated with each fit's posterior between-participant SD of `log_M` (Pearson −0.48 in G0 and −0.33 in G2-correct; median within-cell correlation −0.54 and −0.33), although the true SD is 0. So fits that infer more spurious between-participant spread also sit lower. This is compatible with a prior/hierarchy effect but does not establish it, and we did not test alternative priors on the SD.
 
@@ -90,7 +90,7 @@ These analyses were added after the main results (2026-09-28) and use only the s
 
 ## 6. Reproducibility statement
 
-Code, configuration, seeds, compact per-fit results (`data/processed/`), figures and a dated decision/analysis log are in this repository. Full posterior objects are not stored except for replications 1–2 per cell (`data/interim/`, git-ignored). Run order: `make all` (setup, grid, G1, G0, G2, compile, analyse, figures), plus `make robustness` for the two refit-based checks (prior sweep and K = 6; roughly 20 and 75 minutes). The full grid took about 26 hours on one 22-core machine (see README). Deviations from the original protocol are listed in `docs/design_decisions.md`: `qs2` replaced the archived `qs`; explicit aggregation before fitting; replications reduced from 30 to 20 after measured throughput (~55 fits/hour); compact result records instead of full fit objects; chain-parallel sampling. Errors found and corrected during the project, all recorded in `docs/analysis_log.md`: K-generic simulation; a hardcoded interpretation string; a misattributed bias range; the fitting backend (rstan, not CmdStan); and the claim that the G0 K = 6 check was a re-binning.
+Code, configuration, seeds, compact per-fit results (`data/processed/`), figures and a dated decision/analysis log are in this repository. Full posterior objects are not stored except for replications 1–2 per cell (`data/interim/`, git-ignored). Run order: `make all` (setup, grid, G1, G0, G2, compile, analyse, figures), plus `make robustness` for the two refit-based checks (prior sweep and K = 6; roughly 20 and 75 minutes). The full grid took about 26 hours on one 22-core machine (see README). Deviations from the locked design are listed in `docs/design_decisions.md`: `qs2` replaced the archived `qs`; explicit aggregation before fitting; replications reduced from 30 to 20 after measured throughput (~55 fits/hour); compact result records instead of full fit objects; chain-parallel sampling. Errors found and corrected during the project, all recorded in `docs/analysis_log.md`: K-generic simulation; a hardcoded interpretation string; a misattributed bias range; the fitting backend (rstan, not CmdStan); and the claim that the G0 K = 6 check was a re-binning.
 
 ## 7. References
 

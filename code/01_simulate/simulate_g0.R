@@ -1,7 +1,6 @@
 # G0: model-consistent benchmark. Generate data under the equal-variance
 # Gaussian meta-d' model via hmetad::sim_metad_participant(), with an
-# explicit known log_M, for pipeline/internal validation (protocol
-# section 3.1, docs/design_decisions.md).
+# explicit known log_M, for pipeline/internal validation (docs/design_decisions.md).
 #
 # No between-subject parameter variability is introduced (sd_dprime =
 # sd_M = sd_c = 0): every simulated subject shares the same generating

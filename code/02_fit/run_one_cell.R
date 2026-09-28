@@ -1,7 +1,7 @@
 # Command-line entry point: takes a single grid_id (a fully-specified
 # row of config/grid.csv -- generator, cell params, rep_id, fit_variant,
 # and pre-derived sim_seed/fit_seed; see code/00_setup/02_create_grid.R).
-# Simplification vs. protocol section 4.2's literal "grid_id and rep_id"
+# Simplification vs. the design's literal "grid_id and rep_id"
 # wording: rep_id is already a grid.csv column, so grid_id alone fully
 # determines the row -- no scientific effect, just one fewer CLI arg.
 #
@@ -45,7 +45,7 @@ if (nrow(row) != 1) stop("grid_id ", grid_id, " not found (or not unique) in con
 row <- as.list(row)
 
 # Known-truth ground for G0/G2's known-parameter recovery check
-# (protocol section 3.1; not part of the grid since it never varies).
+# (docs/design_decisions.md; not part of the grid since it never varies).
 log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 
 out_dir <- here::here("data", "interim")
@@ -162,7 +162,7 @@ summarise_epred <- function(fit, agg) {
 }
 
 # G2-only extras (both fit variants -- G2's whole point is comparing
-# correct-vs-misspecified LOO/PPC, protocol section 3.3/6.3). Computed
+# correct-vs-misspecified LOO/PPC, the design). Computed
 # even for the escalated/failed case if a fit object exists, since a
 # high-Pareto-k or poor-PPC fit is itself informative, not just passes.
 add_g2_extras <- function(attempt, agg) {

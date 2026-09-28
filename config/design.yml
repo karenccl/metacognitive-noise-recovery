@@ -1,4 +1,4 @@
-# Locked design constants (protocol section 1.3). All grid, seed, and
+# Locked design constants (docs/design_decisions.md). All grid, seed, and
 # sampler settings referenced by code/ must live here -- no script
 # should hardcode these values independently. See docs/design_decisions.md
 # for rationale.

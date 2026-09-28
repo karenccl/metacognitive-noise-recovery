@@ -1,5 +1,5 @@
-# Fig 4: G2 correct-vs-misspecified comparison (protocol sections 3.3,
-# 6.3, 6.4). Generator: G2 (Gumbel-min signal distribution, known
+# Fig 4: G2 correct-vs-misspecified comparison (docs/design_decisions.md).
+# Generator: G2 (Gumbel-min signal distribution, known
 # log_M = -1). Fitted: hierarchical hmetad under the correct Gumbel-min
 # family vs. the misspecified default Gaussian family, both fit to the
 # SAME simulated dataset per replicate. Panel A: paired LOO/ELPD

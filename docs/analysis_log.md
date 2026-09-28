@@ -4,7 +4,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 
 ## 2026-09-22
 
-- Scaffolded repository structure per protocol section 2.1 (`code/`, `config/`, `data/`,
+- Scaffolded repository structure per the design (`code/`, `config/`, `data/`,
   `outputs/`, `docs/`, `tests/`, `manuscript/`, plus `README.md`, `LICENSE`, `CITATION.cff`,
   `.gitignore`, `Makefile`). No simulation or fitting code implemented yet.
 - Committed (`869d5e8`) and pushed scaffold to `origin/main`
@@ -13,13 +13,12 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 ## 2026-09-23 — Day 0: verify backend
 
 - Confirmed R 4.5.0 installed at `C:\Program Files\R\R-4.5.0`.
-- `cmdstanr::cmdstan_version()` returned `2.36.0`, matching the version recorded in the
-  protocol. CmdStan path: `C:/Users/chanc/.cmdstan/cmdstan-2.36.0`.
+- `cmdstanr::cmdstan_version()` returned `2.36.0`, matching the pinned version. CmdStan path: `~/.cmdstan/cmdstan-2.36.0`.
 - Ran a CmdStan compile+sample smoke test using the bundled
   `examples/bernoulli/bernoulli.stan` model (2 chains, 200 warmup / 200 sampling draws each,
   seed 12345). Compiled and sampled without error in ~1.2s; `rhat` ≈ 1.03 for `theta` and
   `lp__`, no divergences. Backend verified working end-to-end.
-- Checked availability of all packages listed in protocol section 4.1: `cmdstanr`, `brms`,
+- Checked availability of all packages in the initial package list: `cmdstanr`, `brms`,
   `hmetad`, `posterior`, `bayesplot`, `loo`, `tidyverse`, `tidybayes`, `yaml`, `here`,
   `testthat`, `renv` all present. **`qs` is not installed** — flagged as a gap to close before
   Day 2 batch infrastructure (per-cell results are specified to save as `.qs`).
@@ -32,7 +31,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - `install.packages("qs")` failed: `qs` is archived on CRAN, not available for R 4.5.0.
 - Installed `qs2` 0.3.1 (same author, current maintained successor) plus its dependencies
   `RcppParallel` 6.2.1 and `stringfish` 0.19.2 — all from CRAN binaries, no compile issues.
-- **Deviation from protocol section 4.1:** use `qs2::qs_save()` / `qs2::qs_read()` in place of
+- **Deviation from the initial package list:** use `qs2::qs_save()` / `qs2::qs_read()` in place of
   `qs::qsave()` / `qs::qread()`; interim per-cell result files use the `.qs2` extension instead
   of `.qs`. Updated `code/00_setup/00_packages.R`, `code/02_fit/run_one_cell.R`, and
   `.gitignore` accordingly. No effect on the scientific design.
@@ -52,7 +51,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   `cmdstanr` from bbsbayes, `hmetad` from metacoglab, `rstan`/`StanHeaders` from stan-dev).
 - Committed `.Rprofile`, `renv.lock`, and `renv/{.gitignore,activate.R,settings.json}`.
   `renv/library/` stays gitignored (both renv's own `renv/.gitignore` and the project
-  `.gitignore` exclude it), consistent with protocol section 2.3.
+  `.gitignore` exclude it), consistent with the design.
 - **Note for future snapshots:** once real dependencies (`library()`/`::`-calls) land in the
   R scripts, prefer the default `renv::snapshot()` (dependency-scan based) so the lockfile
   reflects only what's actually used; re-run with `type = "all"` deliberately if a full-library
@@ -83,13 +82,13 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   decision-consistent latent quantity `q`, additive Gaussian readout noise `y = q + ε`,
   `ε ~ N(0, σ_c²)`) into `docs/design_decisions.md`, satisfying the Day-1 gate requirement to
   specify G1 in writing before implementation. Explicitly avoids the "`a·RT` as terminal
-  evidence" mistake named in protocol section 3.2.
+  evidence" mistake named in the design.
 - Wrote the DDM-to-empirical-d′ calibration plan (bisection on drift `v` at fixed `a`/`t0`,
   targeting `d′ ∈ {0.75, 1.5}` within ±0.02, output to
   `outputs/tables/ddm_calibration.csv`) and the σ_c low/medium/high pilot plan. Flagged
   explicitly that raw confidence-category occupancy is **not** a valid degeneracy diagnostic
   here, since the locked rank-based within-subject `K=4` discretisation guarantees ~25% per
-  category by construction regardless of σ_c (protocol section 1.4) — the pilot instead checks
+  category by construction regardless of σ_c (docs/design_decisions.md) — the pilot instead checks
   Spearman `ρ(q,y)` and the confidence–accuracy association.
 - Added `ddm:` block to `config/design.yml` with starting values (`a=1.5`, `t0=0.3s`,
   `tau=0.3s`, `s=1`, `dt=0.001s`) pending the calibration pilot; `v` and the three `σ_c` values
@@ -121,7 +120,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   correlated — checked via `order()` + `is.unsorted()`). At `sigma_c = 50`, Spearman
   `cor(q, y) ≈ 0.03` (chosen to demonstrate near-zero correlation is reachable; the actual
   low/medium/high grid values are still pending the pilot). Same-seed calls are `identical()`.
-- Wrote the protocol's required unit tests into `tests/test_discretise_confidence.R` (12 tests:
+- Wrote the design's required unit tests into `tests/test_discretise_confidence.R` (12 tests:
   category counts, row/column preservation, `K=6` support for the later binning-sensitivity
   analysis, tie/degeneracy flagging, input validation) and `tests/test_simulate_g1_ddm.R` (17
   tests: row/column contract, `sigma_c=0` monotonicity, large-`sigma_c` decorrelation +
@@ -223,7 +222,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   errors, and an `empty=TRUE` build check for `.build_metad_formula()`/`.build_metad_priors()`.
   Deliberately did *not* add a full MCMC-fitting test to the automated suite (a single fit takes
   1-2+ minutes even at reduced settings) — the G0 baseline fit itself is this step's real
-  correctness check, run manually and logged here, per the protocol's own Day 2 morning wording
+  correctness check, run manually and logged here, per the design's own Day 2 morning wording
   ("do not overinterpret one fit").
 - Updated `config/design.yml`: `fitting.aggregate` corrected to `false` (was stale from the
   original `aggregate=TRUE` plan); added `fitting.hierarchical_dprime_c` (`true`) and
@@ -239,7 +238,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   treedepth used 6 (well under the 12 limit), no warnings. Recovery: `log_M` Intercept −0.864
   (95% CI [−1.241, −0.561], known truth −1 inside the interval), `dprime` 1.506 (true 1.5), `c`
   −0.018 (true 0), all six threshold-gap intercepts near their generating −1. Consistent with a
-  single illustrative run per the protocol's own caution not to overinterpret one fit. Saved
+  single illustrative run per the design's own caution not to overinterpret one fit. Saved
   the full fit object to `outputs/reports/g0_baseline_fit_result.rds` (gitignored, local only).
 - **Day 2 morning deliverable complete:** `fit_one_hmetad()`/`extract_fit_summary()` implemented
   and the G0 baseline confirms the whole pipeline (simulate → aggregate → hierarchical fit →
@@ -256,12 +255,12 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - Full-grid projection: 72 unique fit-cells/rep × ~2.07 hours/pass ≈ 62 hours (2.6 days) at 30
   reps/cell run strictly sequentially (one fit at a time).
 - **Consulted the project lead** on replication count vs. compute time, given this is a genuine
-  resource/timeline tradeoff with real Monte Carlo precision consequences (protocol explicitly
+  resource/timeline tradeoff with real Monte Carlo precision consequences (the design explicitly
   allows dropping to 20 or 15 reps). Chose: keep 30 reps/cell, add concurrent batch dispatch
   instead of reducing precision.
 - Implemented `code/00_setup/02_create_grid.R`: builds `config/grid.csv` with `grid_id`,
   `cell_id` (shared between a G2 cell's two fit-variant rows so they use the *same* simulated
-  dataset, per protocol section 3.3's "two fits per generated dataset"), deterministic
+  dataset, per the design's "two fits per generated dataset"), deterministic
   `sim_seed`/`fit_seed` derived from `seed_base` + stable row indices. Generated the real
   grid: 2160 rows over 1800 unique cells (360 G0 + 1080 G1 + 360 G2 cells → 720 G2 fit rows).
 - Implemented `code/02_fit/run_one_cell.R`: resumable (skips existing output), simulates +
@@ -275,7 +274,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   (not-yet-saved) rows, and runs up to `execution.max_concurrent_fits` (`5`) `run_one_cell.R`
   subprocesses at once via `processx`, polling every 2s and launching a replacement as each
   slot frees up.
-- **Smoke-tested the full batch pipeline twice** (protocol's Day-2 gate): once sequentially
+- **Smoke-tested the full batch pipeline twice** (the design's Day-2 gate): once sequentially
   (4 tiny N=3 rows: g0 fail, g1 fail [both expected — hierarchical SDs are barely identifiable
   at N=3, a small-sample artefact of the deliberately tiny smoke size, not a bug], g2
   misspecified pass, g2 correct/gumbel **error** with the exact predicted message —
@@ -325,7 +324,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   the plan is to pool coverage across G0 cells (MCSE ~1.3%) and report it with MCSE rather than
   per-cell. Regenerated `config/grid.csv`: now 1440 rows (240 G0 + 720 G1 + 480 G2 fit rows over
   1200 unique cells).
-- **Pre-registered the failed-fit handling rule** in `docs/design_decisions.md`, before any
+- **Pre-specified the failed-fit handling rule** in `docs/design_decisions.md`, before any
   production-scale results exist: primary analysis includes `pass` + `fail` (flagged, never
   silently pooled); sensitivity analysis uses `pass`-only; `error` rows are excluded from
   parameter-estimate analyses and instead reported as convergence failures in RQ3 (failure-rate
@@ -390,14 +389,14 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   - Elapsed time per fit: median 265.8s, mean 268.1s, max 1514.3s (one outlier, not
     investigated further here — a candidate for the Day-3/4 diagnostics summary to flag by
     condition).
-- Per the pre-registered failed-fit rule (above): the 3 `fail` rows stay in the primary analysis,
+- Per the pre-specified failed-fit rule (above): the 3 `fail` rows stay in the primary analysis,
   flagged; a pass-only sensitivity analysis will check whether they change any conclusion. Zero
   `error` rows means there is nothing to fold into the RQ3 convergence-failure tabulation beyond
   these 3 flagged fits (a very low failure rate at N≥20, consistent with the G0 baseline's clean
   behavior on Day 2).
 - Confirmed 0 lingering R processes after completion (clean shutdown, no orphaned workers).
 - **Not yet done:** compiling/aggregating the 1440 individual `data/interim/*.qs2` result files
-  into the compact processed products in `data/processed/` (protocol's Day 3 morning task,
+  into the compact processed products in `data/processed/` (the design's Day 3 morning task,
   `code/03_recovery_analysis/compile_results.R`, not yet implemented) — that is the next step
   before any recovery metrics, figures, or the report can be produced.
 
@@ -408,7 +407,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   posterior point summary — mean/median/sd/95% CI — from the compact `draws_b_sd$b_Intercept`
   saved by `run_one_cell.R`), cross-checks the result set against `config/grid.csv` for
   completeness (missing/duplicate/unexpected `grid_id`s — from structured status fields, not
-  file presence alone, per protocol section 5), and computes G0 bias/RMSE/coverage/interval-width
+  file presence alone, per the design), and computes G0 bias/RMSE/coverage/interval-width
   per condition plus a pooled-across-cells coverage estimate (the plan locked when replications
   were revised to 20 — see the 2026-09-23 reps-30→20 entry above).
 - **Completeness: perfect.** All 1440 intended grid rows present exactly once; 0 missing, 0
@@ -469,7 +468,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
     1.0.
   - Primary (pass+fail) and pass-only sensitivity results are **identical**, since G1 had a
     100% pass rate (0 fails, 0 errors) across all 720 fits — the flagged-vs-pass-only question
-    the pre-registered rule anticipated turned out not to matter for G1.
+    the pre-specified rule anticipated turned out not to matter for G1.
 - Confidence-category marginals confirmed ~25%/category as expected by construction (not a
   degeneracy diagnostic, per the Day-1 design decision); per-replicate tie/cut-point diagnostics
   were not persisted in the compact output format and were not re-audited here (documented
@@ -479,12 +478,12 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - **Bottom line for the report's Results section:** under the specified DDM-type generator,
   estimated static `log_M` declined monotonically as confidence-readout noise increased, with
   near-perfect ordinal recovery — consistent with (but not yet cross-checked against) adequate
-  generative fit; that check is the Day 5 PPC task, still pending. Per protocol section 6.2's
+  generative fit; that check is the Day 5 PPC task, still pending. Per the design's
   interpretation template, the ordinal-recovery claim alone does **not** yet establish that the
   fitted static meta-d′ model is a generatively adequate account of the full response-confidence
   distribution. G1's `run_one_cell.R` records don't carry PPC precursors (only G2 rows compute
   `loo`/`epred_summary`, per the 2026-09-23 output-format decision) — G1's own posterior
-  predictive check (protocol's "G1 low-noise pass" / "G1 high-noise pass/failure" representative
+  predictive check (the design's "G1 low-noise pass" / "G1 high-noise pass/failure" representative
   fits) is a Day 5 task requiring a fresh `epred_draws_metad()` call on a handful of saved fits,
   not yet done.
 
@@ -495,7 +494,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   and `dim(loo_object$pointwise) = [20, 5]` for an N=20 fit confirms (again) that one LOO
   observation is one participant's aggregated count vector (5 = the standard `pointwise` columns
   `elpd_loo`/`mcse_elpd_loo`/`p_loo`/`looic`/`influence_pareto_k`, 20 = participants) — stated
-  explicitly in the script's own header per protocol's requirement to document the LOO unit
+  explicitly in the script's own header per the design's requirement to document the LOO unit
   before interpreting it.
 - Paired all 240 G2 cells' `correct`/`misspecified` fits by `(cell_id, rep_id)` — valid because
   both variants of a cell were fit to the **identical** simulated dataset (shared `sim_seed`,
@@ -525,7 +524,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
 - Wrote `data/processed/g2_pareto_k_by_fit.csv`, `g2_pareto_k_summary.csv`,
   `g2_elpd_comparison.csv` (240 pairs), `g2_elpd_summary.csv` (by condition),
   `g2_log_M_recovery.csv` (24 rows: 12 conditions × 2 variants).
-- **Bottom line for the report:** G2 supports the protocol's misspecification-sensitivity
+- **Bottom line for the report:** G2 supports the design's misspecification-sensitivity
   question clearly — LOO correctly and increasingly favors the true generative distribution as
   data accumulate, and point-estimate bias under misspecification is systematic, sizeable, and
   in a specific (efficiency-inflating) direction, not just noisier. Scale caveat applies as
@@ -562,7 +561,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   negative). The three priors span only a modest range (G0: −0.939 to −0.966, a 0.027 spread;
   G1: −0.722 to −0.736, a 0.014 spread) relative to the posterior SD (~0.09/0.07) — at N=40/T=200
   the likelihood is reasonably, but not overwhelmingly, informative relative to any of these
-  three prior widths. Per protocol's instruction to treat this as an identifiability finding,
+  three prior widths. Per the design's instruction to treat this as an identifiability finding,
   not a defect: this is a normal, expected degree of prior sensitivity, not a warning sign.
 
 - **This corrects/narrows the 2026-09-24 "negative bias, opposite direction from shrinkage" flag
@@ -578,7 +577,7 @@ Time-stamped log of launched batches, failures, reruns, and deviations from the 
   itself leans slightly negative of truth at this design, and the production prior's mild
   shrinkage toward 0 is *attenuating* that tendency somewhat, not creating it.
   **Not fully explained by this sweep** (a single representative replicate can't resolve a
-  small-magnitude, 12-condition-consistent aggregate effect — protocol's own caution against
+  small-magnitude, 12-condition-consistent aggregate effect — the design's own caution against
   overinterpreting one illustrative run applies here too): the residual small negative bias's
   ultimate source (candidates include posterior-mean-of-a-nonlinear-log-link-transform effects,
   or hierarchical partial-pooling behavior on the `sd_participant` components) is left as a
@@ -631,7 +630,7 @@ direction.
   underlying continuous evidence identical (same `sim_seed`) so only the discretisation
   granularity changes, and compares against the existing K=4 production results for the same
   `grid_id`s.
-- **Found and fixed a real bug while implementing this** (protocol section 1.4's own reason for
+- **Found and fixed a real bug while implementing this** (the design's own reason for
   needing this check): `simulate_g0()`/`simulate_g2_gumbel()` never overrode
   `sim_metad_participant()`'s `r_z_c2_0`/`r_z_c2_1` correlation-matrix arguments, so they only
   worked at `K=4` by coincidence (hmetad's own hardcoded `diag(3)` default happened to match
@@ -655,7 +654,7 @@ direction.
     computed result (which showed sizeable individual-level shifts). Rewrote the interpretation
     text to be generated from the actual numbers (max/mean |diff|, CI-overlap count) rather than
     an assumption written before seeing the data — exactly the "no sensitivity analysis silently
-    becomes the headline result" failure mode protocol section 5 warns against, caught here
+    becomes the headline result" failure mode the design warns against, caught here
     before it reached the report. Regenerated `robustness_table.csv` from the already-saved
     comparison data (no need to redo the 20 fits).
 - Wrote `data/processed/sensitivity_binning_comparison.csv` (20 rows) and
@@ -668,7 +667,7 @@ direction.
 
 ## 2026-09-25 — Day 5 morning: posterior predictive checks
 
-- Implemented `code/04_ppc_and_comparison/ppc_joint_counts.R` for the 5 protocol-prespecified
+- Implemented `code/04_ppc_and_comparison/ppc_joint_counts.R` for the 5 pre-specified
   representative categories: G0 typical pass, G1 low-noise pass, G1 high-noise pass, G2 correct
   (Gumbel-min), G2 misspecified (Gaussian). **G1 "high-noise failure" does not exist to show** —
   all 720 G1 production fits passed (documented, not substituted with a cherry-picked worse
@@ -701,7 +700,7 @@ direction.
   misspecification** (all 5 fits "look fine" by max/mean discrepancy alone), but LOO reliably
   distinguishes the models, and PPC's per-cell *pattern* (not just its magnitude) still carries
   the signal if inspected specifically at the confidence extremes. Directly actionable for
-  protocol section 6.2's interpretation template: ordinal/point-estimate agreement (or, here,
+  the design's interpretation template: ordinal/point-estimate agreement (or, here,
   superficially small PPC discrepancy) does not by itself establish generative adequacy —
   corroborating diagnostics (LOO; cell-level PPC pattern, not just aggregate magnitude) matter.
 - Wrote `data/processed/ppc_joint_counts.csv` (80 rows: 5 fits × 16 cells),
@@ -801,13 +800,13 @@ The report uses the verified table above.
 - **Not done / needs the author:** release tag and public release (not created — publishing is
   the author's call), `manuscript/supplementary_methods.md` (still a stub), a pasted
   `sessioninfo` in `docs/computational_environment.md`, CV bullet/plain-language summary, and the
-  optional JAGS and open-data checks (reported as limitations, per the protocol's stop rule).
+  optional JAGS and open-data checks (reported as limitations, per the design's stop rule).
 
 ## 2026-09-25 — Day 6: supplementary methods, environment record, and two corrections
 
 - Wrote `manuscript/supplementary_methods.md` (S1–S13: sampler, G1 equations, calibration,
   generators, discretisation, model, diagnostics, seeds/grid, metric definitions, robustness
-  checks, storage, protocol deviations, errata) and replaced `docs/computational_environment.md`
+  checks, storage, design deviations, errata) and replaced `docs/computational_environment.md`
   with real session info, hardware (Core Ultra 7 155H, 16 cores/22 threads, 31.4 GB) and the
   package/backend table. Details were taken from code, config and CSVs, not memory.
 - **Correction 1 — the sampler was `rstan`, not CmdStan.** The session-info capture showed
@@ -921,7 +920,7 @@ The report uses the verified table above.
 - **19.** Generating truths moved into `config/design.yml` (`truth:` block: log_M, c, mean_z_c2);
   the eight scripts that hard-coded -1 now read it. Values are unchanged, so no results changed.
   (The generator function defaults still carry `mean_z_c2 = -1`; run_one_cell passes log_M from config.)
-- **21-22.** `design_decisions.md` now says the protocol document is not in the repo, and marks the
+- **21-22.** `design_decisions.md` now marks the
   original "all fits use `aggregate = TRUE`" decision as superseded by the explicit-aggregation wrapper.
 - **23.** Fig 1 now says confidence-threshold gaps are pooled, matching `hierarchical_thresholds: false`.
 - **26-28.** Fig 2 subtitle grammar; Fig 3 legend (done earlier); Fig 5 title no longer claims all fits
@@ -957,3 +956,23 @@ The report uses the verified table above.
 - Not confirmed from a source: the Buerkner (2017) page range 1-28 (Crossref returns no pages for JSS).
 - Only bibliographic metadata was checked. The papers were not re-read to confirm that each supports the
   sentence citing it in the report.
+
+## 2026-09-28 — Release checks
+
+- **Environment.** `renv::status()` was flagging a dependency-scan error on `data/interim/` (1,441 files)
+  and unused recorded packages. Added `.renvignore` (data/, outputs/, manuscript/, docs/) and re-snapshotted:
+  the lockfile drops 62 unused packages (167 to 105; every required package remains) and now records the
+  metacoglab and stan-dev r-universe repositories, which `hmetad` and `rstan` need for `renv::restore()`.
+  Status: consistent.
+- **Downstream rerun.** New `code/run_downstream.R` (portable stand-in for `make`) reran compile, G1 metrics,
+  LOO, diagnostics, PPC, bias diagnostics, prior summary and all figures from `data/interim/`, then the
+  tests (54 pass). Every table was byte-identical to the committed version except the two PPC tables, which
+  differ only at the 1e-16 level for G2-correct (from the `expm1` form of the Gumbel CDF adopted earlier).
+  Those two files were refreshed. Fig 4's PNG varies byte-for-byte between runs even with fixed seeds
+  (device-level; its input tables are identical), so PNG byte-identity is not guaranteed for that figure.
+- **Editorial edits.** A batch rewording (protocol references, "pre-registered" to "pre-specified", CmdStan
+  path) was reviewed and applied. Two defects in it were fixed: a truncated last line in `fig_5_ppc.R`
+  (a parse error) and the removal of `LICENSE`/`license: MIT`; MIT was kept.
+- **Not done.** A from-scratch refit of one grid cell to confirm bit-for-bit determinism was started and
+  interrupted; the original result file was restored unchanged. Full-pipeline reproduction from a clone
+  (`renv::restore()` plus the grid) has not been run.

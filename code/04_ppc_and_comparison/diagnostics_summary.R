@@ -1,5 +1,5 @@
-# Aggregate diagnostic/failure summary across G0/G1/G2 (protocol sections
-# 4.4, 6.4): status counts, escalation (refit) rate, R-hat, ESS,
+# Aggregate diagnostic/failure summary across G0/G1/G2
+# (docs/design_decisions.md): status counts, escalation (refit) rate, R-hat, ESS,
 # divergences, treedepth hits, by generator/variant and by design cell.
 #
 # CAVEAT (stated in the outputs too): every diagnostic column and
@@ -12,7 +12,7 @@
 # A "fail" here means the escalated retry still tripped a diagnostic flag
 # (R-hat >= 1.01, ESS < 400, divergences or max-treedepth hits); a
 # "fail" fit still has a posterior and stays in the primary analysis,
-# flagged, per the pre-registered rule in docs/design_decisions.md.
+# flagged, per the pre-specified rule in docs/design_decisions.md.
 #
 # Run from the project root: Rscript code/04_ppc_and_comparison/diagnostics_summary.R
 

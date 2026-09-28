@@ -1,4 +1,4 @@
-# G1 primary metrics (protocol sections 3.2, 6.2). G0's bias/RMSE/
+# G1 primary metrics (docs/design_decisions.md). G0's bias/RMSE/
 # coverage are computed in compile_results.R -- this script is scoped
 # to G1's ordinal-recovery estimands, the primary deliverable for RQ1:
 #   - posterior mean log_M by replicate (primary point estimate, the same
@@ -20,7 +20,7 @@
 #     diagnostics caveat below)
 #
 # Computed on BOTH the primary analysis set (status pass+fail, flagged)
-# and a pass-only sensitivity set, per the pre-registered failed-fit
+# and a pass-only sensitivity set, per the pre-specified failed-fit
 # rule (docs/design_decisions.md).
 #
 # Run from the project root: Rscript code/03_recovery_analysis/compute_primary_metrics.R
@@ -39,7 +39,7 @@ g1_all$sigma_c_value <- unlist(sigma_c_map[g1_all$sigma_c_level])
 # --- Convergence failure / refit rates (on the FULL attempted set --------
 # these are computational-difficulty outcomes, not filtered by the
 # failed-fit analysis rule, which only governs *parameter-estimate*
-# inclusion; protocol section 4.4/6.2).
+# inclusion; the design).
 
 failure_rates <- g1_all |>
   dplyr::group_by(n_participants, n_trials, dprime_target, sigma_c_level) |>
@@ -130,7 +130,7 @@ readr::write_csv(dprime_check, here::here("data", "processed", "g1_empirical_dpr
 cat("\n=== G1 empirical d' vs. calibration target (pooled across N/T/sigma_c) ===\n")
 print(dprime_check)
 cat("\nNote: category-count marginals (prop_conf_1..4) are reported for descriptive\n")
-cat("completeness; per protocol section 1.4, these are ~equal by construction under the\n")
+cat("completeness; per the design, these are ~equal by construction under the\n")
 cat("locked rank-based discretisation and are NOT a degeneracy diagnostic. Per-replicate\n")
 cat("tie/cut-point diagnostics (discretise_confidence()'s own output) were not persisted\n")
 cat("in the compact run_one_cell.R output format (a Day-2 storage tradeoff) and were\n")

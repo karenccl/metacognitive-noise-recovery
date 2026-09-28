@@ -1,9 +1,9 @@
-# Fig 3: G1 ordinal recovery -- posterior log_M vs. sigma_c (protocol
-# sections 3.2, 6.2, 6.4). Generator: G1 (DDM with post-decisional
+# Fig 3: G1 ordinal recovery -- posterior log_M vs. sigma_c
+# (docs/design_decisions.md). Generator: G1 (DDM with post-decisional
 # readout noise sigma_c). Fitted model: hierarchical static Gaussian
 # hmetad, K=4. Primary estimand: ordering of population
 # log_M over sigma_c (NOT numerical recovery of sigma_c -- different
-# scales, protocol section 1.2). Every replication is shown as a raw
+# scales, the design). Every replication is shown as a raw
 # point (20 per sigma_c level per panel); failed fits would be shown as
 # x (there are none in G1: 720/720 pass). Lines join per-level means.
 #

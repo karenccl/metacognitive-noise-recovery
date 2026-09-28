@@ -1,6 +1,6 @@
 # Preliminary simulator validation: DDM drift-to-d' calibration,
 # sigma_c low/medium/high pilot, and degeneracy diagnostics, run before
-# committing to the primary grid (protocol section 1.3, Day 1 gate; see
+# committing to the primary grid (docs/design_decisions.md; Day 1 gate; see
 # docs/design_decisions.md for the calibration plan this implements).
 #
 # Outputs:
@@ -169,7 +169,7 @@ print(sigma_c_pilot)
 # association is closest to three target levels spanning the observed
 # range (near-ceiling, mid, near-floor), rather than evenly-spaced sigma_c
 # values -- the point is a distinguishable, nondegenerate spread of
-# informativeness, not arbitrary noise magnitudes (protocol section 3.2).
+# informativeness, not arbitrary noise magnitudes (docs/design_decisions.md).
 assoc_range <- range(sigma_c_pilot$cor_confidence_correct)
 targets <- assoc_range[2] - diff(assoc_range) * c(0.15, 0.5, 0.85)
 pick_idx <- sapply(targets, function(t) which.min(abs(sigma_c_pilot$cor_confidence_correct - t)))

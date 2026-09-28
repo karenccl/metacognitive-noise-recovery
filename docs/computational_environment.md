@@ -76,8 +76,9 @@ loaded via a namespace (and not attached):
  pkgconfig_2.0.3
 ```
 
-CmdStan 2.36.0 at `C:/Users/chanc/.cmdstan/cmdstan-2.36.0`; a newer CmdStan exists upstream and
-was deliberately not installed. `getOption("brms.backend")` is `NULL` in a fresh session.
+CmdStan 2.36.0 was installed at `~/.cmdstan/cmdstan-2.36.0` during setup (a newer CmdStan exists
+upstream and was deliberately not installed), but it was not used for any reported fit: all fits ran
+on the default `rstan` backend, so CmdStan is not needed to reproduce the results. `getOption("brms.backend")` is `NULL` in a fresh session.
 `renv::status()` reports many packages as "recorded but not used" because the lockfile was
 written with `type = "all"` before real code existed (see `docs/analysis_log.md`); this is
 over-inclusion, not missing packages.
@@ -88,7 +89,7 @@ over-inclusion, not missing packages.
 |---|---|---|
 | 2026-09-23 | `cmdstanr::cmdstan_version()` | 2.36.0 |
 | 2026-09-23 | Bundled bernoulli model through `cmdstanr` directly (2 chains × 200+200) | Passed in ~1.2 s. Verifies CmdStan itself; does not verify the `brms` backend |
-| 2026-09-23 | Package availability for the protocol's install list | All present except `qs` |
+| 2026-09-23 | Package availability for the initial install list | All present except `qs` |
 | 2026-09-23 | `qs` install | Failed (archived on CRAN); installed `qs2` 0.3.1 instead (deviation) |
 | 2026-09-23 | `renv::init(bare = TRUE)` + `hydrate` + `snapshot(type = "all")` | 156 packages locked in `renv.lock` |
 | 2026-09-25 | `fit$backend` in saved production fits | `rstan` (see above) |

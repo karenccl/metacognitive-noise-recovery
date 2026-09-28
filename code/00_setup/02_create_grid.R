@@ -8,11 +8,11 @@
 #   - G1: n_participants x n_trials x dprime_target x sigma_c_level.
 #   - G2 additionally has TWO fit rows per generated dataset
 #     (fit_variant "correct" [gumbel_min] and "misspecified" [gaussian]),
-#     protocol section 3.3 ("G2 requires two fits per generated dataset").
+#     the design ("G2 requires two fits per generated dataset").
 #     Both rows share the same `cell_id`/`sim_seed` (same underlying
 #     data) but distinct `grid_id`/`fit_seed` (independent Stan RNG).
 #
-# Seed derivation (protocol section 1.3's random-number policy): every
+# Seed derivation (docs/design_decisions.md's random-number policy): every
 # sim_seed/fit_seed is deterministic, derived only from seed_base plus a
 # stable integer index over the sorted cell/grid structure -- no reliance
 # on hashing or wall-clock state.

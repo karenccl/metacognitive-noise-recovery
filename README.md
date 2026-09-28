@@ -91,7 +91,7 @@ The full grid took about 26 hours on one 22-core Windows machine (5 concurrent f
 
 ## Diagnostic and failure policy
 
-A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no divergences or maximum-treedepth hits. A flagged fit is refitted once with `adapt_delta = 0.99` and treedepth 14; if still flagged it is labelled `fail`. Pre-registered analysis rule: the primary analysis includes `pass` and `fail` fits (failures flagged), the sensitivity analysis is pass-only, and `error` rows would count as convergence failures. Diagnostics and elapsed time describe each row's final attempt only.
+A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no divergences or maximum-treedepth hits. A flagged fit is refitted once with `adapt_delta = 0.99` and treedepth 14; if still flagged it is labelled `fail`. Pre-specified analysis rule: the primary analysis includes `pass` and `fail` fits (failures flagged), the sensitivity analysis is pass-only, and `error` rows would count as convergence failures. Diagnostics and elapsed time describe each row's final attempt only.
 
 ## Licence and citation
 

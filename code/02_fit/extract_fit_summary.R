@@ -2,8 +2,8 @@
 # max rank-normalised R-hat, min bulk/tail ESS for focal population
 # parameters (population-level "b_*" effects and random-effect SDs
 # "sd_*" -- not the per-subject "r_*" deviations), divergence count,
-# max-treedepth hit count, and a pass/refit classification (protocol
-# section 4.4). Does NOT decide "fail" -- that is the caller's
+# max-treedepth hit count, and a pass/refit classification (docs/design_decisions.md).
+# Does NOT decide "fail" -- that is the caller's
 # escalation-policy decision after a refit attempt (run_one_cell.R,
 # not yet implemented), since a single call can't know its own retry
 # history. Pareto k / LOO diagnostics are out of scope here (only

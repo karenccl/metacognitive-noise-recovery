@@ -1,5 +1,5 @@
 # Fig 1: design schematic of the three generators and the fitted models
-# (protocol section 6.4). Drawn with ggplot primitives so it is fully
+# (docs/design_decisions.md). Drawn with ggplot primitives so it is fully
 # reproducible from code. Numbers are read from config/design.yml and
 # config/grid.csv rather than hardcoded, so it cannot drift from the
 # design that was actually run.

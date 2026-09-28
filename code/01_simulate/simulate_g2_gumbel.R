@@ -1,17 +1,16 @@
 # G2: non-Gaussian signal distribution (gumbel_min) via
 # hmetad::sim_metad_participant(distribution = gumbel_min lcdf/lccdf),
-# for the controlled distributional-misspecification study (protocol
-# section 3.3, docs/design_decisions.md).
+# for the controlled distributional-misspecification study (docs/design_decisions.md).
 #
 # hmetad only exports normal_lcdf/normal_lccdf (both take (x, mu), with
 # an implicit fixed unit scale/variance -- see docs/design_decisions.md's
 # hmetad API notes). There is no exported gumbel_min equivalent, so this
 # file defines one, matching the same (x, mu) contract: a "parameter-free"
-# distribution (protocol section 3.3 / stanvars_metad() docs) with a
+# distribution (docs/design_decisions.md; stanvars_metad() docs) with a
 # FIXED scale and MEAN-CENTERED at mu, so `mu` plays the same role here
 # as it does for the normal case (dprime/meta_c are then comparable in
 # spirit across distributions, though never assumed to be on an
-# identical numeric scale -- see protocol section 3.3's scale caveat).
+# identical numeric scale -- see the design's scale caveat).
 #
 # Standard Gumbel-min(location = nu, scale = beta) has CDF
 #   F(x) = 1 - exp(-exp((x - nu) / beta)),

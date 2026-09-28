@@ -6,7 +6,7 @@
 # Backend note (corrected 2026-09-25): brms.backend was never set, so every
 # production fit used brms's default rstan backend, not cmdstanr. Do NOT set
 # options(brms.backend = "cmdstanr") if you want to reproduce the published
-# results. The original protocol plan named "qs"; it is archived on CRAN, so
+# results. The initial package list named "qs"; it is archived on CRAN, so
 # qs2 is used instead.
 
 required <- c(

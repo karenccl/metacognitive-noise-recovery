@@ -1,10 +1,10 @@
 # G1: DDM-type confidence generator with post-decisional readout noise
-# sigma_c (protocol section 3.2, docs/design_decisions.md). Returns
+# sigma_c (docs/design_decisions.md). Returns
 # trial-level data with participant, trial, stimulus, response, correct,
 # rt, latent pre/post-decisional evidence q, readout y, binned
 # confidence (1:K), and generator metadata (v, a, t0, tau, sigma_c, seed).
 #
-# Do NOT use a * RT as terminal evidence (protocol 3.2's named fatal
+# Do NOT use a * RT as terminal evidence (the design's named fatal
 # mistake). q below is always read directly off the simulated
 # accumulator trajectory.
 #
@@ -55,7 +55,7 @@
 # Post-decisional continuation: the SAME accumulator continues from
 # x_at_decision for a further fixed duration tau, with no absorbing
 # boundary, so post-decisional evidence can move back across the
-# choice boundary (protocol 3.2, step 4).
+# choice boundary (docs/design_decisions.md, G1 DGP step 4).
 .ddm_postdecision_phase <- function(x0, drift, tau, s = 1, dt = 0.001) {
   n_tau_steps <- max(0L, round(tau / dt))
   if (n_tau_steps == 0L) {
@@ -101,7 +101,7 @@ simulate_g1_ddm <- function(n_participants,
     response_pm1 <- ifelse(decision$hit_upper, 1L, -1L)
     # Sign-flip by the response actually made: q > 0 means evidence
     # accumulated *for the choice made*, regardless of which boundary
-    # that was (protocol 3.2, step 5). q can go negative (post-decisional
+    # that was (docs/design_decisions.md, G1 DGP step 5). q can go negative (post-decisional
     # evidence against the choice made) -- intended, not a bug.
     q <- (x_post - a / 2) * response_pm1
     y <- q + stats::rnorm(n_total, mean = 0, sd = sigma_c)

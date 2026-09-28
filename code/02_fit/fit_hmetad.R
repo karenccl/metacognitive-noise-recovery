@@ -1,5 +1,5 @@
 # fit_one_hmetad(): the single wrapper used everywhere hmetad::fit_metad()
-# is called (protocol section 4.2). Validates input columns/category
+# is called (docs/design_decisions.md). Validates input columns/category
 # count, aggregates explicitly via hmetad::aggregate_metad() (see the
 # "aggregation route" note below -- a deliberate refinement of the
 # earlier aggregate=TRUE plan), builds a hierarchical formula and

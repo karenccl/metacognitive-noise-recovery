@@ -1,5 +1,5 @@
-# Fig 5: representative posterior predictive checks (protocol sections
-# 5 Day 5, 6.4). Five prespecified representative fits, all N=40, T=200,
+# Fig 5: representative posterior predictive checks (Day 5; see
+# docs/design_decisions.md). Five prespecified representative fits, all N=40, T=200,
 # d'=1.5, rep 1 (selected by category, not by how good they look): G0
 # typical pass, G1 low/high noise pass (no G1 failure exists to show),
 # G2 correct, G2 misspecified. Points = the 16 stimulus x response x

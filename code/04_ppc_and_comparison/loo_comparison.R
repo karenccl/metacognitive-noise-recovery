@@ -1,5 +1,5 @@
-# G2 correct-vs-Gaussian LOO/ELPD comparison (protocol sections 3.3,
-# 6.3). Pairs the two fit variants by (cell_id, rep_id) -- they were
+# G2 correct-vs-Gaussian LOO/ELPD comparison (docs/design_decisions.md).
+# Pairs the two fit variants by (cell_id, rep_id) -- they were
 # fit to the IDENTICAL simulated dataset (code/00_setup/02_create_grid.R
 # gives both variants of a G2 cell the same sim_seed), so
 # loo::loo_compare() is a valid same-data comparison.
@@ -9,8 +9,7 @@
 # aggregated-count models returns a `draws x n_participants` matrix --
 # one LOO observation is one PARTICIPANT's aggregated response/confidence
 # count vector, not one trial. All ELPD/Pareto-k interpretation below is
-# at that unit; no trial-level generalisation is implied (protocol
-# section 4, understanding check 5).
+# at that unit; no trial-level generalisation is implied (docs/design_decisions.md; understanding check 5).
 #
 # Run from the project root: Rscript code/04_ppc_and_comparison/loo_comparison.R
 
@@ -129,12 +128,12 @@ cat(sprintf(
 ))
 
 # --- log_M recovery: correct vs. misspecified (known truth = -1) -----------
-# Primary G2 estimand (protocol section 3.3): recovery of the generating
+# Primary G2 estimand (docs/design_decisions.md): recovery of the generating
 # model's own log_M. Both variants target the SAME nominal scale here
 # (both are the hmetad "M-ratio on log scale" dpar), but this is a
 # within-hmetad comparison, not a claim that any two arbitrary
 # distributions' log_M are on an identical substantive scale more
-# generally (protocol's scale caveat).
+# generally (the design's scale caveat).
 
 log_M_ground_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
 

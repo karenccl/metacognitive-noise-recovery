@@ -2,7 +2,7 @@
 # processed products in data/processed/. Verifies each intended
 # condition/replicate is represented exactly once and surfaces
 # failures from structured status fields, not missing files alone
-# (protocol section 5, Day 3 morning).
+# (docs/design_decisions.md; Day 3 morning).
 #
 # Outputs:
 #   data/processed/compiled_results.csv  -- one row per grid row, with
@@ -13,7 +13,7 @@
 #     prior_sensitivity.R, ppc scripts) should read instead of
 #     re-reading all data/interim/*.qs2 files.
 #   data/processed/g0_recovery_summary.csv -- per-condition G0 bias/
-#     RMSE/coverage/interval-width, per the pre-registered failed-fit
+#     RMSE/coverage/interval-width, per the pre-specified failed-fit
 #     rule (primary = pass+fail, flagged; see docs/design_decisions.md).
 #
 # Run from the project root: Rscript code/03_recovery_analysis/compile_results.R
@@ -106,7 +106,7 @@ readr::write_csv(compiled, here::here("data", "processed", "compiled_results.csv
 cat("\nWrote data/processed/compiled_results.csv (", nrow(compiled), "rows )\n")
 
 # --- G0 recovery metrics: bias, RMSE, coverage, interval width -------------
-# Primary analysis per the pre-registered rule (docs/design_decisions.md):
+# Primary analysis per the pre-specified rule (docs/design_decisions.md):
 # include pass + fail (flagged), exclude error (no posterior to include).
 
 g0 <- compiled |>
@@ -133,7 +133,7 @@ g0_summary <- g0 |>
   )
 
 # Wilson score interval for coverage (Monte Carlo binomial uncertainty on
-# the coverage proportion itself -- protocol section 6.1).
+# the coverage proportion itself -- the design).
 g0_summary <- g0_summary |>
   dplyr::rowwise() |>
   dplyr::mutate(
@@ -149,7 +149,7 @@ readr::write_csv(g0_summary, here::here("data", "processed", "g0_recovery_summar
 cat("\n=== G0 recovery summary (by condition) ===\n")
 print(g0_summary, n = Inf)
 
-# Pooled coverage across all G0 cells (protocol's own resolution for
+# Pooled coverage across all G0 cells (the design's own resolution for
 # per-cell coverage being imprecise at any feasible replication count --
 # docs/design_decisions.md's Day-2 reps-30->20 rationale).
 pooled_n <- sum(g0$covered, na.rm = TRUE)

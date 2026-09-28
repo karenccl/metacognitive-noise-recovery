@@ -138,7 +138,7 @@ computed on population-level effects (`b_*`) and random-effect SDs (`sd_*`) only
 per-participant deviations. Flags: max R-hat ≥ 1.01, minimum bulk or tail ESS < 400, any
 divergence, any transition at max treedepth. A flagged fit is refitted once with `adapt_delta`
 0.99, treedepth 14 and seed + 1; if still flagged the status is `fail`, and a crash is `error`.
-The pre-registered handling rule is in the report (Section 3.4). Reported diagnostics and elapsed
+The pre-specified handling rule is in the report (Section 3.4). Reported diagnostics and elapsed
 time describe the final attempt only.
 
 ## S8. Seeds and grid
@@ -191,7 +191,7 @@ draws of `b_*`/`sd_*`, aggregated counts, grid metadata; G2 rows add the `loo` o
 cell posterior-predictive summary). The full `brmsfit` is kept only for replications 1–2. Tracked
 summaries are in `data/processed/`; per-fit files (`data/interim/*.qs2`) are git-ignored.
 
-## S12. Deviations from the original protocol
+## S12. Deviations from the locked design
 
 | Change | Why |
 |---|---|
@@ -203,7 +203,7 @@ summaries are in `data/processed/`; per-fit files (`data/interim/*.qs2`) are git
 | Chain-parallel sampling and concurrent grid dispatch | ~2× per-fit speed-up; ~5 fits at once |
 | `run_one_cell.R` takes one `grid_id` (rep id is a grid column) | fewer arguments, same information |
 | Run order G1, G0, G2 | G1 is the primary-question generator |
-| Confidence-bin sensitivity is K = 6 on 20 fits | protocol asks for a small representative subset |
+| Confidence-bin sensitivity is K = 6 on 20 fits | the design specifies a small representative subset |
 
 ## S13. Errata and corrections found during the project
 

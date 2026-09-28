@@ -1,6 +1,6 @@
 # Post-hoc diagnostics from the saved compact draws (NO refitting).
 # Added 2026-09-28 in response to review items 11-13; exploratory, not part
-# of the pre-registered analysis plan.
+# of the pre-specified analysis plan.
 #
 #  (11) The small negative log_M bias in G0 and G2-correct: is it related to
 #       each fit's posterior between-participant SD of log_M

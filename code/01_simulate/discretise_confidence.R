@@ -1,6 +1,6 @@
 # Single named function implementing the locked K=4 rank-based,
 # within-subject discretisation rule applied to a continuous confidence
-# readout (protocol sections 1.3, 1.4). Must preserve/return cut-points
+# readout (docs/design_decisions.md). Must preserve/return cut-points
 # per subject and be usable for the K=6 / fixed-cutpoint sensitivity
 # analysis as well.
 #
@@ -24,7 +24,7 @@
 # that straddle a bin boundary: dplyr::ntile() still assigns them to
 # different bins (via row order), so a high tie rate means the K=4
 # labels partly reflect arbitrary tie-breaking rather than genuine
-# ordering. This is the check protocol section 1.4 asks for.
+# ordering. This is the check the design asks for.
 
 discretise_confidence <- function(data, participant_col, value_col, k = 4) {
   stopifnot(is.data.frame(data), k >= 2)

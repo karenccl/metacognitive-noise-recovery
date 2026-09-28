@@ -3,7 +3,7 @@
 # log_M priors (normal(0,0.5), normal(0,1), normal(0,2), locked in
 # config/design.yml's priors.log_M_sensitivity) on the EXACT same
 # simulated dataset per generator. Plot posterior median, 95% interval,
-# and posterior/prior overlap (protocol section 5, Day 4 midday).
+# and posterior/prior overlap (docs/design_decisions.md; Day 4 midday).
 #
 # "Exact same simulated dataset" is achieved by regenerating the trial-
 # level data with the grid row's own recorded sim_seed (deterministic

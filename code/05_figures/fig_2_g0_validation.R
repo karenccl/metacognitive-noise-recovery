@@ -1,4 +1,4 @@
-# Fig 2: G0 known-parameter recovery (protocol sections 3.1, 6.1, 6.4).
+# Fig 2: G0 known-parameter recovery (docs/design_decisions.md).
 # Generator: G0 (Gaussian meta-d' model). Fitted model: hierarchical
 # hmetad, normal(0,1) log_M prior, K=4. Estimand: population-level
 # log_M (known truth -1). Uncertainty: per-replicate error shown as raw

@@ -1,8 +1,8 @@
 # Posterior predictive checks for prespecified representative fits
-# (protocol section 5, Day 5 morning):
+# (docs/design_decisions.md; Day 5 morning):
 #   - G0 typical pass
 #   - G1 low-noise pass
-#   - G1 high-noise pass (protocol also asks for a "failure where
+#   - G1 high-noise pass (the design also asks for a "failure where
 #     possible" case, but G1 had a 100% pass rate across all 720
 #     production fits -- no failure exists to show; documented, not
 #     substituted with a cherry-picked worse fit)

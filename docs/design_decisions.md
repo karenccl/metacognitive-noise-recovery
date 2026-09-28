@@ -1,8 +1,7 @@
 # Design Decisions
 
-Locked decisions per the project protocol. The protocol document ("Publication-ready hmetad project
-protocol", supplied by the project owner) is not included in this repository, so the "protocol section
-X" references below cannot be followed from the repo alone. Record any justified deviation below with a date; do not silently alter
+Design specification for this simulation study: the locked decisions below were fixed before any
+production fitting. Record any justified deviation below with a date; do not silently alter
 the core scientific question.
 
 ## Status
@@ -17,18 +16,18 @@ the core scientific question.
 
 ## 2026-09-22 — Initial scaffold
 
-Repository structure created per protocol section 2.1. No scientific decisions locked yet.
+Repository structure created. No scientific decisions locked yet.
 
 ## 2026-09-23 — Deviation: qs → qs2
 
-Protocol section 4.1 lists `qs` for atomic per-cell result storage. `qs` is archived on CRAN
+The initial package list specified `qs` for atomic per-cell result storage. `qs` is archived on CRAN
 and unavailable for R 4.5.0; installed `qs2` (same author, maintained successor) instead.
 Interim result files now use `qs2::qs_save()`/`qs2::qs_read()` and the `.qs2` extension in
 place of `.qs`. Purely a serialization-format substitution; no effect on the scientific design,
 grid, or estimands. See `docs/computational_environment.md` and `docs/analysis_log.md` for
 details.
 
-## Locked decisions (from protocol)
+## Locked decisions
 
 - **Primary estimand:** group-level or condition-level posterior `log_M` from `hmetad`.
 - **`log_M` interpretation:** M = exp(log_M) = meta-d′ / d′; log_M = -1 implies M ≈ 0.368.
@@ -53,10 +52,9 @@ details.
 ## 2026-09-23 — hmetad API notes (from package help; no vignettes bundled in 0.2.1)
 
 `hmetad` 0.2.1 (metacoglab r-universe) is a `brms`-based reimplementation of the meta-d′ model,
-not the classic Fleming JAGS/Stan HMeta-d toolbox. Its function names match everywhere the
-protocol references them (`sim_metad`, `fit_metad`, `aggregate_metad`, `stanvars_metad`,
-`epred_draws_metad`, `joint_probabilities`, `type2_probabilities`), so the protocol was clearly
-written against this package. Key facts established empirically (see
+not the classic Fleming JAGS/Stan HMeta-d toolbox. The functions used in this study (`sim_metad`, `fit_metad`, `aggregate_metad`, `stanvars_metad`,
+`epred_draws_metad`, `joint_probabilities`, `type2_probabilities`) are all present in this
+version. Key facts established empirically (see
 `docs/analysis_log.md` for the verification script/output):
 
 - **Scale of `M`/`log_M` differs by function — this is the single most important gotcha:**
@@ -89,7 +87,7 @@ written against this package. Key facts established empirically (see
   Lau). The alternative (`metac_absolute = FALSE`, `meta_c = M * c`) re-expresses the type-2
   criterion *relative* to `c`/`dprime` and is not needed for this project.
   **Locked decision: use `metac_absolute = TRUE` (the package default) throughout G0/G1/G2,**
-  matching the standard model definition the protocol's `log_M` interpretation assumes.
+  matching the standard model definition the design's `log_M` interpretation assumes.
 
 - **Aggregation route:** `fit_metad(..., aggregate = TRUE)` (default) accepts one-row-per-trial
   data with `stimulus`, `response`, `confidence` (+ any grouping columns in the formula) and
@@ -99,7 +97,7 @@ written against this package. Key facts established empirically (see
   entry below):** all fits use `aggregate = TRUE` on trial-level input. In the final pipeline
   `fit_one_hmetad()` calls `aggregate_metad()` itself and fits with `aggregate = FALSE`. This is precisely why the likelihood is
   aggregated-count-based and why LOO must be interpreted at the subject/cell level, not the
-  trial level (protocol section 4, understanding check 5).
+  trial level.
 
 - **`K`** is auto-inferred by `aggregate_metad()`/`fit_metad()` from `max(confidence)` if not
   passed explicitly; scripts should pass `K` explicitly (from `config/design.yml`) rather than
@@ -122,7 +120,7 @@ written against this package. Key facts established empirically (see
   (per the package's documented example), for both G0/G1 (`distribution = "normal"`, default)
   and G2's correctly-specified fit (`distribution = "gumbel_min"`); G2's Gaussian-misspecified
   fit reuses the same priors as G0/G1 since it *is* the G0/G1 model family.
-- **G2 distribution:** `gumbel_min`, per protocol section 3.3 and `stanvars_metad()`'s own
+- **G2 distribution:** `gumbel_min`, per the design and `stanvars_metad()`'s own
   worked example (`stanvars_metad(4, distribution = "gumbel_min")`).
 
 ## 2026-09-23 — G0/G2 generator implementation and Gumbel-min parameterisation
@@ -155,7 +153,7 @@ estimated mean/variance from the CDF recover `mu`/`1` to within Monte Carlo/grid
 with these functions produces no `NA`s and shows accuracy increasing with `dprime` as expected
 (hit rate 0.70→0.81 going from `dprime=0.75` to `1.5`, both non-degenerate). This is a
 documented, locked distributional choice, not a claim that meta-d′/dprime on the Gumbel-min
-scale is numerically equivalent to the Gaussian scale (protocol section 3.3's scale caveat still
+scale is numerically equivalent to the Gaussian scale (the scale caveat still
 applies to any cross-distribution parameter comparison).
 
 **Day 2 dependency, not yet implemented:** fitting the correctly-specified G2 model requires
@@ -167,7 +165,7 @@ parameterisation as the R functions above. `stanvars_metad()`'s own generated co
 define them — this is exactly what its documentation means by "you must additionally provide two
 functions to Stan." Needed in `code/02_fit/fit_hmetad.R`.
 
-## 2026-09-23 — G1 DGP specification (protocol section 3.2)
+## 2026-09-23 — G1 DGP specification
 
 Written before implementation, per the Day-1 gate. Diffusion coefficient fixed at `s = 1`
 throughout (standard DDM convention; `v`/`a` are expressed in units of `s`). Time step
@@ -201,19 +199,19 @@ noise SD, the G1 ground truth manipulated across the low/medium/high grid cells)
    *in favor of the response actually made* (i.e., higher intended confidence), and `q_it`
    can go negative (post-decisional evidence against the choice made — a "changed my mind"
    region), which is an intended feature of the mechanism, not a bug.
-6. **Noisy confidence evidence (protocol eq.):** `y_it = q_it + ε_it`, `ε_it ~ N(0, σ_c²)`.
+6. **Noisy confidence evidence (design equation):** `y_it = q_it + ε_it`, `ε_it ~ N(0, σ_c²)`.
    `σ_c` is independent of trial/participant noise draws (uncorrelated with `ξ_k`).
 7. Convert `y_it` to `confidence_it ∈ {1, …, K}` (`K = 4`) via the locked
    `discretise_confidence()` rank-based within-subject rule, applied over all of a subject's
    trials at once (not per-cell), using the **continuous** `y_it`, not `q_it` or accuracy.
 
-**Retained columns (protocol requirement — keep both `q` and `y` even though only binned
+**Retained columns (design requirement — keep both `q` and `y` even though only binned
 `confidence` goes to `hmetad`):** `participant`, `trial`, `stimulus` (recoded `0`/`1` for
 `hmetad`), `response` (recoded `0`/`1`), `correct`, `rt`, `q`, `y`, `confidence`, plus generator
 metadata columns `v`, `a`, `t0`, `tau`, `sigma_c`, `seed`.
 
 **Explicitly avoided:** using `a · RT` (or any function of RT alone) as a stand-in for
-terminal/post-decisional evidence magnitude (protocol section 3.2's named fatal mistake) — `q`
+terminal/post-decisional evidence magnitude (the named fatal mistake) — `q`
 above is always read directly off the simulated accumulator trajectory, never derived from RT.
 
 ## 2026-09-23 — DDM-to-empirical-d′ and σ_c calibration plan
@@ -235,14 +233,13 @@ before the primary grid, output to `outputs/tables/ddm_calibration.csv`:**
    in `outputs/tables/ddm_calibration.csv`.
 5. If both targets cannot be reached with a shared `a`/`t0` at plausible mean RTs
    (`< 2 s`), allow `a`/`t0` to vary by target level and document why in this file (a
-   deviation, but an anticipated and justified one — see protocol section 3.2).
+   deviation, but an anticipated and justified one — see the design).
 
 **σ_c low/medium/high pilot, before the primary grid:**
 
-Because the `K = 4` discretisation is a rank-based within-subject quantile rule (protocol
-section 1.4), **marginal confidence-category occupancy will be ≈25% per category for every
+Because the `K = 4` discretisation is a rank-based within-subject quantile rule, **marginal confidence-category occupancy will be ≈25% per category for every
 σ_c by construction** — that is not a valid pilot diagnostic here (this is exactly the
-degeneracy the protocol's section 1.4 correction warns about). Instead:
+degeneracy the design warns about). Instead:
 
 1. At one calibrated DDM setting (`d′ = 1.5`, one large pseudo-subject, `T = 20,000`), sweep a
    grid of candidate `σ_c` values (e.g. informed by the empirical SD of `q` from step 2 of the
@@ -256,7 +253,7 @@ degeneracy the protocol's section 1.4 correction warns about). Instead:
 3. Choose "low/medium/high" as three `σ_c` values spanning a clearly distinguishable range of
    the confidence–accuracy association from (b) — not evenly-spaced arbitrary numbers. Record
    the actual chosen values and the full pilot sweep table (do not just label them low/medium/
-   high without justification, per protocol section 3.2).
+   high without justification, per the design).
 4. Save the pilot sweep and final chosen values into `docs/design_decisions.md` (update this
    section) and `config/design.yml` once run.
 
@@ -359,14 +356,14 @@ missing columns, and non-0/1 stimulus/response coding before any Stan compilatio
 `extract_fit_summary()` (`code/02_fit/extract_fit_summary.R`) restricts its focal-parameter
 R-hat/ESS check to population-level effects (`^b_`) and random-effect SDs (`^sd_`), explicitly
 excluding the numerous per-participant deviation terms (`r_participant[...]`) — consistent with
-protocol section 4.4's "focal population parameters" wording. It classifies `pass`/`refit` only;
+the design's "focal population parameters" wording. It classifies `pass`/`refit` only;
 `fail` (an escalated refit that still doesn't pass) is a decision for the not-yet-implemented
 `run_one_cell.R`, which owns the retry/escalation policy and thus the retry history a single
 call to `extract_fit_summary()` can't see.
 
 ## 2026-09-23 — Day 2 midday: compute benchmark and replication count
 
-Per protocol section 5 (Day 2 midday). Benchmarked `fit_one_hmetad()` at production sampling
+per the design (Day 2 midday). Benchmarked `fit_one_hmetad()` at production sampling
 settings across the N/T corners of the grid (G0 data, `dprime_target=1.5`, `log_M=-1`):
 
 | N | T | elapsed (s), `cores=1` (default before today) |
@@ -397,7 +394,7 @@ dispatch rather than reduce replications. `code/02_fit/run_grid.R` was rewritten
 `config/design.yml`'s `execution.max_concurrent_fits` (`5`, sized as
 `floor((22 cores - 2 headroom) / 4 cores-per-fit)` for the current machine) `run_one_cell.R`
 subprocesses at once via `processx`, polling and backfilling as each finishes. This keeps the
-full protocol-specified **30 replications/cell** (no Monte Carlo precision compromise) at a
+full pre-specified **30 replications/cell** (no Monte Carlo precision compromise) at a
 projected **~12-13 hours** total wall time — feasible as a single unattended run. Verified the
 concurrency logic on a 6-row/max-concurrent-3 smoke grid: pool correctly held at 3, backfilled
 as jobs finished, all 6 completed with correct exit statuses and no crashes.
@@ -442,7 +439,7 @@ working, tested fitting path. Ready to launch the full production grid.
 The first full-grid launch (2160 rows, 30 reps/cell) was stopped manually after producing 16
 results, to make several changes before committing real compute to it. Each change below is a
 locked decision (updates the "locked decisions" list where relevant); rationale is recorded here
-per the reproducibility-log requirement (protocol section 2.2).
+per the reproducibility-log requirement.
 
 ### Replications: 30 → 20
 
@@ -451,7 +448,7 @@ Measured throughput at 5-way concurrency was ~52 fits/hour (thermal-throttled be
 making the 30-rep grid a 41+ hour run rather than the ~12-13 hour projection. Revised
 `config/design.yml`'s `grid.replications.target` to **20**.
 
-**Rationale:** RQ1 (protocol's primary question) is an ordinal/monotonicity question — probability
+**Rationale:** RQ1 (the primary question) is an ordinal/monotonicity question — probability
 of correct `log_M` ordering across `σ_c` and the sign/direction of the `log_M`-on-`σ_c` slope —
 not a point-estimate-precision question. At 20 replications, Monte Carlo SE of a bias estimate is
 ≈0.04 (on the `log_M` scale), adequate for this purpose. Per-cell 95% CI coverage (a G0 secondary
@@ -461,10 +458,10 @@ not meaningfully worse at 20. The plan is therefore to **pool coverage across al
 (360 replications total after pooling, giving coverage MCSE ≈1.3%) and report pooled coverage
 with its MCSE, rather than claim precision on any single cell's coverage. This does not weaken
 the primary (G1 ordinal) claim, which was never coverage-based. `grid.replications.minimum: 15`
-(protocol's floor) is unchanged and not needed here since 20 was reached directly, not via
+(the pre-specified floor) is unchanged and not needed here since 20 was reached directly, not via
 further escalation.
 
-### Pre-registered failed-fit handling rule (before seeing any real results)
+### Pre-specified failed-fit handling rule (before seeing any real results)
 
 To avoid the appearance (or reality) of post-hoc rationalization once the grid finishes, the
 following is locked **now**, before any production-scale results exist:
@@ -472,17 +469,17 @@ following is locked **now**, before any production-scale results exist:
 - **Primary analysis:** includes every fit with `status` `"pass"` **or** `"fail"` (i.e. every
   attempted fit that produced a posterior at all, whether or not it cleared diagnostic
   thresholds after escalation). Fits are **flagged** by their status in all primary tables/figures
-  — never silently pooled with passes as if equivalent — per protocol section 6.4's "never
+  — never silently pooled with passes as if equivalent — per the design's "never
   suppress failed fits."
 - **Sensitivity analysis:** re-runs the primary metrics on **pass-only** fits, to check whether
   conclusions depend on including diagnostically-flagged fits.
 - **`status = "error"` rows** (simulation or Stan compile/runtime errors, not merely poor
   diagnostics) are excluded from both the primary and sensitivity *parameter-estimate* analyses
   (there is no posterior to include) and are instead **reported as convergence/computational
-  failures in RQ3** (protocol's understanding-check framing: "a high convergence-failure rate
+  failures in RQ3** (the design's understanding-check framing: "a high convergence-failure rate
   signals computational instability... and must be reported"), i.e. counted in the failure-rate
   denominator and tabulated by condition, consistent with the already-locked "Fail" row of the
-  status table in protocol section 4.4.
+  status table in the design.
 
 ### Compact output format (storage)
 
@@ -492,7 +489,7 @@ only, from `extract_fit_summary()`), `escalated`, `warnings`, `error_message`, a
 the aggregated observed counts (`agg`, from `hmetad::aggregate_metad()`), and posterior **draws
 for `b_*`/`sd_*` parameters only** (`extract_b_sd_draws()`, mirroring `extract_fit_summary()`'s
 own focal-parameter selection so the two never disagree about what counts as "focal"). This is
-still everything a group-level/condition-level analysis needs (protocol's primary estimand is
+still everything a group-level/condition-level analysis needs (the design's primary estimand is
 population-level `log_M`, not any individual participant's random-effect deviation).
 
 The **full `brmsfit`** is additionally kept only when `rep_id <= config's
@@ -533,7 +530,7 @@ showing up as spurious diffs on `renv.lock` and other text files across sessions
 
 ## What this project must not claim
 
-See protocol section 1.2. In particular: do not claim `log_M` "recovers" σ_c numerically; do not
+In particular: do not claim `log_M` "recovers" σ_c numerically; do not
 report 95% CI coverage for σ_c using `log_M` intervals; do not call the G1 DDM process
 "non-Gaussian" without separately establishing the empirical distributional feature tested; do
 not treat a successful MCMC fit as evidence of generative correctness without PPCs; do not make
