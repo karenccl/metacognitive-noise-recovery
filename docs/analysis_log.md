@@ -978,3 +978,12 @@ The report uses the verified table above.
   the same package versions; it does not establish bit-identity across machines or backends. The original
   result file was restored byte-for-byte afterwards.
 - **Not done.** Full-pipeline reproduction from a clone (`renv::restore()` plus the grid) has not been run.
+
+## 2026-09-28 - v1.0.1
+
+- Local and remote `main` had diverged. The local licence-removal commit was dropped (MIT kept); its
+  remaining wording edits were already upstream. A leftover analysis-log wording commit was kept.
+- `report.md`: two clarifications, with no change to any result. The G2 Gaussian fit's `log_M` "bias" is
+  deviation from the Gumbel-min generating value, not recovery of a Gaussian parameter. One LOO
+  observation is one participant's aggregated count vector.
+- `CITATION.cff` version 1.0.1. Tagged `v1.0.1`; `v1.0.0` left where it was.

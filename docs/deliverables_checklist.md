@@ -19,5 +19,5 @@ Status as of 2026-09-28. "Done" means produced and committed; it does not mean e
 | Single-fit refit reproduces stored draws exactly | `data/interim/` | Done 2026-09-28 (grid cell 721; same machine and versions) |
 | Fresh-clone check (figures only) | n/a | Done 2026-09-28: all five figures rebuild from a clean clone; full-pipeline reproduction (renv::restore + fits) not done |
 | `make` targets run end to end | `Makefile` | Not run (`make` not installed); scripts run individually |
-| Release tag (v1.0.0) | n/a | Done 2026-09-28 |
+| Release tag (v1.0.0; v1.0.1 adds report clarifications) | n/a | Done 2026-09-28 |
 | Archive (Zenodo/OSF) | n/a | Optional, not done |
