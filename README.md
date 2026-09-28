@@ -3,7 +3,7 @@
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
 A reproducible R/Stan simulation study (no human data). Draft report: [manuscript/report.md](manuscript/report.md).
 
-**Status (2026-09-28, v1.1):** all 1,440 fits, analyses, figures, report and supplement are complete; v1.1 is on branch `v2-extensions` and not yet merged or pushed. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4). RQ1 is a validity check.
+**Status (2026-09-28, v1.1):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; v1.1 is released as tag `v1.1.0`. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4). RQ1 is a validity check.
 
 ## Question
 
