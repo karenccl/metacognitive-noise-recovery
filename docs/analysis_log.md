@@ -1042,3 +1042,33 @@ Design locked in `3cc7e71` and `01d1b9c` (`design_decisions.md`, "v2 extension 1
   Hash references in this log, `design_decisions.md` and `g2_ppc_all.R` were updated:
   `4785b35` → `3cc7e71`, `37bed3d` → `01d1b9c`, `4faac0e` → `e7f0511`. Commit dates, and so the
   order "design before analysis", are preserved.
+
+## 2026-09-29 - v2 extension 2: replicated-data posterior predictive p-values (result)
+
+Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
+`code/04_ppc_and_comparison/g2_ppp_fullfits.R`; outputs `data/processed/v2/g2_ppp_by_fit.csv`,
+`g2_ppp_summary.csv`, `outputs/figures/v2/fig_g2_ppp.png`. No refitting.
+
+- **Preconditions.** All 48 files have a `brmsfit`; per-draw probabilities sum to 1 (max deviation
+  5.6e-16); draw means reproduce the stored `epred_mean` (max deviation 5.6e-17). 4,000 draws per fit.
+- **Runs.** One full run gave the results below. The panel B subtitle was clipped and count labels
+  overlapped the error bars, so the plotting code was changed (layout only) and the script rerun;
+  both CSVs were byte-identical (seeded per fit: `seed_base + grid_id`).
+- **Inclusion.** All 48 fits passed diagnostics (the two failed G2-correct fits are replications > 2),
+  so the pass-only sensitivity is identical to the primary analysis. The script applies the rule's
+  count thresholds as proportions for a smaller pass-only set; this was not needed.
+- **Flags (p < 0.05), out of 24 per family.** Stat 1 (aggregate RMSE): Gaussian 16 (Wilson
+  0.47-0.82), correct 0. Stat 2 (highest confidence): Gaussian 20, correct 0. Stat 3 (participant
+  X2/df): Gaussian 15, correct 9. On the same 24 datasets: oracle stat 1 (extension 1) 22, LOO > 2 SE
+  16. Stat 1 by T: 2/8, 7/8, 7/8 at T = 100/200/400; by N: 6/12 and 10/12. Median p (stat 1):
+  correct 0.52, Gaussian 0.010.
+- **Verdict (pre-specified rule): Partial** (16/24 is between 7 and 17; correct 0/24). Stat 2 meets
+  the naming condition (20/24 flagged, 0/24 false alarms), so the report names it as a targeted
+  check that did flag the misspecification.
+- **Predictions.** P1 held for stats 1 and 2 (0/24) but not stat 3 (9/24). P2 held (16/24 practical
+  vs 22/24 oracle). P3 not supported: detection appears from T = 200, not only at T = 400.
+- **Exploratory (not tested).** Stat 3 flags the *correct* family often (6/8 at T = 400, 7/12 at
+  N = 40), so it is not a usable check here. One candidate explanation is a participant-level misfit
+  shared by both families: simulated participants' confidence thresholds vary slightly, but the
+  fitted models pool them (report §5, limitation iii). The aggregate statistics average this out.
+- **Not yet done.** Report not updated.
