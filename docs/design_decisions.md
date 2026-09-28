@@ -528,6 +528,90 @@ priority ordering (G1 is the primary-question generator).
 Added `* text=auto eol=lf` to stop line-ending churn (Windows CRLF vs. the repo's LF convention)
 showing up as spurious diffs on `renv.lock` and other text files across sessions/machines.
 
+## 2026-09-28 — v2 extension 1: posterior predictive checks on all 480 G2 fits
+
+Written and committed before any v2 PPC statistic was computed. v2 work lives on the
+`v2-extensions` branch. Outputs go to `data/processed/v2/` and `outputs/figures/v2/`; no v1 file is
+overwritten.
+
+**Purpose.** The report's model-adequacy claim is that aggregate PPCs do not reveal the Gaussian
+misspecification that LOO detects. In v1 this rests on one replicate per model (grid 1321/1322,
+N = 40, T = 200, d′ = 1.5, rep 1). This extension evaluates the claim across all 240 G2 datasets,
+each fitted under both families.
+
+**What was already seen.** Before writing this section the author had seen the v1 results: the single
+replicate (misspecified RMSE largest, its four largest cell errors at the highest confidence level) and
+the ELPD summaries (correct family preferred in 96.2% of pairs, 72.9% by > 2 SE). The predictions below
+are made with that knowledge; no v2 statistic had been computed.
+
+**Data (no refitting).** Every G2 result file stores `epred_summary` (per participant × stimulus ×
+response × confidence posterior mean, median and 95% interval of the predicted cell probability,
+conditional on stimulus) and the observed counts in `agg`. Checked on 2026-09-28: all 480 files have
+a non-empty `epred_summary`; predicted probabilities sum to 1 within participant × stimulus;
+478/480 fits are `pass`. Posterior draws of the predictions were not saved, so replicated-data
+p-values cannot be computed. The statistics below use the posterior-mean prediction.
+
+**Statistics (per fit).** Let n be the observed count and p̂ the posterior-mean predicted probability
+of a cell, with n_s the participant's trial count for that stimulus.
+
+1. **Aggregate RMSE (primary, same as v1).** Pool observed and predicted counts over participants
+   into the 16 stimulus × response × confidence cells, convert to proportions within stimulus, and
+   take the RMSE of observed − predicted. This is the v1 definition in `ppc_joint_counts.R`.
+2. **Highest-confidence discrepancy.** Mean absolute observed − predicted proportion over the four
+   confidence = 4 cells of statistic 1. It targets the pattern seen in the v1 replicate.
+3. **Participant-level Pearson X².** Σ over participant × cell of (n − n_s p̂)² / (n_s p̂), divided by
+   the number of participant × stimulus cells minus the number of participant × stimulus
+   constraints (N × 16 − N × 2). This is scaled by sampling noise and so is comparable across N and T,
+   unlike statistics 1–2. It ignores posterior uncertainty in p̂ (a small anticonservative effect,
+   shared by both families).
+
+**Comparisons.**
+
+- **Paired (240 datasets):** misspecified − correct difference in each statistic; the proportion of
+  pairs in which the misspecified fit is worse; median and 90% range of the difference, by cell.
+- **Calibrated detection (the analyst's view, who sees one model only):** for each of the 12
+  N × T × d′ cells, the threshold is the 95th percentile of the correct-family fits' statistic in that
+  cell (20 values, so the threshold is crude; also reported pooled across cells for statistic 3).
+  Detection rate = proportion of misspecified fits above it. Reported with a Wilson 95% interval and
+  set beside LOO's > 2 SE preference rate for the same cell.
+- **Trend:** detection rate and paired difference against N, T and d′ (descriptive; no p-values on
+  replicates, as in v1).
+
+**Predictions.**
+
+- P1. In most pairs (> 50%) the misspecified fit has the larger aggregate RMSE, but the median paired
+  difference is small (< 0.005 on the proportion scale).
+- P2. The highest-confidence discrepancy shows the difference more clearly than the aggregate RMSE
+  (higher paired proportion).
+- P3. The calibrated detection rate for the aggregate RMSE is well below LOO's > 2 SE rate in most
+  cells and rises with T and N.
+
+**Decision rule for the report's claim (fixed now).**
+
+- **Kept:** detection rate for statistics 1 and 3, pooled over cells, is < 50%, and below LOO's > 2 SE
+  rate in at least 10 of 12 cells. The report keeps "aggregate PPC does not reveal the
+  misspecification", now supported by 240 pairs.
+- **Qualified:** any cell has detection ≥ 80% for any statistic. The claim is restricted to the
+  cells where detection is low, and the report names the statistic and conditions under which PPC
+  does detect it.
+- **Reversed:** pooled detection ≥ 80% for statistic 1. The v1 claim is withdrawn and the limitations
+  section says the v1 single replicate was unrepresentative.
+- Anything else is reported as mixed, cell by cell, without choosing the favourable statistic.
+
+**Inclusion.** Pre-specified failed-fit rule applies: primary analysis uses `pass` and `fail` fits
+(flagged); a pass-only sensitivity analysis is reported. A pair enters the paired analysis only if
+both fits have `epred_summary`.
+
+**Check before use.** The script recomputes statistic 1 for grid 1321/1322 from `epred_summary` and
+must match `data/processed/ppc_discrepancy_summary.csv` to 1e-6; otherwise it stops.
+
+**Stopping rule.** One pass over the 480 existing files. No refitting, no added statistics after the
+results are seen. Any extra analysis is logged as exploratory in `docs/analysis_log.md`.
+
+**Planned outputs.** `code/04_ppc_and_comparison/g2_ppc_all.R`;
+`data/processed/v2/g2_ppc_by_fit.csv`, `g2_ppc_paired.csv`, `g2_ppc_detection_by_cell.csv`;
+`outputs/figures/v2/fig_g2_ppc_all.png`.
+
 ## What this project must not claim
 
 In particular: do not claim `log_M` "recovers" σ_c numerically; do not
