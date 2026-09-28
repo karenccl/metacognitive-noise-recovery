@@ -63,8 +63,13 @@ manuscript/                  report, references, supplementary methods
 Requires R 4.5.0 and a C++ toolchain for `rstan`. `hmetad` 0.2.1 comes from the metacoglab r-universe, `rstan`/`StanHeaders` 2.36.0.9000 from the stan-dev r-universe.
 
 ```r
+options(repos = c(CRAN = "https://cloud.r-project.org",
+                  metacoglab = "https://metacoglab.r-universe.dev",
+                  standev = "https://stan-dev.r-universe.dev"))
 renv::restore()
 ```
+
+The lockfile records these three repositories, so a plain `renv::restore()` should also find them; setting `repos` first is a safeguard. `Rscript code/00_setup/00_packages.R` then checks that everything needed is installed.
 
 **Sampler:** all results were produced with `brms`'s default **`rstan`** backend. Leave `brms.backend` unset (or `"rstan"`); setting it to `"cmdstanr"` would use a different sampler and will not reproduce the published draws bit-for-bit. CmdStan is not needed. (An earlier version of this README, and of the environment notes, wrongly said CmdStan was used; see `docs/computational_environment.md`.)
 
@@ -76,6 +81,8 @@ What needs the fits: `compile_results.R`, `compute_primary_metrics.R`, `loo_comp
 
 ```bash
 make test        # unit tests, fast
+# no make (e.g. Windows)? everything downstream of the fits, in order:
+#   Rscript code/run_downstream.R
 make all         # setup, grid, G1, G0, G2, compile, analyse, figures
 make robustness  # prior sweep (~20 min) and K=6 refits (~75 min)
 ```
