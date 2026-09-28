@@ -23,7 +23,7 @@ Grid per cell: N ∈ {20, 40} participants × T ∈ {100, 200, 400} trials × d�
 
 ## Headline results (all from `data/processed/`)
 
-- **G1 ordinal recovery:** `log_M` fell with σ_c in 12/12 cells (slopes −0.50 to −0.63); ordering low > medium > high held in 100% of matched replications in 11 cells and 95% in one; 720/720 fits passed. (Fig. 3)
+- **G1 ordinal recovery:** level means of `log_M` ordered low > medium > high in 12/12 cells (adjacent differences 0.46–1.20, smallest 7.2 Monte Carlo SEs); ordering low > medium > high held in 100% of matched replications in 11 cells and 95% in one; 720/720 fits passed. (Fig. 3)
 - **G0 calibration:** pooled 95% credible-interval coverage 95.8% (95% CI 92.5–97.7%, MCSE 1.3%); small negative `log_M` bias in every cell (−0.18 to −0.03), source not established. (Fig. 2)
 - **G2:** LOO preferred the correct family in 96.2% of 240 paired datasets; Gaussian misspecification biased `log_M` upward in all 12 cells (+0.06 to +0.20). 8–12% of LOO observations have Pareto k > 0.7 (no remedy applied). (Fig. 4)
 - **Model adequacy:** posterior predictive discrepancy was small for all five representative fits, including the misspecified one, so small PPC error did not flag the misspecification. (Fig. 5; one replicate per fit)

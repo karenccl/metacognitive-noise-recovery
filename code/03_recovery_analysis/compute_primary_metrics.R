@@ -1,9 +1,14 @@
 # G1 primary metrics (protocol sections 3.2, 6.2). G0's bias/RMSE/
 # coverage are computed in compile_results.R -- this script is scoped
 # to G1's ordinal-recovery estimands, the primary deliverable for RQ1:
-#   - median/mean posterior log_M by replicate
-#   - slope of log_M on sigma_c (regression per N x T x dprime_target
-#     condition, pooling all 3 sigma_c levels' replications)
+#   - posterior mean log_M by replicate (primary point estimate, the same
+#     one used for G0/G2 bias and RMSE; posterior median as a sensitivity)
+#   - per-level means of log_M and pairwise level differences with Monte
+#     Carlo SEs, per N x T x dprime_target condition. (Revised 2026-09-28:
+#     an earlier version regressed log_M linearly on sigma_c and printed
+#     p-values. The three calibrated levels are not equally spaced on any
+#     natural scale and p-values on simulation replicates depend only on
+#     the number of replications, so both were dropped.)
 #   - Spearman correlation between sigma_c and posterior median log_M
 #   - ordering accuracy (paired by rep_id -- NOTE: sigma_c levels do
 #     NOT share simulation seeds in this grid, see the caveat below)
@@ -134,16 +139,14 @@ cat("(outputs/tables/sigma_c_pilot.csv) -- not re-audited per production replica
 
 # --- Primary G1 estimands, by (N, T, dprime_target) condition -------------
 
-compute_condition_metrics <- function(df) {
+compute_condition_metrics <- function(df, est = "log_M_mean") {
+  df$estimate <- df[[est]]
   df |>
     dplyr::group_by(n_participants, n_trials, dprime_target) |>
     dplyr::group_modify(function(sub, key) {
-      slope_fit <- stats::lm(log_M_median ~ sigma_c_value, data = sub)
-      slope_summary <- summary(slope_fit)$coefficients["sigma_c_value", ]
+      spearman <- stats::cor(sub$sigma_c_value, sub$estimate, method = "spearman")
 
-      spearman <- stats::cor(sub$sigma_c_value, sub$log_M_median, method = "spearman")
-
-      by_level <- split(sub$log_M_median, sub$sigma_c_level)
+      by_level <- split(sub$estimate, sub$sigma_c_level)
       low <- by_level[["low"]]; medium <- by_level[["medium"]]; high <- by_level[["high"]]
 
       # Ordering accuracy: paired by rep_id. Sigma_c levels do NOT share
@@ -152,12 +155,12 @@ compute_condition_metrics <- function(df) {
       # so this pairs by replicate INDEX only, not common random numbers;
       # a valid but higher-variance Monte Carlo comparison than CRN would give.
       ord <- dplyr::inner_join(
-        sub |> dplyr::filter(sigma_c_level == "low") |> dplyr::select(rep_id, low = log_M_median),
-        sub |> dplyr::filter(sigma_c_level == "medium") |> dplyr::select(rep_id, medium = log_M_median),
+        sub |> dplyr::filter(sigma_c_level == "low") |> dplyr::select(rep_id, low = estimate),
+        sub |> dplyr::filter(sigma_c_level == "medium") |> dplyr::select(rep_id, medium = estimate),
         by = "rep_id"
       ) |>
         dplyr::inner_join(
-          sub |> dplyr::filter(sigma_c_level == "high") |> dplyr::select(rep_id, high = log_M_median),
+          sub |> dplyr::filter(sigma_c_level == "high") |> dplyr::select(rep_id, high = estimate),
           by = "rep_id"
         )
       ordering_accuracy <- mean(ord$low > ord$medium & ord$medium > ord$high)
@@ -168,12 +171,23 @@ compute_condition_metrics <- function(df) {
       # rep_ids -- doesn't require seed-matching, so uses the full
       # sample at each sigma_c level).
       sep_prob <- function(a, b) mean(outer(a, b, `>`))
+      # Difference in level means; SE treats the levels as independent
+      # samples (independent sim_seeds), so it is a Monte Carlo SE of the
+      # mean difference, not an inferential test.
+      mc_diff <- function(a, b) c(diff = mean(a) - mean(b), se = sqrt(stats::var(a) / length(a) + stats::var(b) / length(b)))
+      d_lm <- mc_diff(low, medium); d_mh <- mc_diff(medium, high); d_lh <- mc_diff(low, high)
 
       tibble::tibble(
         n_reps_per_level = length(low),
         n_matched_reps = n_matched_reps,
-        slope = slope_summary["Estimate"], slope_se = slope_summary["Std. Error"],
-        slope_p = slope_summary["Pr(>|t|)"],
+        mean_low = mean(low), mean_medium = mean(medium), mean_high = mean(high),
+        sd_low = stats::sd(low), sd_medium = stats::sd(medium), sd_high = stats::sd(high),
+        mcse_low = stats::sd(low) / sqrt(length(low)),
+        mcse_medium = stats::sd(medium) / sqrt(length(medium)),
+        mcse_high = stats::sd(high) / sqrt(length(high)),
+        diff_low_medium = d_lm[["diff"]], diff_low_medium_mcse = d_lm[["se"]],
+        diff_medium_high = d_mh[["diff"]], diff_medium_high_mcse = d_mh[["se"]],
+        diff_low_high = d_lh[["diff"]], diff_low_high_mcse = d_lh[["se"]],
         spearman_rho = spearman,
         ordering_accuracy = ordering_accuracy,
         sep_prob_low_gt_medium = sep_prob(low, medium),
@@ -197,9 +211,22 @@ sensitivity_metrics <- compute_condition_metrics(sensitivity_set)
 print(sensitivity_metrics, n = Inf, width = Inf)
 readr::write_csv(sensitivity_metrics, here::here("data", "processed", "g1_sensitivity_metrics.csv"))
 
-cat("\n=== Sign check: how many of the 12 conditions show the expected negative slope? ===\n")
-cat("Primary:", sum(primary_metrics$slope < 0), "/ 12\n")
-cat("Sensitivity:", sum(sensitivity_metrics$slope < 0), "/ 12\n")
+cat("\n=== Point-estimate sensitivity: posterior MEDIAN instead of mean (pass+fail) ===
+")
+median_metrics <- compute_condition_metrics(primary_set, est = "log_M_median")
+readr::write_csv(median_metrics, here::here("data", "processed", "g1_primary_metrics_median.csv"))
+print(dplyr::select(median_metrics, n_participants, n_trials, dprime_target, spearman_rho, ordering_accuracy), n = Inf)
+
+cat("\n=== Direction check: low > medium > high in the level means ===
+")
+chk <- function(m) sum(m$diff_low_medium > 0 & m$diff_medium_high > 0)
+cat("Primary (mean):", chk(primary_metrics), "/ 12; pass-only:", chk(sensitivity_metrics), "/ 12; median:", chk(median_metrics), "/ 12\n")
+cat("Smallest adjacent difference in MC SEs (mean):",
+    round(min(c(primary_metrics$diff_low_medium / primary_metrics$diff_low_medium_mcse,
+                primary_metrics$diff_medium_high / primary_metrics$diff_medium_high_mcse)), 1), "\n")
+cat("Ordering accuracy range (mean / median):",
+    sprintf("%.2f-%.2f / %.2f-%.2f", min(primary_metrics$ordering_accuracy), max(primary_metrics$ordering_accuracy),
+            min(median_metrics$ordering_accuracy), max(median_metrics$ordering_accuracy)), "\n")
 
 cat("\nDone. Wrote data/processed/g1_failure_rates.csv, g1_empirical_dprime_check.csv,\n")
-cat("g1_primary_metrics.csv, g1_sensitivity_metrics.csv.\n")
+cat("g1_primary_metrics.csv, g1_sensitivity_metrics.csv, g1_primary_metrics_median.csv.\n")

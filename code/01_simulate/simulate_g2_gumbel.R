@@ -36,7 +36,8 @@ gumbel_min_euler_gamma <- -digamma(1)
 gumbel_min_lcdf <- function(x, mu, beta = gumbel_min_beta) {
   nu <- mu + gumbel_min_euler_gamma * beta
   z <- (x - nu) / beta
-  log1p(-exp(-exp(z)))
+  # log(1 - exp(-t)) with t = exp(z); expm1 keeps precision when t is small
+  log(-expm1(-exp(z)))
 }
 
 gumbel_min_lccdf <- function(x, mu, beta = gumbel_min_beta) {

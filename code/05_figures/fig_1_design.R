@@ -27,7 +27,7 @@ boxes <- tibble::tribble(
   "fit", 7, 3,  5.4, 5.6, okabe[["fit"]],
   "Fitted model (all generators)\nhierarchical hmetad, K = 4\n(1|participant) on log_M, d', c\nnormal(0,1) log_M prior\n4 chains, 1000 warmup + 1000 draws\nadapt_delta 0.95\n(one escalation retry if flagged)\n\nG2 also fit under Gaussian\n(misspecified) for comparison",
   "out", 13.4, 3, 5.4, 5.6, "grey85",
-  "Outputs\nG0: bias, RMSE, pooled coverage\nG1: slope, Spearman, ordering\n     accuracy, separation prob.\nG2: paired LOO/ELPD, log_M bias\nPPCs; prior & K=6 sensitivity"
+  "Outputs\nG0: bias, RMSE, pooled coverage\nG1: level means, diffs, Spearman, ordering\n     accuracy, separation prob.\nG2: paired LOO/ELPD, log_M bias\nPPCs; prior & K=6 sensitivity"
 ) |> dplyr::mutate(xmin = x - w / 2, xmax = x + w / 2, ymin = y - h / 2, ymax = y + h / 2)
 
 arrows <- tibble::tribble(

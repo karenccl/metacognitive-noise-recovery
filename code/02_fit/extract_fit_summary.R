@@ -42,7 +42,7 @@ extract_fit_summary <- function(fit,
   min_ess_tail <- suppressWarnings(min(summ$ess_tail, na.rm = TRUE))
 
   flags <- character(0)
-  if (!is.finite(max_rhat) || max_rhat >= rhat_max) flags <- c(flags, "rhat")
+  if (!is.finite(max_rhat) || max_rhat > rhat_max) flags <- c(flags, "rhat")
   if (!is.na(n_divergent) && n_divergent > 0) flags <- c(flags, "divergences")
   if (!is.finite(min_ess_bulk) || min_ess_bulk < bulk_ess_min) flags <- c(flags, "bulk_ess")
   if (!is.finite(min_ess_tail) || min_ess_tail < tail_ess_min) flags <- c(flags, "tail_ess")

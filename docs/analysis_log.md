@@ -879,3 +879,28 @@ The report uses the verified table above.
   parameterisation is unverified and those rows are descriptive.
 - Outputs: bias_fit_level.csv, bias_diagnosis_summary.csv, bias_by_sample_size.csv, g2_coverage.csv,
   g2_nuisance_recovery.csv. Report Limitation (iv) reworded from "unexplained" to "partly characterised".
+
+## 2026-09-28 — Review items 6-10: G1 summary, point estimate, R-hat boundary, Gumbel CDF
+
+- **6-7 (G1 summary).** `compute_primary_metrics.R` no longer fits a linear slope of `log_M` on
+  sigma_c or reports its p-values: the three calibrated levels are not equally spaced on any
+  natural scale, and p-values on simulation replicates reflect only the replication count. It now
+  reports, per N x T x d' cell, per-level means, SDs and MC SEs, adjacent and low-high differences
+  with independent-sample MC SEs, Spearman, ordering accuracy and separation probabilities.
+  Result unchanged in substance: means ordered low > medium > high in 12/12 cells (mean `log_M`
+  -0.30..-0.18 / -0.84..-0.66 / -1.93..-1.71; differences 0.46-0.57 and 0.88-1.20; smallest
+  adjacent gap 7.2 MC SEs). Report abstract, RQ1 prediction, methods, results and README reworded;
+  the RQ1 prediction text was changed after seeing the data (it named the slope), which is noted here.
+- **9 (point estimate).** G0/G2 bias and RMSE used the posterior mean while G1 used the median.
+  G1 now uses the posterior mean; the median version is kept as a sensitivity
+  (`g1_primary_metrics_median.csv`): ordering accuracy 0.95-1.00 and 12/12 direction check both ways.
+  Fig 3 now plots posterior means; its subtitle no longer clips and the empty fail/error legend
+  entries are gone.
+- **8 (R-hat boundary).** `extract_fit_summary.R` now flags `max_rhat > rhat_max` instead of `>=`.
+  Fits with max R-hat exactly 1.01: 0 of 1,440, so no fit would be reclassified and nothing was refit.
+  (One fit has max R-hat 1.0124 and was already flagged.)
+- **10 (Gumbel CDF).** R-side `gumbel_min_lcdf` now uses `log(-expm1(-exp(z)))`, which keeps
+  precision when exp(z) is small. The Stan twin already used `log1m_exp`, so no fit is affected;
+  the stored G2 `epred_summary` objects were computed with the old R form and were not regenerated
+  (differences would arise only in extreme lower tails).
+- 54 tests pass; Fig 1 and Fig 3 regenerated.
