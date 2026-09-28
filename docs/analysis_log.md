@@ -973,6 +973,10 @@ The report uses the verified table above.
 - **Editorial edits.** A batch rewording (protocol references, "pre-registered" to "pre-specified", CmdStan
   path) was reviewed and applied. Two defects in it were fixed: a truncated last line in `fig_5_ppc.R`
   (a parse error) and the removal of `LICENSE`/`license: MIT`; MIT was kept.
-- **Not done.** A from-scratch refit of one grid cell to confirm bit-for-bit determinism was started and
-  interrupted; the original result file was restored unchanged. Full-pipeline reproduction from a clone
-  (`renv::restore()` plus the grid) has not been run.
+- **Single-fit determinism (completed later the same day).** Grid cell 721 (G0, N = 20, T = 100, d' = 0.75,
+  rep 1) was refitted from scratch with `run_one_cell.R` (2.9 min, fit seed 21261644). Posterior draws of the
+  population effects and SDs were exactly identical to the stored ones (max absolute difference 0), as were
+  the aggregated counts, max R-hat (1.00206), status and escalation flag. This is one fit on one machine with
+  the same package versions; it does not establish bit-identity across machines or backends. The original
+  result file was restored byte-for-byte afterwards.
+- **Not done.** Full-pipeline reproduction from a clone (`renv::restore()` plus the grid) has not been run.

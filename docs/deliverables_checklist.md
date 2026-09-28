@@ -16,6 +16,7 @@ Status as of 2026-09-28. "Done" means produced and committed; it does not mean e
 | Supplementary methods | `manuscript/supplementary_methods.md` | Draft |
 | References | `manuscript/references.bib` | Verified against Crossref 2026-09-28 (one page range unconfirmed) |
 | Prior record | `outputs/tables/prior_summary.csv` | Done |
+| Single-fit refit reproduces stored draws exactly | `data/interim/` | Done 2026-09-28 (grid cell 721; same machine and versions) |
 | Fresh-clone check (figures only) | n/a | Done 2026-09-28: all five figures rebuild from a clean clone; full-pipeline reproduction (renv::restore + fits) not done |
 | `make` targets run end to end | `Makefile` | Not run (`make` not installed); scripts run individually |
 | Release tag (v1.0.0) | n/a | Done 2026-09-28 |
