@@ -1023,3 +1023,13 @@ Design locked in `4785b35` and `37bed3d` (`design_decisions.md`, "v2 extension 1
   eyeballing absolute RMSE ~0.009 would notice it. Participant-level X2 (stat 3), which is scaled by
   sampling noise, detected it far less often (0.49).
 - **Not yet done.** `manuscript/report.md` not changed; revision planned for v1.1.
+
+## 2026-09-28 - v1.1.0 release preparation
+
+- Report revised (`4faac0e`): §3.5 methods, §4.4 results (Fig. 6), abstract, discussion,
+  limitations (vi), next steps and reproducibility statement now carry the reversed PPC conclusion.
+- `fig_5_ppc.R`: title no longer says discrepancies are small "including the misspecified one";
+  subtitle and caption point to the all-G2 result (Fig. 6). Figure regenerated.
+- README status, headline and limitation bullets, repository map; supplement S9 (PPC method) and
+  S13 errata 5-6 updated. Makefile `analyse` target now also runs `g2_ppc_all.R`.
+- `CITATION.cff` version 1.1.0.

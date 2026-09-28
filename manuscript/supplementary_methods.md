@@ -167,6 +167,15 @@ exists).
 - **PPC.** `hmetad::epred_draws_metad()` on the aggregated data, posterior-mean cell probability
   per participant × that participant's stimulus-specific trial count, summed over participants,
   compared with observed counts as proportions conditional on stimulus.
+- **PPC across all G2 fits (v1.1).** `code/04_ppc_and_comparison/g2_ppc_all.R`, from each fit's
+  saved `epred_summary` (posterior-mean cell probabilities; predictive draws were not saved) and
+  `agg`, no refitting. Per fit: (1) the aggregate RMSE above; (2) mean |observed − predicted| over
+  the four confidence = 4 cells of (1); (3) Σ (n − n_s p̂)² / (n_s p̂) over participant × cell,
+  divided by N·16 − N·2. Detection threshold per N × T × d′ cell = 19th order statistic of the 20
+  correct-family values (`quantile(x, 0.95, type = 1)`); a Gaussian fit is detected if strictly
+  above it. Pooled detection = mean of the 12 per-cell rates. The script first reproduces (1) for
+  grid 1321/1322 from `ppc_discrepancy_summary.csv` (difference 1.1e-17). Design, decision rule
+  and revision history: `docs/design_decisions.md`, "v2 extension 1".
 - **Empirical d′.** From pooled hit/false-alarm counts per replicate with proportions clamped to
   [1/(2·max(n₀, n₁)), 1 − that].
 
@@ -216,5 +225,13 @@ Each is recorded with its date in `docs/analysis_log.md`.
    −0.177 to −0.025, G2-correct −0.092 to −0.007, G2-misspecified +0.064 to +0.195.
 4. **K-generic generators** (S4) and **a hardcoded interpretation string** in the K = 6
    robustness table that contradicted the computed result; both fixed before results were used.
-5. **PPC claim scope.** The confidence-level-4 pattern in the misspecified fit's discrepancies is
-   one replicate per fit and is reported as suggestive.
+5. **PPC claim scope.** In v1.0 the confidence-level-4 pattern in the misspecified fit's
+   discrepancies rested on one replicate per fit and was reported as suggestive. Across all 240 G2
+   datasets (v1.1) the Gaussian fit's highest-confidence discrepancy was a median 6.8 times the
+   correct fit's.
+6. **PPC conclusion reversed (v1.1).** v1.0 concluded from one replicate that aggregate posterior
+   predictive discrepancy did not reveal the G2 misspecification. The pre-specified analysis of all
+   240 G2 datasets reversed this: the Gaussian fit's RMSE was larger in 96.7% of datasets, and
+   oracle-calibrated detection averaged 0.875 over cells. The v1.0 replicate was typical (ratio 1.9);
+   the error was reading a small absolute discrepancy as no signal. Report §4.4; `analysis_log.md`,
+   2026-09-28.

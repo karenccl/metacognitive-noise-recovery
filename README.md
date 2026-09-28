@@ -3,7 +3,7 @@
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
 A reproducible R/Stan simulation study (no human data). Draft report: [manuscript/report.md](manuscript/report.md).
 
-**Status (2026-09-28):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2 (misspecification is visible to LOO and biases `log_M`, but not to aggregate PPC); RQ1 is a validity check.
+**Status (2026-09-28, v1.1):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4). RQ1 is a validity check.
 
 ## Question
 
@@ -28,14 +28,15 @@ Grid per cell: N ∈ {20, 40} participants × T ∈ {100, 200, 400} trials × d�
 - **G1 ordinal recovery:** level means of `log_M` ordered low > medium > high in 12/12 cells (adjacent differences 0.46–1.20, smallest 7.2 Monte Carlo SEs); ordering low > medium > high held in 100% of matched replications in 11 cells and 95% in one; 720/720 fits passed. (Fig. 3)
 - **G0 calibration:** pooled 95% credible-interval coverage 95.8% (95% CI 92.5–97.7%, MCSE 1.3%); small negative `log_M` bias in every cell (−0.18 to −0.03; mean −0.075) that shrinks with data and correlates with the posterior between-participant SD, but whose cause was not tested. (Fig. 2)
 - **G2:** LOO preferred the correct family in 96.2% of 240 paired datasets; Gaussian misspecification biased `log_M` upward in all 12 cells (+0.06 to +0.20); 95% interval coverage of the true `log_M` was 97.1% (correct) vs 81.2% (Gaussian). 8–12% of LOO observations have Pareto k > 0.7 (no remedy applied). (Fig. 4)
-- **Model adequacy:** posterior predictive discrepancy was small for all five representative fits, including the misspecified one, so small PPC error did not flag the misspecification. (Fig. 5; one replicate per fit)
+- **Model adequacy (revised in v1.1):** across all 240 G2 datasets the Gaussian fit's aggregate PPC discrepancy was small in absolute terms (median RMSE 0.009 vs 0.003 for the correct family) but larger than the correct fit's in 96.7% of datasets, concentrated at the highest confidence level. Calibrated against the correct family's discrepancies (an oracle reference an analyst would not have), it detected the misspecification in 87.5% of datasets, at least as often as LOO's > 2 SE criterion in every cell. The v1.0 reading of one replicate ("small, so not flagged") was wrong. (Figs. 5 and 6; `data/processed/v2/`)
 - **Failures:** 1,437 pass, 3 fail, 0 error out of 1,440; failures confined to d′ = 0.75 cells.
 
 Results are conditional on the simulated processes. Full limitations are in the report (Section 5). The main ones:
 
 - RQ1 is a comparatively favourable test of the static model.
 - The small negative `log_M` bias is only partly characterised.
-- The K = 6 (G1 only), prior-width (n = 1 per generator) and PPC (n = 1 per fit) checks are small; G0 sensitivity to bin count is untested.
+- The K = 6 (G1 only) and prior-width (n = 1 per generator) checks are small; G0 sensitivity to bin count is untested.
+- The PPC analysis covers all G2 fits but G0/G1 only one replicate each, uses posterior-mean predictions (no replicated datasets), and its detection rates rely on an oracle reference.
 - Several priors (flat d′/criterion intercepts, `student_t(3, 0, 2.5)` SDs) are unvaried brms defaults.
 - LOO Pareto-k values are unreliable for a substantial share of observations.
 - One seed base, one environment, rstan only; no JAGS cross-check or real-data illustration.
@@ -47,12 +48,12 @@ code/00_setup/               config loading, grid construction
 code/01_simulate/            G0/G1/G2 generators, confidence discretisation, DDM calibration
 code/02_fit/                 fit wrapper, diagnostics, per-cell runner, concurrent grid runner
 code/03_recovery_analysis/   compile results, G1 primary metrics, prior and K=6 (G1 re-binning) sensitivity
-code/04_ppc_and_comparison/  LOO comparison, PPCs, diagnostics summary
+code/04_ppc_and_comparison/  LOO comparison, PPCs (incl. all-G2 PPC, v1.1), diagnostics summary
 code/05_figures/             the five headline figures
 config/                      design.yml (all constants), grid.csv (1,440 rows)
-data/processed/              compact result tables (tracked)
+data/processed/              compact result tables (tracked); v2/ holds the v1.1 all-G2 PPC tables
 data/interim/                per-fit result files (git-ignored, ~1,440 files)
-outputs/                     figures, calibration/benchmark tables
+outputs/                     figures (figures/v2/: Fig. 6), calibration/benchmark tables
 docs/                        design decisions, analysis log, computational environment
 tests/                       testthat unit tests (generators, discretisation, fit-wrapper inputs)
 manuscript/                  report, references, supplementary methods
@@ -77,7 +78,7 @@ The lockfile records these three repositories, so a plain `renv::restore()` shou
 
 What can be regenerated from the tracked files alone: the figures (`make figures`), since they read only `data/processed/*.csv` and `config/`.
 
-What needs the fits: `compile_results.R`, `compute_primary_metrics.R`, `loo_comparison.R` and `ppc_joint_counts.R` read `data/interim/`, which is git-ignored. Regenerate it with the grid run (resumable; safe to re-invoke):
+What needs the fits: `compile_results.R`, `compute_primary_metrics.R`, `loo_comparison.R`, `ppc_joint_counts.R` and `g2_ppc_all.R` read `data/interim/`, which is git-ignored. Regenerate it with the grid run (resumable; safe to re-invoke):
 
 ```bash
 make test        # unit tests, fast

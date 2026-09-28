@@ -5,7 +5,8 @@
 # G2 correct, G2 misspecified. Points = the 16 stimulus x response x
 # confidence cells (proportions conditional on stimulus); the highest
 # confidence category (C4) is highlighted because that is where the G2
-# misspecified fit's largest discrepancies concentrate.
+# misspecified fit's largest discrepancies concentrate. Title and caption
+# revised in v1.1 after the all-G2 PPC analysis (g2_ppc_all.R, Fig. 6).
 #
 # Run from the project root: Rscript code/05_figures/fig_5_ppc.R
 
@@ -32,11 +33,11 @@ p <- ggplot(ppc, aes(x = predicted_prop, y = observed_prop)) +
   scale_color_manual(values = c("Highest confidence (C4)" = "#D55E00", "Other confidence levels" = "#0072B2")) +
   scale_shape_manual(values = c("0" = 16, "1" = 17), labels = c("Stimulus 0", "Stimulus 1")) +
   labs(
-    title = "Posterior predictive discrepancies are small for every fit, including the misspecified one",
-    subtitle = "Each point is one stimulus x response x confidence cell (proportion conditional on stimulus). Dashed line = perfect fit.\nIn these single replicates, only the misspecified G2 fit has its four largest errors all at the highest confidence category (suggestive, n = 1 per fit).",
+    title = "Posterior predictive discrepancies for five representative fits (one replicate each)",
+    subtitle = "Each point is one stimulus x response x confidence cell (proportion conditional on stimulus). Dashed line = perfect fit.\nIn these single replicates, only the misspecified G2 fit has its four largest errors all at the highest confidence category;\nacross all 240 G2 datasets, the Gaussian fit's highest-confidence discrepancy was a median 6.8 times the correct fit's (Fig. 6).",
     x = "Posterior-predicted proportion (hmetad::epred_draws_metad)", y = "Observed proportion",
     color = NULL, shape = NULL,
-    caption = "Representative condition N=40, T=200, d'=1.5, replication 1 (fits chosen by category). All fits are hierarchical hmetad, K=4. G1 had no failed fits to display (720/720 pass).\nSmall aggregate discrepancy is not evidence of generative adequacy: LOO (Fig. 4) separates the G2 models far more clearly than PPC magnitude does."
+    caption = "Representative condition N=40, T=200, d'=1.5, replication 1 (fits chosen by category). All fits are hierarchical hmetad, K=4. G1 had no failed fits to display (720/720 pass).\nAbsolute discrepancies are small for every fit, but small is not adequate: across all 240 G2 datasets the Gaussian fit's RMSE exceeded the correct fit's in 96.7% (Fig. 6)."
   ) +
   theme_minimal() +
   theme(legend.position = "bottom", plot.caption = element_text(hjust = 0, size = 7.5),

@@ -32,6 +32,7 @@ analyse:
 	$(RSCRIPT) code/04_ppc_and_comparison/loo_comparison.R
 	$(RSCRIPT) code/04_ppc_and_comparison/diagnostics_summary.R
 	$(RSCRIPT) code/04_ppc_and_comparison/ppc_joint_counts.R
+	$(RSCRIPT) code/04_ppc_and_comparison/g2_ppc_all.R
 	$(RSCRIPT) code/03_recovery_analysis/bias_diagnostics.R
 	$(RSCRIPT) code/03_recovery_analysis/prior_summary.R
 
