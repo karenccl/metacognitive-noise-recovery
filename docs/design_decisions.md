@@ -646,6 +646,86 @@ RMSE ratio (1.9) lies within the range observed across the 240 pairs. The report
 the replicate was not unusual and that its interpretation ("small, so not flagged") was wrong. The
 verdict itself (Reversed) is unchanged.
 
+## 2026-09-29 — v2 extension 2: replicated-data posterior predictive p-values (48 stored fits)
+
+Written and committed before any extension-2 statistic was computed. Outputs go to
+`data/processed/v2/` and `outputs/figures/v2/`; no earlier file is overwritten.
+
+**Purpose.** Extension 1 showed that the Gaussian fit's aggregate discrepancy is systematically larger
+than the correct fit's, but detection was calibrated against the correct family's own distribution
+(an oracle). The report (v1.1, §5) states that practical references were not tested. This extension
+asks whether a reference an analyst actually has, the fitted model's own replicated data, flags the
+misspecification.
+
+**What was already seen.** The v1.1 results, including the oracle detection rates and paired
+ratios for every G2 dataset (so also for the 24 datasets used here), were known when this section
+was written. The predictions below are made with that knowledge.
+
+**Data (no refitting).** The 48 G2 fits whose full `brmsfit` was kept (`rep_id` 1–2 in each of the
+12 N × T × d′ cells, correct and Gaussian families: 24 paired datasets). `simulate_g2_gumbel.R`
+must be sourced first so `gumbel_min_lcdf`/`lccdf` are in scope for the Gumbel-family predictions.
+
+**Precondition (checked before any statistic; the script stops if it fails).** For every one of
+the 48 files: the `fit` element is a non-null `brmsfit`; `hmetad::epred_draws_metad(fit, agg)`
+runs; per-draw cell probabilities sum to 1 within participant × stimulus × draw (to 1e-8); and
+their mean over draws reproduces the stored `epred_summary$epred_mean` to 1e-8.
+
+**Replicated data.** For each posterior draw s (all 4,000) and each participant × stimulus, draw
+y_rep ~ Multinomial(n_ps, p_ps^(s)), where n_ps is that participant's observed trial count for the
+stimulus (fixed by the design) and p_ps^(s) the draw's predicted cell probabilities. This matches
+the aggregated multinomial likelihood used in fitting. RNG seed per fit: `seed_base + grid_id`.
+
+**Statistics.** The three extension-1 statistics, computed as realised discrepancies
+T(y, θ^(s)) and T(y_rep^(s), θ^(s)) against the draw's own probabilities (not the posterior mean):
+(1) aggregate RMSE, primary; (2) highest-confidence discrepancy, secondary; (3) participant-level
+Pearson X²/df, secondary. Posterior predictive p-value: p = proportion of draws with
+T(y_rep, θ) ≥ T(y, θ). A fit is **flagged** if p < 0.05 (one-sided: large discrepancy only).
+
+**Summaries.**
+
+- Flag rate among Gaussian fits (practical detection) and among correct fits (false alarm), each
+  out of 24, with Wilson 95% intervals; per-cell counts (0–2) listed but not interpreted.
+- Descriptive split by T (100 / 200 / 400; 8 datasets each) and by N (20 / 40; 12 each).
+- On the same 24 datasets: oracle detection from extension 1 and LOO's > 2 SE preference.
+- Distribution of p-values for each family (known to be conservative: under a correct model they
+  concentrate near 0.5 rather than being uniform).
+
+**Predictions.**
+
+- P1. Correct-family fits are rarely flagged (≤ 2 of 24 for each statistic).
+- P2. Practical detection by statistic 1 is lower than oracle detection on the same 24 datasets.
+- P3. Where it occurs, practical detection is concentrated at T = 400.
+
+**Decision rule for the report's statement on practical PPC (fixed now; evaluated in this order,
+first match wins).**
+
+1. **Not interpretable:** more than 2 of 24 correct fits flagged by statistic 1. The report says
+   the replicated-data check had an excess false-alarm rate and draws no conclusion from it.
+2. **Practical PPC detects:** statistic 1 flags ≥ 18 of 24 Gaussian fits. The report states that
+   a replicated-data PPC on the aggregate discrepancy flagged the misspecification in most datasets.
+3. **Practical PPC misses:** statistic 1 flags ≤ 6 of 24 Gaussian fits. The report states that the
+   signal is visible when fitted families are compared (LOO, or discrepancies side by side) but a
+   single model's replicated-data PPC on the aggregate discrepancy usually did not flag it.
+4. **Partial:** otherwise; reported by T and N without choosing a favourable statistic.
+
+Statistics 2 and 3 do not change the category. If statistic 2 flags ≥ 18 of 24 Gaussian fits with
+≤ 2 of 24 false alarms, the report additionally names it as a targeted check that did flag the
+misspecification.
+
+**Limitations fixed in advance.** 24 pairs, 2 per cell: per-cell results are not interpretable and
+the rates carry wide intervals. The datasets are replications 1–2 only, chosen by the storage rule,
+not by outcome. Posterior predictive p-values are conservative, so low detection partly reflects
+the method, not only the size of the misfit.
+
+**Inclusion.** All 48 fits (2 G2-correct fits failed diagnostics; any among these 48 are flagged
+and a pass-only sensitivity is reported).
+
+**Stopping rule.** One pass. No added statistics or thresholds after results are seen; anything
+further is logged as exploratory.
+
+**Planned outputs.** `code/04_ppc_and_comparison/g2_ppp_fullfits.R`;
+`data/processed/v2/g2_ppp_by_fit.csv`, `g2_ppp_summary.csv`; `outputs/figures/v2/fig_g2_ppp.png`.
+
 ## What this project must not claim
 
 In particular: do not claim `log_M` "recovers" σ_c numerically; do not
