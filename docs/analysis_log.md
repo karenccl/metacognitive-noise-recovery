@@ -1096,3 +1096,20 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   runs `g2_ppp_fullfits.R` (~15 min).
 - Tests: `testthat::test_dir("tests")` 54 pass, 0 fail. `make` itself is not installed on this
   machine, so the targets were run as their underlying `Rscript` commands, not through `make`.
+
+## 2026-09-29 - v3 set-up: branch, locked constants, API checks
+
+- Branch `v3-enhancement` from `main` (v1.2.1). Plan: `docs/v3_plan.md`. Constants and
+  pre-specified rules: `config/v3.yml` (committed before any v3 fit).
+- Environment: R 4.5.0, brms 2.23.0, hmetad 0.2.1, loo 2.8.0 (renv library active).
+- API checks (plan §1.3), all "yes", so the main code paths are used:
+  - (a) `brms:::loo.brmsfit` has `reloo`, `k_threshold`, `reloo_args`.
+  - (b) `brms:::reloo.brmsfit` sets `ll_args$allow_new_levels <- TRUE` itself, with
+    `sample_new_levels` defaulting to `"gaussian"`; `kfold.brmsfit` calls `log_lik(...,
+    allow_new_levels = TRUE)`. No extra argument needed. reloo refits run through
+    `future.apply::future_lapply` (sequential unless a `future` plan is set).
+  - (c) `hmetad::aggregate_metad(data, ...)` takes tidy-select grouping columns;
+    `aggregate_metad(d, participant, difficulty, K = 4)` gives one row per participant x
+    difficulty and is identical to the `!!!rlang::syms(...)` form.
+  - (d) `hmetad::epred_draws_metad(object, newdata, ...)` forwards `...` to
+    `tidybayes::epred_draws()`, so `ndraws` (and `seed`) are accepted.

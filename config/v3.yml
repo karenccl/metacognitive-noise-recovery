@@ -1,0 +1,49 @@
+# v3 enhancement constants (docs/v3_plan.md). Locked before any v3 fit.
+version: v3
+seed_base_v3: 20261001
+
+sign_conventions:
+  delta_mis: "log_M(normal) - log_M(correct or gumbel_min); positive = Gaussian higher"
+  elpd_diff_empirical: "elpd(normal) - elpd(gumbel_min); positive = Gaussian preferred"
+  # NOTE: the opposite direction to g2_elpd_comparison.csv's
+  # elpd_diff_correct_minus_mis (positive there = correct = Gumbel preferred).
+
+loo_robust:
+  k_threshold: 0.7
+  kfold_K: 5
+
+g3:
+  n_participants: 40
+  n_trials_per_level: 200          # 2 levels -> 400 trials/participant, matches largest G0/G2 cell
+  replications: 20
+  conditions:
+    control: [1.25, 1.25]          # same d' in both halves (no mixture), mean d' = 1.25
+    mixture: [0.5, 2.0]            # two difficulty levels, mean d' = 1.25
+  fit_variants: [normal_pooled, gumbel_pooled, normal_difficulty, gumbel_difficulty]
+  # Pre-specified decision rule (evaluated in v3_g3_summary.R):
+  # "pooling artefact present" if, in the mixture condition, the pooled comparison
+  # favours gumbel_min by > 2 SE in >= 25% of replications AND in the control
+  # condition in <= 10% of replications.
+  artefact_rule:
+    mixture_min_prop: 0.25
+    control_max_prop: 0.10
+
+empirical:
+  primary_category: perception
+  secondary_category: memory         # optional analysis, reported separately
+  min_participants: 20
+  min_trials_per_participant: 100
+  accuracy_range: [0.55, 0.95]       # participant exclusion
+  conf_levels_range: [3, 11]         # discrete scales only; > 11 treated as continuous -> excluded
+  merge_min_prop: 0.05               # merge adjacent confidence levels used on < 5% of trials
+  k_max: 6
+  k_min: 3
+  max_condition_levels: 4
+  difficulty_designs_primary: [constant, recorded_levels]
+  difficulty_designs_sensitivity: [staircase]
+  max_datasets_primary: 20           # if more are eligible, sample this many with seed_base_v3
+  hierarchical_thresholds: true      # REQUIRED for real data (participants differ in criteria)
+  loo_repair:
+    max_prop_bad_k_for_reloo: 0.10   # above this, use grouped K-fold instead of reloo
+  categories:
+    two_se_rule: 2                   # |elpd_diff| > 2 * se_diff -> "clear"
