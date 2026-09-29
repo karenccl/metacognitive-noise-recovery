@@ -1,0 +1,2 @@
+n_pairs,n_refits,prop_favor_psis,prop_favor_exact,prop_2se_psis,prop_2se_exact,sign_agreement,twose_agreement,median_abs_change,max_abs_change,psis_conclusion_holds
+24,142,0.9583333333333334,0.9583333333333334,0.6666666666666666,0.6666666666666666,1,1,0.027863068914669498,0.8748800564984336,TRUE

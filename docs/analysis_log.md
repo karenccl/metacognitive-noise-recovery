@@ -1161,3 +1161,30 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   `run_one_cell.R`; `draws_b_sd` identical to the stored record (max abs diff 0), identical `agg`,
   status `pass`, max R-hat 1.00206. Original file restored (md5 591034d8... unchanged).
 - Tests: 76 pass, 0 fail (includes the new `test_simulate_g3.R`).
+
+## 2026-09-30 - v3 step 2: exact-refit LOO on the 48 stored G2 fits
+
+- Scripts: `code/04_ppc_and_comparison/v3_reloo_stored_fits.R` (3 shards x 4 cores, ~1.3 h wall
+  clock; records in `data/interim/v3_reloo/`), `v3_loo_robust_summary.R`. Outputs:
+  `data/processed/v3/g2_loo_psis_vs_exact_by_pair.csv`, `g2_loo_psis_vs_exact_summary.csv`,
+  `g2_pareto_k_by_cell.csv`.
+- 30 of 48 fits had at least one participant with Pareto k > 0.7; 142 leave-one-participant-out
+  refits in total (4 to 13 per affected fit), all succeeded. Refit seeds = the stored fit's seed.
+- Result (sign as in `g2_elpd_comparison.csv`: > 0 favours the correct model): correct favoured in
+  23/24 pairs under both PSIS and exact LOO; > 2 SE in 16/24 under both. Sign agreement 24/24,
+  2-SE agreement 24/24, median |change| 0.028 elpd, max 0.87 (N = 40, T = 200, d' = 0.75, rep 1:
+  20.77 -> 19.91, SE 6.6).
+- Decision (plan §3.5): `twose_agreement` = 1.00 >= 0.9 and the favour rate moves 0 points, so the
+  PSIS-LOO conclusion stands on this subset; the optional K-fold (§3.4) is not run. The remaining
+  216 pairs have no stored fit and cannot be refitted; their Pareto k profile by cell is in
+  `g2_pareto_k_by_cell.csv`.
+- **Deviations from the plan's code** (brms 2.23.0):
+  1. `reloo_args = list(check = FALSE, ...)` errors ("formal argument 'check' matched by multiple
+     actual arguments"): `loo.brmsfit` already passes `check`. Removed.
+  2. Passing `cores = 4` in `reloo_args` also reaches `log_lik()`, which on Windows then runs on a
+     PSOCK cluster whose workers lack `gumbel_min_lcdf` ("object 'gumbel_min_lcdf' not found").
+     Sampler cores now come from `options(mc.cores = 4)` (brm's default); `log_lik()` stays
+     serial. Refit seed passed as `reloo_args = list(seed = r$seed)`.
+  3. The brms-version fallback to `brms::reloo()` was dropped: the §1.3 check showed
+     `loo(reloo = TRUE)` exists.
+- reloo sets the refitted participants' Pareto k to 0 in `loo_exact` (checked on the trial fit).
