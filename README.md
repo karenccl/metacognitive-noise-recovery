@@ -3,7 +3,7 @@
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
 A reproducible R/Stan simulation study (no human data). Draft report: [manuscript/report.md](manuscript/report.md).
 
-**Status (2026-09-28, v1.1):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; v1.1 is released as tag `v1.1.0`. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4). RQ1 is a validity check.
+**Status (2026-09-29, v1.2):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; the current release is tag `v1.2.0`. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4); v1.2 adds a practical single-model check with replicated data. RQ1 is a validity check.
 
 ## Question
 
@@ -29,6 +29,7 @@ Grid per cell: N ∈ {20, 40} participants × T ∈ {100, 200, 400} trials × d�
 - **G0 calibration:** pooled 95% credible-interval coverage 95.8% (95% CI 92.5–97.7%, MCSE 1.3%); small negative `log_M` bias in every cell (−0.18 to −0.03; mean −0.075) that shrinks with data and correlates with the posterior between-participant SD, but whose cause was not tested. (Fig. 2)
 - **G2:** LOO preferred the correct family in 96.2% of 240 paired datasets; Gaussian misspecification biased `log_M` upward in all 12 cells (+0.06 to +0.20); 95% interval coverage of the true `log_M` was 97.1% (correct) vs 81.2% (Gaussian). 8–12% of LOO observations have Pareto k > 0.7 (no remedy applied). (Fig. 4)
 - **Model adequacy (revised in v1.1):** across all 240 G2 datasets the Gaussian fit's aggregate PPC discrepancy was small in absolute terms (median RMSE 0.009 vs 0.003 for the correct family) but larger than the correct fit's in 96.7% of datasets, concentrated at the highest confidence level. Calibrated against the correct family's discrepancies (an oracle reference an analyst would not have), it detected the misspecification in 87.5% of datasets, at least as often as LOO's > 2 SE criterion in every cell. The two are not like-for-like (oracle reference versus a single-dataset decision), so this does not mean PPC is more sensitive than LOO. The v1.0 reading of one replicate ("small, so not flagged") was wrong. (Figs. 5 and 6; `data/processed/v2/`)
+- **Practical PPC check (v1.2):** using only each fitted model's own replicated data (24 datasets with stored full fits), a discrepancy on the highest-confidence cells flagged the Gaussian fit in 20/24 datasets with 0/24 false alarms. The aggregate RMSE flagged 16/24 (the same as LOO > 2 SE on those datasets; oracle 22/24) and only 2/8 at T = 100. The participant-level X² also flagged 9/24 correct fits, so it is not usable. Small sample: two datasets per cell. (Fig. 7)
 - **Failures:** 1,437 pass, 3 fail, 0 error out of 1,440; failures confined to d′ = 0.75 cells.
 
 Results are conditional on the simulated processes. Full limitations are in the report (Section 5). The main ones:
@@ -36,7 +37,7 @@ Results are conditional on the simulated processes. Full limitations are in the 
 - RQ1 is a comparatively favourable test of the static model.
 - The small negative `log_M` bias is only partly characterised.
 - The K = 6 (G1 only) and prior-width (n = 1 per generator) checks are small; G0 sensitivity to bin count is untested.
-- The PPC analysis covers all G2 fits but G0/G1 only one replicate each, uses posterior-mean predictions (no replicated datasets), and its detection rates rely on an oracle reference.
+- The all-G2 PPC analysis uses posterior-mean predictions and an oracle reference; the replicated-data check that removes the oracle covers only 24 datasets (two per cell). G0/G1 have one PPC replicate each. Why the participant-level X² flags correct fits is untested.
 - Several priors (flat d′/criterion intercepts, `student_t(3, 0, 2.5)` SDs) are unvaried brms defaults.
 - LOO Pareto-k values are unreliable for a substantial share of observations.
 - One seed base, one environment, rstan only; no JAGS cross-check or real-data illustration.

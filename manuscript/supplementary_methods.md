@@ -176,6 +176,14 @@ exists).
   above it. Pooled detection = mean of the 12 per-cell rates. The script first reproduces (1) for
   grid 1321/1322 from `ppc_discrepancy_summary.csv` (difference 1.1e-17). Design, decision rule
   and revision history: `docs/design_decisions.md`, "v2 extension 1".
+- **Replicated-data PPC (v1.2).** `code/04_ppc_and_comparison/g2_ppp_fullfits.R`, on the 48 G2
+  fits with a stored `brmsfit` (replications 1–2). Per draw s (4,000):
+  `hmetad::epred_draws_metad()` probabilities p^(s); y_rep ~ Multinomial(n_ps, p_ps^(s)) per
+  participant × stimulus, drawn as sequential conditional binomials; RNG seed `seed_base +
+  grid_id`. The statistics (1)–(3) above are computed against p^(s) for y and y_rep;
+  p = mean[T(y_rep, θ) ≥ T(y, θ)], flagged if p < 0.05. Preconditions checked first: per-draw
+  sums equal 1 (max deviation 5.6e-16) and draw means reproduce `epred_summary` (5.6e-17).
+  Design and decision rule: `docs/design_decisions.md`, "v2 extension 2".
 - **Empirical d′.** From pooled hit/false-alarm counts per replicate with proportions clamped to
   [1/(2·max(n₀, n₁)), 1 − that].
 
@@ -234,4 +242,5 @@ Each is recorded with its date in `docs/analysis_log.md`.
    240 G2 datasets reversed this: the Gaussian fit's RMSE was larger in 96.7% of datasets, and
    oracle-calibrated detection averaged 0.875 over cells. The v1.0 replicate was typical (ratio 1.9);
    the error was reading a small absolute discrepancy as no signal. Report §4.4; `analysis_log.md`,
-   2026-09-28.
+   2026-09-28. v1.2 then tested a practical (non-oracle) check with replicated data on 24 datasets
+   (report §4.4, Fig. 7).

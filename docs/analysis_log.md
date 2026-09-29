@@ -1072,3 +1072,12 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   shared by both families: simulated participants' confidence thresholds vary slightly, but the
   fitted models pool them (report §5, limitation iii). The aggregate statistics average this out.
 - **Not yet done.** Report not updated.
+
+## 2026-09-29 - v1.2.0 release preparation
+
+- Report v1.2: header, abstract, §3.5 (replicated-data check method), §4.4 (new paragraph and
+  Fig. 7, verdict Partial, stat 2 named), discussion implications, limitations (vi) and next steps
+  updated. The earlier statement that a practical PPC reference "was not tested" is removed. The
+  pooled-threshold explanation for the X² false alarms is stated as untested.
+- README status, new practical-PPC headline and limitation; supplement S9 and S13 item 6;
+  `CITATION.cff` 1.2.0 (date 2026-09-29); checklist.
