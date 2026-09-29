@@ -118,6 +118,10 @@ fit_one_hmetad <- function(data,
           prior = priors, stanvars = extra_stanvars,
           chains = chains, cores = cores, iter = warmup + iter_sampling, warmup = warmup,
           control = list(adapt_delta = adapt_delta, max_treedepth = max_treedepth),
+          # Pinned: all production fits used brms's default rstan backend; a
+          # global options(brms.backend = "cmdstanr") would otherwise switch
+          # samplers silently and break bit-for-bit reproduction.
+          backend = "rstan",
           seed = seed, refresh = 0, ...
         )
       },

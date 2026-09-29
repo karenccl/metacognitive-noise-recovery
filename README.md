@@ -3,7 +3,7 @@
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
 A reproducible R/Stan simulation study (no human data). Draft report: [manuscript/report.md](manuscript/report.md).
 
-**Status (2026-09-29, v1.2):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; the current release is tag `v1.2.0`. The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4); v1.2 adds a practical single-model check with replicated data. RQ1 is a validity check.
+**Status (2026-09-29, v1.2):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; the current release is tag `v1.2.1` (v1.2.0 plus engineering fixes). The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4); v1.2 adds a practical single-model check with replicated data. RQ1 is a validity check.
 
 ## Question
 
@@ -73,7 +73,7 @@ renv::restore()
 
 The lockfile records these three repositories, so a plain `renv::restore()` should also find them; setting `repos` first is a safeguard. `Rscript code/00_setup/00_packages.R` then checks that everything needed is installed.
 
-**Sampler:** all results were produced with `brms`'s default **`rstan`** backend. Leave `brms.backend` unset (or `"rstan"`); setting it to `"cmdstanr"` would use a different sampler and will not reproduce the published draws bit-for-bit. CmdStan is not needed. (An earlier version of this README, and of the environment notes, wrongly said CmdStan was used; see `docs/computational_environment.md`.)
+**Sampler:** all results were produced with `brms`'s default **`rstan`** backend. Since v1.2.1, `fit_one_hmetad()` passes `backend = "rstan"` explicitly, so a global `options(brms.backend = "cmdstanr")` no longer changes the sampler; a refit of grid cell 721 with the pin reproduced the stored draws exactly. CmdStan is not needed. (An earlier version of this README, and of the environment notes, wrongly said CmdStan was used; see `docs/computational_environment.md`.)
 
 ## Reproduction
 

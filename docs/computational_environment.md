@@ -27,8 +27,9 @@ of this file, report draft) were wrong on this point and have been corrected.
 Consequences: the model and Stan version are the same either way, so the statistical results
 are not in question, but sampling output is not bit-identical across backends. To match the
 published results, leave `brms.backend` unset (or set it to `"rstan"`); do not set it to
-`"cmdstanr"`. Recommended hardening (not done, since it would change fitting code after the
-results were produced): pass `backend = "rstan"` explicitly in `fit_one_hmetad()`.
+`"cmdstanr"`. Hardening done in v1.2.1 (2026-09-29): `fit_one_hmetad()` now passes `backend = "rstan"`
+explicitly. A refit of grid cell 721 with the pin gave draws identical to the stored ones (max
+absolute difference 0), so the change does not alter any result.
 
 ## Software
 

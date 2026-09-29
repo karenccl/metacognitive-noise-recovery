@@ -1081,3 +1081,18 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   pooled-threshold explanation for the X² false alarms is stated as untested.
 - README status, new practical-PPC headline and limitation; supplement S9 and S13 item 6;
   `CITATION.cff` 1.2.0 (date 2026-09-29); checklist.
+
+## 2026-09-29 - Engineering tidy-up (v1.2.1)
+
+- `fit_one_hmetad()`: `backend = "rstan"` now passed explicitly (previously a recommendation).
+  Check: grid cell 721 was refitted with `run_one_cell.R` after the change; `draws_b_sd` identical to
+  the stored record (max abs diff 0), same aggregated counts, status and max R-hat (1.00206). The
+  original result file was restored byte-for-byte afterwards.
+- `compile_results.R`: the TODO about centralising `log_M` was stale (it already reads
+  `design.yml`'s `truth:` block, as `run_one_cell.R` does); comment corrected and `cfg` reused.
+  Rerun: all `data/processed/` outputs byte-identical.
+- Makefile: new `calibrate` target (`validate_generators.R`, under a minute) now part of `all`;
+  rerun reproduced `ddm_calibration.csv` and `sigma_c_pilot.csv` byte-for-byte. `analyse` now also
+  runs `g2_ppp_fullfits.R` (~15 min).
+- Tests: `testthat::test_dir("tests")` 54 pass, 0 fail. `make` itself is not installed on this
+  machine, so the targets were run as their underlying `Rscript` commands, not through `make`.

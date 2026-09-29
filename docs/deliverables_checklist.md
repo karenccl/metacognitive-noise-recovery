@@ -18,8 +18,8 @@ Status as of 2026-09-28. "Done" means produced and committed; it does not mean e
 | Prior record | `outputs/tables/prior_summary.csv` | Done |
 | Single-fit refit reproduces stored draws exactly | `data/interim/` | Done 2026-09-28 (grid cell 721; same machine and versions) |
 | Fresh-clone check (figures only) | n/a | Done 2026-09-28: all five figures rebuild from a clean clone; full-pipeline reproduction (renv::restore + fits) not done |
-| `make` targets run end to end | `Makefile` | Not run (`make` not installed); scripts run individually |
+| `make` targets run end to end | `Makefile` | `make` not installed; the underlying scripts for `test`, `calibrate` and `compile` rerun 2026-09-29 with identical outputs |
 | PPC across all 480 G2 fits (v1.1) | `data/processed/v2/`, `outputs/figures/v2/fig_g2_ppc_all.png` | Done 2026-09-28; reverses the v1.0 PPC conclusion |
 | Replicated-data PPC on 48 stored G2 fits (v1.2) | `data/processed/v2/g2_ppp_*.csv`, `outputs/figures/v2/fig_g2_ppp.png` | Done 2026-09-29; verdict Partial, stat 2 named |
-| Release tag (v1.0.0; v1.0.1 report clarifications; v1.1.0 PPC correction; v1.2.0 practical PPC check) | n/a | v1.2.0 prepared 2026-09-29 |
+| Release tag (v1.0.0; v1.0.1 report clarifications; v1.1.0 PPC correction; v1.2.0 practical PPC check; v1.2.1 engineering fixes) | n/a | Done 2026-09-29 |
 | Archive (Zenodo/OSF) | n/a | Optional, not done |
