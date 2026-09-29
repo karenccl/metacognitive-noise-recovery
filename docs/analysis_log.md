@@ -1226,10 +1226,11 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
 - Manual coding (`config/empirical_manual_coding.csv`, 53 datasets = every auto-eligible
   perception or memory dataset): coded from each readme, the metadata sheet, and counts of distinct
   difficulty values per participant (to tell a per-participant calibration from a trial-by-trial
-  staircase). No model had been fitted to any real dataset. Perception: 20 constant or
-  recorded_levels, 7 staircase, 5 unrecorded_varied (more than 4 difficulty levels), 3 unclear
+  staircase). No model had been fitted to any real dataset. Perception (33): 19 constant or
+  recorded_levels, 7 staircase, 4 unrecorded_varied (more than 4 difficulty levels), 3 unclear
   (Desender_2021_Cognit: scale differs by condition; OHora_unpub_2: signed wager; Zheng_2023:
-  binary confidence). Memory: 17 constant or recorded_levels, 1 unrecorded_varied. Where the
+  binary confidence). Memory (20): 19 constant or recorded_levels (Kantner_2010 and
+  Kantner_unpub2 have 6 conditions and fall to the 4-level rule), 1 unrecorded_varied. Where the
   modelled condition is not difficulty (speed/accuracy instruction, feedback, rating order,
   material), the notes say so; the plan allows any discrete factor with <= 4 levels.
 - Selection (`02_select_datasets.R`) is written but not run: it reads the G3 verdict (plan
