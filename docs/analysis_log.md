@@ -1265,3 +1265,15 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   preference, not as evidence by itself.
 - Consequence for step 4 (plan §4.7, rule written into `02_select_datasets.R` before the verdict):
   perception datasets coded `unrecorded_varied` enter the separate `sensitivity_unrecorded` set.
+
+## 2026-09-30 - v3 step 4 (part 2): selection, preparation, pre-registration tag
+
+- `02_select_datasets.R` (G3 verdict = no artefact): 19 primary, 7 sensitivity (staircase),
+  4 sensitivity_unrecorded, 17 secondary (memory), 5 excluded (3 perception `unclear`;
+  Kantner_2010 and Kantner_unpub2 with 6 conditions). OHora_unpub_2 was dropped earlier by
+  `conf_higher_is_more = FALSE`. 19 primary <= 20, so no sampling.
+- `03_prepare_datasets.R` -> `prepare_log.csv`: 45 of 47 usable. Gajdos_2019 and OHora_2017 keep
+  19 participants after the pre-specified exclusions (< min_participants 20) and drop out of the
+  primary set (17 primary remain). All data checks passed: `acc_agreement` = 1 wherever the dataset
+  has an Accuracy column (19 datasets), and `conf_acc_rho` > 0 everywhere (0.10 to 0.40).
+- Tag `v3-prereg-empirical` placed on this commit, before any model was fitted to real data.
