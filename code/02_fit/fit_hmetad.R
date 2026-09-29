@@ -36,28 +36,41 @@
 # `dpar = "<dpar_name>"` form because this wrapper always gives every
 # dpar an explicit formula (see `.build_metad_formula()`).
 
+# v3 (docs/v3_plan.md §4.2): optional population-level covariates on
+# dprime/c and on log_M (the mu part). With both NULL (the default) the
+# formula is identical to v1.2.1 (tests/test_formula_backcompat.R).
 .build_metad_formula <- function(K, group = "participant",
                                   hierarchical_dprime_c = TRUE,
-                                  hierarchical_thresholds = FALSE) {
+                                  hierarchical_thresholds = FALSE,
+                                  dprime_c_covariates = NULL,
+                                  log_M_covariates = NULL) {
   gap_params <- hmetad::metac2_parameters(K)
   gap_rhs <- paste(gap_params, collapse = " + ")
+  re <- paste0("(1|", group, ")")
+  fixed <- function(covs) paste(c("1", covs), collapse = " + ")
 
-  mu_form <- stats::as.formula(paste0("N ~ 1 + (1|", group, ")"))
-  dprime_c_rhs <- if (hierarchical_dprime_c) paste0("1 + (1|", group, ")") else "1"
+  mu_form <- stats::as.formula(paste0("N ~ ", fixed(log_M_covariates), " + ", re))
+  dprime_c_rhs <- if (hierarchical_dprime_c) paste0(fixed(dprime_c_covariates), " + ", re)
+                  else fixed(dprime_c_covariates)
   dprime_c_form <- stats::as.formula(paste0("dprime + c ~ ", dprime_c_rhs))
-  thresholds_rhs <- if (hierarchical_thresholds) paste0("1 + (1|", group, ")") else "1"
+  thresholds_rhs <- if (hierarchical_thresholds) paste0("1 + ", re) else "1"
   thresholds_form <- stats::as.formula(paste0(gap_rhs, " ~ ", thresholds_rhs))
 
   brms::bf(mu_form, dprime_c_form, thresholds_form)
 }
 
-.build_metad_priors <- function(K, log_M_prior, metac2_prior) {
+.build_metad_priors <- function(K, log_M_prior, metac2_prior,
+                                log_M_b_prior = NULL) {
   gap_params <- hmetad::metac2_parameters(K)
   gap_priors <- Reduce(`c`, lapply(
     gap_params,
     function(p) brms::set_prior(metac2_prior, class = "Intercept", dpar = p)
   ))
-  gap_priors + brms::set_prior(log_M_prior, class = "Intercept")
+  pri <- gap_priors + brms::set_prior(log_M_prior, class = "Intercept")
+  # Only when log_M has covariates: prior on its condition coefficients
+  # (class "b" with no dpar = the mu / log_M part of the model).
+  if (!is.null(log_M_b_prior)) pri <- pri + brms::set_prior(log_M_b_prior, class = "b")
+  pri
 }
 
 .validate_metad_input <- function(data, k, group) {
@@ -83,6 +96,12 @@ fit_one_hmetad <- function(data,
                             hierarchical_thresholds = FALSE,
                             log_M_prior = "normal(0, 1)",
                             metac2_prior = "normal(0, 1)",
+                            # --- v3 additions (defaults reproduce v1.2.1 exactly) ---
+                            agg_by = NULL,               # extra grouping columns, e.g. "difficulty"
+                            dprime_c_covariates = NULL,  # e.g. "difficulty"
+                            log_M_covariates = NULL,     # e.g. "condition" (empirical only)
+                            log_M_b_prior = if (is.null(log_M_covariates)) NULL else "normal(0, 1)",
+                            # ---------------------------------------------------------
                             chains = 4,
                             cores = chains,
                             warmup = 1000,
@@ -97,14 +116,24 @@ fit_one_hmetad <- function(data,
                             metadata = list(),
                             ...) {
   .validate_metad_input(data, k = K, group = group)
+  if (!is.null(agg_by)) {
+    miss <- setdiff(agg_by, names(data))
+    if (length(miss)) stop("fit_one_hmetad: agg_by column(s) not in data: ", paste(miss, collapse = ", "))
+  }
+  if (!all(c(dprime_c_covariates, log_M_covariates) %in% agg_by)) {
+    stop("fit_one_hmetad: every covariate must also be listed in agg_by")
+  }
 
   formula <- .build_metad_formula(
     K, group = group,
     hierarchical_dprime_c = hierarchical_dprime_c,
-    hierarchical_thresholds = hierarchical_thresholds
+    hierarchical_thresholds = hierarchical_thresholds,
+    dprime_c_covariates = dprime_c_covariates,
+    log_M_covariates = log_M_covariates
   )
-  priors <- .build_metad_priors(K, log_M_prior = log_M_prior, metac2_prior = metac2_prior)
-  agg <- hmetad::aggregate_metad(data, !!rlang::sym(group), K = K)
+  priors <- .build_metad_priors(K, log_M_prior = log_M_prior, metac2_prior = metac2_prior,
+                                log_M_b_prior = log_M_b_prior)
+  agg <- hmetad::aggregate_metad(data, !!!rlang::syms(c(group, agg_by)), K = K)
 
   t0 <- Sys.time()
   warnings_caught <- character(0)
@@ -139,6 +168,8 @@ fit_one_hmetad <- function(data,
       k = K, distribution = distribution, metac_absolute = metac_absolute,
       hierarchical_dprime_c = hierarchical_dprime_c,
       hierarchical_thresholds = hierarchical_thresholds,
+      agg_by = agg_by, dprime_c_covariates = dprime_c_covariates,
+      log_M_covariates = log_M_covariates,
       n_units = nrow(agg), seed = seed, elapsed_secs = elapsed, agg = agg
     )
   )

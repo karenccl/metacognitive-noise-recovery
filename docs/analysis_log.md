@@ -1147,3 +1147,17 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   3. It shows the correct-model baseline error is the same small negative bias seen in G0, so it
      belongs to the fitting procedure (prior/shrinkage), not to the Gumbel generator. `delta_mis`
      then isolates the misspecification effect.
+
+## 2026-09-29 - v3: fit wrapper extension (covariates / multi-column aggregation)
+
+- `fit_one_hmetad()` gains `agg_by`, `dprime_c_covariates`, `log_M_covariates`, `log_M_b_prior`
+  (defaults NULL = v1.2.1 behaviour); `.build_metad_formula()` / `.build_metad_priors()` extended.
+  The record now also stores `agg_by` and the covariate lists.
+- Regression fixture `tests/fixtures/formula_k4_v121.rds` was written from the unmodified v1.2.1
+  code and committed first (f1f9d01). `tests/test_formula_backcompat.R`: default formula and priors
+  identical to the fixture; covariates land only in the intended formula parts; a covariate model
+  (condition on dprime/c and log_M, hierarchical thresholds, gumbel_min) builds an empty brmsfit.
+- Reproducibility check (plan §4.2 step E): grid cell 721 refitted with the modified code via
+  `run_one_cell.R`; `draws_b_sd` identical to the stored record (max abs diff 0), identical `agg`,
+  status `pass`, max R-hat 1.00206. Original file restored (md5 591034d8... unchanged).
+- Tests: 76 pass, 0 fail (includes the new `test_simulate_g3.R`).
