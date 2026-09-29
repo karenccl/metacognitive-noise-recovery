@@ -50,10 +50,10 @@ for (ds in datasets) {
     f <- fits[[j]]; t0 <- Sys.time()
     res <- if (method == "reloo") {
       tryCatch(brms::loo(f$fit, reloo = TRUE, k_threshold = k_thr,
-                         reloo_args = list(seed = f$seed)),
+                         reloo_args = list(seed = f$seed, init_r = e$init_r)),
                error = function(err) err)
     } else {
-      tryCatch(brms::kfold(f$fit, folds = folds, seed = f$seed, save_fits = FALSE),
+      tryCatch(brms::kfold(f$fit, folds = folds, seed = f$seed, init_r = e$init_r, save_fits = FALSE),
                error = function(err) err)
     }
     qs2::qs_save(list(dataset = ds, family = fams[j], method = method,

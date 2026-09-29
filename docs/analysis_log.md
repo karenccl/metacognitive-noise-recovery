@@ -1277,3 +1277,23 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   primary set (17 primary remain). All data checks passed: `acc_agreement` = 1 wherever the dataset
   has an Accuracy column (19 datasets), and `conf_acc_rho` > 0 everywhere (0.10 to 0.40).
 - Tag `v3-prereg-empirical` placed on this commit, before any model was fitted to real data.
+
+## 2026-09-30 - v3 step 4 (part 3): trial fits and sampler deviations (before the main run)
+
+- Trial fits (plan §5.7) on the smallest (Maniscalco_2017_expt3, 21 participants) and largest
+  (Rouault_2018_Expt1, 498 participants) prepared datasets, both families, default settings:
+  - Maniscalco normal: pass (554 s). Maniscalco gumbel_min: 145 divergent transitions at
+    adapt_delta 0.95 and again after escalation to 0.99 -> `fail` (R-hat 1.00, min bulk ESS 1287).
+  - Rouault normal: no chain initialised ("Rejecting initial value ... multinomial_logit_lpmf:
+    log-probabilities parameter is -inf"); the fit had no draws and the script stopped. With 498
+    participants and participant-level thresholds, Stan's default random inits on (-2, 2) almost
+    always push some participant's type-2 cell probability to zero. A one-chain test with
+    `init_r = 0.5` initialised after 2 rejections and sampled normally.
+  - Rouault gumbel_min was still sampling after ~65 min when the trials were stopped.
+- **Deviations, fixed in `config/v3.yml$empirical` before the main run and applied to every
+  empirical fit and every reloo/K-fold refit:** `init_r: 0.5`; `adapt_delta_start: 0.99` (the
+  plan's own §5.7 remedy); escalation retry at adapt_delta 0.999 / max_treedepth 14 (design.yml's
+  0.99 / 14 is already the starting point). The four trial fits were discarded and are redone under
+  these settings, so all empirical fits share one configuration.
+- `04_fit_dataset.R` now records a fit that errors (e.g. no draws) as status `error` instead of
+  stopping, so the dataset is categorised `unreliable` by the pre-specified rule.

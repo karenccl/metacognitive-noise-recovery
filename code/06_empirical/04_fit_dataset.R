@@ -44,12 +44,18 @@ fit_once <- function(adapt_delta, max_treedepth, seed) fit_one_hmetad(
   rhat_max = cfg$diagnostics$rhat_max, bulk_ess_min = cfg$diagnostics$bulk_ess_min,
   tail_ess_min = cfg$diagnostics$tail_ess_min, seed = seed,
   extra_stanvars = if (family == "gumbel_min") gumbel_min_stanvars() else NULL,
-  metadata = list(dataset = dataset, family = family, set = prep$set))
+  metadata = list(dataset = dataset, family = family, set = prep$set),
+  init_r = e$init_r)                                            # forwarded to rstan::sampling
 
-a <- fit_once(adapt_start, cfg$sampling$max_treedepth, seed)
+# A fit that returns no draws makes the diagnostic step error; record it as
+# status "error" (-> "unreliable" in the summary) instead of crashing.
+safe_fit <- function(...) tryCatch(fit_once(...), error = function(err)
+  list(status = "error", fit = NULL, error_message = conditionMessage(err)))
+a <- safe_fit(adapt_start, cfg$sampling$max_treedepth, seed)
 a$escalated <- FALSE
 if (identical(a$status, "refit")) {
-  a <- fit_once(cfg$sampling$escalation$adapt_delta, cfg$sampling$escalation$max_treedepth, seed + 1L)
+  esc <- if (is.null(e$escalation)) cfg$sampling$escalation else e$escalation
+  a <- safe_fit(esc$adapt_delta, esc$max_treedepth, seed + 1L)
   a$escalated <- TRUE
   if (identical(a$status, "refit")) a$status <- "fail"
 }
