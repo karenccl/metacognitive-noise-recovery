@@ -1113,3 +1113,37 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
     difficulty and is identical to the `!!!rlang::syms(...)` form.
   - (d) `hmetad::epred_draws_metad(object, newdata, ...)` forwards `...` to
     `tidybayes::epred_draws()`, so `ndraws` (and `seed`) are accepted.
+
+## 2026-09-29 - v3 step 1: relative misspecification bias (no refitting)
+
+- Script `code/03_recovery_analysis/relative_bias.R`; outputs in `data/processed/v3/`:
+  `g2_relative_bias_by_fit.csv`, `g2_relative_bias_by_cell.csv` (primary + pass-only),
+  `g2_dprime_contrast_by_NT.csv`, `g2_dprime_contrast_pooled.csv`, `g2_delta_persistence_lm.csv`,
+  `g2_confidently_wrong.csv`, `g2_baseline_vs_g0.csv`.
+- Integrity checks passed: 240 paired datasets, same `sim_seed` for both variants, no error rows.
+- `delta_mis` (Gaussian - correct, same dataset): +0.19 to +0.25 in the six d' = 0.75 cells,
+  +0.11 to +0.15 in the six d' = 1.5 cells, matching the plan's sanity-check ranges.
+- d' contrast (low - high, independent-sample SE): positive in 6/6 N x T cells (z 2.4 to 7.9);
+  pooled +0.097 (SE 0.011).
+- Persistence: slope on log2(T) = +0.0003 (95% CI -0.013 to +0.014); intercept 0.22; N term
+  -0.006 (CI includes 0); d' = 1.5 term -0.097 (CI -0.118 to -0.075). The misspecification shift
+  does not shrink with more trials, while the Gaussian interval narrows (mean width 0.99 -> 0.49
+  at d' = 0.75), so the share of Gaussian intervals excluding the truth rises from 0.13 at T = 100
+  to 0.35 at T = 400 (d' = 0.75; 0.05 -> 0.33 at d' = 1.5).
+- Baseline: the correct (Gumbel) fit's own bias is -0.007 to -0.092; the difference from the G0
+  bias in the same cell is within 2 SE in all 12 cells, so the small negative baseline is common
+  to correctly specified fits and not a G2-specific effect.
+- **Deviation from the plan's code:** in the pooled contrast, `n_cells_positive` was computed after
+  `diff_low_minus_high` had been overwritten by its mean inside `summarise()`, so it counted a
+  scalar (reported 1). Reordered; now 6.
+- Understanding checks (plan §2.4):
+  1. Each cell has its own seeds, so a low-d' and a high-d' replication with the same `rep_id` share
+     no data; pairing them would claim a correlation that does not exist. The contrast is between
+     two independent means, so the variances add.
+  2. A slope of -0.01 with a CI covering 0 means no detectable shrinkage over a fourfold increase
+     in T: the shift behaves like a pseudo-true displacement, not a small-sample bias. A slope of
+     -0.05 with a CI excluding 0 would mean the shift shrinks with data (about 0.1 over the grid),
+     i.e. partly a finite-sample effect. The observed slope is +0.0003, the first case.
+  3. It shows the correct-model baseline error is the same small negative bias seen in G0, so it
+     belongs to the fitting procedure (prior/shrinkage), not to the Gumbel generator. `delta_mis`
+     then isolates the misspecification effect.
