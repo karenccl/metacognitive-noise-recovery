@@ -1237,3 +1237,31 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   §4.7: perception `unrecorded_varied` datasets enter a separate `sensitivity_unrecorded` set
   only if G3 finds no pooling artefact), so it runs after the G3 summary, then the
   `v3-prereg-empirical` tag.
+
+## 2026-09-30 - v3 step 3: G3 difficulty-mixture simulation (result)
+
+- Rules locked in `config/v3.yml` and tagged `v3-prereg-g3` before any G3 fit. 160 fits
+  (2 conditions x 20 reps x 4 variants), 4 shards x 4 cores, ~6.5 h. Outputs:
+  `data/processed/v3/g3_by_fit.csv`, `g3_loo_by_rep.csv`, `g3_loo_rates.csv`, `g3_bias.csv`,
+  `g3_delta_logM.csv`, `g3_verdict.txt`; Fig. 8.
+- One fit (g3_id 15, control rep 4, normal_difficulty) first ended with status `error`:
+  "cannot open the connection" / "port 11908 cannot be opened" (rstan's local socket while four
+  fits ran concurrently), not a sampling failure. The error record was deleted and the same id
+  rerun with the same seeds: `pass`. All 160 fits now pass or were escalated to pass (2 escalated).
+- **Verdict (pre-specified rule): no pooling artefact.** The pooled comparison favoured Gumbel-min
+  by > 2 SE in 0/20 mixture and 0/20 control replications; the Gaussian (true) model was favoured
+  by > 2 SE in 20/20 in every condition x aggregation (median elpd difference +28.7 mixture pooled,
+  +30.8 control pooled, +57.1 mixture with difficulty modelled).
+- Gaussian (correct) fits: log M bias -0.014 to -0.017, coverage 0.85-1.00. Gumbel-min fits on the
+  Gaussian data: bias -0.46 to -0.50, coverage 0.
+- **Plan checkpoint §4.7 not met as written.** The plan expected the difficulty-version
+  delta log M (normal - gumbel) to be about 0 "because the data are Gaussian". It is +0.45 to
+  +0.48 (MCSE 0.01) in every condition and aggregation. Investigated before step 4: the correctly
+  specified Gaussian fits are unbiased, so the non-zero difference is the misspecified Gumbel
+  fit's shift, the mirror image of G2 (there the Gaussian fit on Gumbel data was shifted by
+  +0.11 to +0.25). A zero family difference was never implied by Gaussian data; the pipeline shows
+  no fault, so step 4 proceeds. Consequence for the empirical analysis: the family difference in
+  log M is large whichever family is wrong, so `delta_logM` must be read together with the LOO
+  preference, not as evidence by itself.
+- Consequence for step 4 (plan §4.7, rule written into `02_select_datasets.R` before the verdict):
+  perception datasets coded `unrecorded_varied` enter the separate `sensitivity_unrecorded` set.

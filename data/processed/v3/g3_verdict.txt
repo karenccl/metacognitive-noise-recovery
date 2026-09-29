@@ -1,0 +1,3 @@
+no pooling artefact by the pre-specified rule
+mixture_pooled_prop_favors_gumbel_2se = 0.000
+control_pooled_prop_favors_gumbel_2se = 0.000
