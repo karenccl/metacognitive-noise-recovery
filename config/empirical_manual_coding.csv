@@ -1,0 +1,54 @@
+dataset,difficulty_design,difficulty_column,conf_higher_is_more,conf_min,conf_max,exclude_filter,rank_within_subject,notes,coded_on
+Bang_2019_Exp2,recorded_levels,Task,TRUE,1,4,Catch_trial == 1,FALSE,"Two tasks (coarse contrast / fine tilt) within participant; within a task the level is fixed per participant (set per batch). Catch trials (different, easier stimuli) excluded.",2026-09-30
+Desender_2021_Cognit,unclear,,TRUE,,,,FALSE,"Confidence scale differs by condition (3 vs 6 points) and has sentinel codes (-99, -96, -1); coherence x volatility x mode design. Not harmonisable to one scale.",2026-09-30
+Desender_2022_Exp1,recorded_levels,Condition,TRUE,1,6,,FALSE,"Coherence fixed at .2 in main task (0.5 only in training); Condition = speed vs accuracy instruction (not difficulty; 2 levels after dropping Training rows). Six-point scale certainly wrong ... certainly correct.",2026-09-30
+Desender_2022_Exp2B,staircase,,TRUE,1,6,,FALSE,Dot difference continuously adapted by an online staircase (readme).,2026-09-30
+Faivre_2018_bioRxiv,staircase,,TRUE,1,6,,FALSE,"Ease takes 10-19 values per participant in 0.005 steps, consistent with an adaptive procedure; the readme does not say so explicitly.",2026-09-30
+Gajdos_2019,constant,,TRUE,1,4,,FALSE,Staircase before the experiment only; fixed contrast during the main task. Confidence 0 = reported error (not a rating) -> dropped.,2026-09-30
+Gherman_2018,constant,,TRUE,1,9,,FALSE,Individual thresholds set in training; no manipulation in main task. Dataset's own Excluded_subj column not used (pre-specified exclusions only).,2026-09-30
+Haddara_2022_Expt1,recorded_levels,Task,TRUE,1,4,,FALSE,Two tasks (letter / colour) within participant; Feedback is between participants and not modelled.,2026-09-30
+Haddara_2022_Expt2,constant,,TRUE,1,4,,FALSE,Difficulty set in the first blocks of day 1 (not in data) then fixed; 7 days of training (learning over days not modelled); Feedback between participants.,2026-09-30
+Hainguerlot_2018,constant,,TRUE,0.5,1,,FALSE,Staircase calibration (not in data) then fixed dot difference. Probability scale 0.5-1 in 6 steps.,2026-09-30
+Hainguerlot_unpub,constant,,TRUE,0.5,1,,FALSE,Staircase calibration (not in data) then fixed dot difference. Probability scale 0.5-1 in 6 steps.,2026-09-30
+Lebreton_2018,staircase,,TRUE,0.5,1,,FALSE,"Contrast varies trial to trial (93-289 values per participant). Four experiments pooled; incentive conditions not modelled; subjects 21XX and 22XX are the same people (readme).",2026-09-30
+Maniscalco_2017_expt1,constant,,TRUE,1,4,,FALSE,One calibrated contrast per participant.,2026-09-30
+Maniscalco_2017_expt2,recorded_levels,ContrastLevel,TRUE,1,4,,FALSE,Three calibrated contrast levels (ContrastLevel 1-3) interleaved.,2026-09-30
+Maniscalco_2017_expt3,constant,,TRUE,1,4,,FALSE,One calibrated contrast per participant; confidence not collected on some trials (NaN -> dropped).,2026-09-30
+Maniscalco_2017_expt4,constant,,TRUE,1,4,,FALSE,One calibrated contrast per participant; wagers 1-4 as confidence; not collected on some trials.,2026-09-30
+Massoni_unpub,recorded_levels,Difficulty,TRUE,0,1,,FALSE,Two within-participant difficulty levels (2x and 0.5x staircase dot difference); feedback between studies not modelled. Probability scale 0-1 in 0.1 steps.,2026-09-30
+Mazor_2020,staircase,,TRUE,1,6,,FALSE,"Contrast varies within participant (3-9 values); detection and discrimination blocks pooled.",2026-09-30
+OHora_2017,recorded_levels,Coherence,TRUE,10,50,,FALSE,Four coherence levels within each block. Post-decision wager 10-50 as confidence. Training rows dropped.,2026-09-30
+OHora_unpub_1,recorded_levels,Coherence,TRUE,10,50,,FALSE,Four coherence levels within each block; lottery motivation between participants not modelled. Training rows dropped.,2026-09-30
+OHora_unpub_2,unclear,,FALSE,,,,FALSE,Signed bi-directional wager (negative = bet on the unchosen direction): not a monotone confidence scale for the given response.,2026-09-30
+Rausch_2020,recorded_levels,SOA,TRUE,1,4,,FALSE,Four SOA levels interleaved. Training block dropped.,2026-09-30
+Rouault_2018_Expt1,unrecorded_varied,,TRUE,1,11,,FALSE,"Dot difference spans 70 values for every participant (more than max_condition_levels = 4); variation cannot be modelled under the 4-level rule.",2026-09-30
+Rouault_2018_Expt2,staircase,,TRUE,1,6,,FALSE,Dot difference adjusted by a staircase (readme).,2026-09-30
+Rouault_2020,recorded_levels,Difficulty,TRUE,1,6,,TRUE,"Two fixed difficulty levels calibrated per participant (raw values differ across participants, so ranked within participant). Confidence 999 = missed -> dropped.",2026-09-30
+Sadeghi_2017_perception,staircase,,TRUE,1,6,,FALSE,1-up 2-down staircase (readme).,2026-09-30
+Siedlecka_2019,recorded_levels,Condition,TRUE,1,4,,FALSE,Calibrated contrast then fixed; Condition = feedback vs no feedback within participant (not difficulty). PAS awareness scale used as confidence.,2026-09-30
+VanBoxtel_2019_Expt1,unrecorded_varied,,TRUE,1,4,,FALSE,Eight motion-noise levels (more than max_condition_levels = 4); double-pass repeats.,2026-09-30
+VanBoxtel_2019_Expt2,unrecorded_varied,,TRUE,1,4,,FALSE,Eight motion-noise levels (more than max_condition_levels = 4); double-pass repeats.,2026-09-30
+Wierzchon_2014,unrecorded_varied,,TRUE,1,4,,FALSE,"Twelve presentation times (more than 4 levels); four awareness scales between participants.",2026-09-30
+Yeon_unpub_Exp1,recorded_levels,Condition,TRUE,1,4,,FALSE,One threshold coherence per participant; Condition = volatility 0/1 interleaved (affects evidence). Training rows dropped.,2026-09-30
+Yeon_unpub_Exp2,staircase,,TRUE,1,4,,FALSE,Coherence varies within participant (9-64 values).,2026-09-30
+Zheng_2023,unclear,,TRUE,,,,FALSE,Binary confidence (1-2) and confidence asked in one of five conditions only (-1 elsewhere); K < k_min.,2026-09-30
+Chandravadia_2020,constant,,TRUE,1,3,,FALSE,Old/new recognition in epilepsy patients; no manipulation.,2026-09-30
+Fallow_unpub_1,recorded_levels,Condition,TRUE,1,3,,FALSE,Stimulus material (faces / paintings / words) between participants.,2026-09-30
+Fallow_unpub_2,recorded_levels,Condition,TRUE,1,3,,FALSE,Stimulus material (faces / paintings) between participants.,2026-09-30
+Fallow_unpub_3,constant,,TRUE,1,3,,FALSE,Scenes only; no manipulation.,2026-09-30
+Hu_2017,constant,,TRUE,1,6,,FALSE,2AFC word recognition; no manipulation.,2026-09-30
+Kantner_2010,recorded_levels,Condition,TRUE,1,3,,FALSE,Six between-participant conditions (item size rule x feedback): more than max_condition_levels.,2026-09-30
+Kantner_2012_E1,constant,,TRUE,1,3,,FALSE,No manipulation; two study-test cycles.,2026-09-30
+Kantner_2012_E2,constant,,TRUE,1,3,,FALSE,No manipulation; two study-test cycles a week apart.,2026-09-30
+Kantner_2012_E3,recorded_levels,StimulusType,TRUE,1,3,,FALSE,Paintings vs words (per trial via StimulusType); Condition (4 order groups) not modelled.,2026-09-30
+Kantner_2014_E1,constant,,TRUE,1,3,,FALSE,Paintings only; training manipulation between participants is secondary.,2026-09-30
+Kantner_2014_E2,recorded_levels,StimulusType,TRUE,1,3,,FALSE,Faces then words within participant.,2026-09-30
+Kantner_unpub2,recorded_levels,Condition,TRUE,1,3,,FALSE,Six between-participant conditions: more than max_condition_levels.,2026-09-30
+Lindsay_2014,recorded_levels,StimulusType,TRUE,1,3,,FALSE,Paintings vs words (per trial); Condition (words / paintings / mixed groups) not modelled.,2026-09-30
+Matthews_2019,unrecorded_varied,,TRUE,1,4,,FALSE,"Lag (4) x trial length x scene x orientation x task: many recorded factors, more than 4 cells.",2026-09-30
+Sadeghi_2017_memory,constant,,TRUE,1,6,,FALSE,Word recognition; patient vs control groups not modelled.,2026-09-30
+Schurgin_2018,recorded_levels,Setsize,TRUE,1,6,,FALSE,Working-memory set size 1 / 3 / 6 interleaved.,2026-09-30
+Siedlecka_2019_Exp1,recorded_levels,Condition,TRUE,1,4,"Block_type %in% c(0, 9)",FALSE,Condition = rating before vs after the response (between participants). Training (Block_type 0) and distractor (9) rows dropped.,2026-09-30
+Siedlecka_2019_Exp2,recorded_levels,Condition,TRUE,1,4,"Block_type %in% c(0, 9)",FALSE,Condition = rating before vs after the response (between participants). Training (Block_type 0) and distractor (9) rows dropped.,2026-09-30
+Skora_unpub,recorded_levels,Condition,TRUE,1,4,,FALSE,Three cue-distance conditions within participant; PAS scale as confidence.,2026-09-30
+Weidemann_2016,constant,,TRUE,1,5,,FALSE,Target proportion manipulated across blocks but not recorded; values outside 1-5 are invalid responses (readme).,2026-09-30

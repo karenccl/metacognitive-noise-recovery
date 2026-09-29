@@ -1188,3 +1188,51 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   3. The brms-version fallback to `brms::reloo()` was dropped: the §1.3 check showed
      `loo(reloo = TRUE)` exists.
 - reloo sets the refitted participants' Pareto k to 0 in `loo_exact` (checked on the trial fit).
+
+## 2026-09-30 - v3 step 4 (part 1): data access, screening, manual coding (no fit)
+
+- Confidence Database downloaded 2026-09-30 from OSF `s46pr` (361 files, 255 MB, all md5-verified;
+  licence CC0 1.0). Record: `docs/data_access_confidence_db.md`; manifest
+  `data/processed/v3/empirical/raw_manifest.csv`. `readxl` (+ `cellranger`, `rematch`) added to
+  `renv.lock` (additions only).
+- Metadata sheet checked before use: file `Database_Information.xlsx`, sheet
+  `Database_Information`, columns `Name_in_database` and `Category` (the plan's guesses were right).
+  Four datasets have no metadata row (Bocheva_unpub_Expt1/2, Rahnev_2021, Zheng_2023_NOC); with
+  no category they cannot enter any set.
+- Screening (`01_screen_datasets.R` -> `screening_table.csv`): 66 of 180 auto-eligible; 33
+  perception, 20 memory, 13 other categories.
+- **Deviations from the plan's screening code (fixed before any real-data fit):**
+  1. `rule_discrete` used `conf_integer`. The rule in `config/v3.yml` is "discrete scales only;
+     3-11 levels", but the integer test rejects discrete probability scales (0.5, 0.6, ..., 1:
+     Hainguerlot_2018/unpub, Lebreton_2018, Massoni_unpub). The rule is now "numeric with 3-11
+     distinct values". Four more datasets eligible.
+  2. `standardise_names()`: case-insensitive renaming of the required/optional columns and
+     `subject_id` -> `Subj_idx` (e.g. Xue_2024 uses `stimulus`, `confidence`). Datasets with one
+     column per task still fail the required-column rule.
+  3. Row filters, fixed per dataset in `config/empirical_manual_coding.csv` and applied by
+     `filter_rows()` before the participant exclusions: practice rows (`Training == 1`)
+     whenever that column exists; an optional `exclude_filter` (catch trials in Bang_2019_Exp2;
+     training and distractor rows in Siedlecka_2019_Exp1/2); the valid confidence range
+     `conf_min`-`conf_max`, which drops sentinel codes (0 = "error" in Gajdos_2019, 999 in
+     Rouault_2020, values outside 1-5 in Weidemann_2016). Without these, practice trials and
+     sentinel codes would enter the model as confidence levels.
+  4. `rank_within_subject`: Rouault_2020 has two fixed difficulty levels calibrated per
+     participant (raw values differ across participants), so the level is the within-participant
+     rank.
+  5. The <= 4-level check uses the levels of the difficulty column actually modelled (after the
+     row filters), not the `Condition` column's count.
+  6. `03_prepare_datasets.R` marks a dataset unusable if `acc_agreement < 0.99` or
+     `conf_acc_rho <= 0` (the plan's §5.5 checks, made automatic).
+- Manual coding (`config/empirical_manual_coding.csv`, 53 datasets = every auto-eligible
+  perception or memory dataset): coded from each readme, the metadata sheet, and counts of distinct
+  difficulty values per participant (to tell a per-participant calibration from a trial-by-trial
+  staircase). No model had been fitted to any real dataset. Perception: 20 constant or
+  recorded_levels, 7 staircase, 5 unrecorded_varied (more than 4 difficulty levels), 3 unclear
+  (Desender_2021_Cognit: scale differs by condition; OHora_unpub_2: signed wager; Zheng_2023:
+  binary confidence). Memory: 17 constant or recorded_levels, 1 unrecorded_varied. Where the
+  modelled condition is not difficulty (speed/accuracy instruction, feedback, rating order,
+  material), the notes say so; the plan allows any discrete factor with <= 4 levels.
+- Selection (`02_select_datasets.R`) is written but not run: it reads the G3 verdict (plan
+  §4.7: perception `unrecorded_varied` datasets enter a separate `sensitivity_unrecorded` set
+  only if G3 finds no pooling artefact), so it runs after the G3 summary, then the
+  `v3-prereg-empirical` tag.
