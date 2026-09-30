@@ -121,3 +121,16 @@ test_that("rank_within_subject recodes per-participant calibrated levels", {
   expect_equal(h$condition_map$raw, c("1", "2"))
   expect_equal(as.character(h$data$condition), c("L1", "L2", "L1", "L2", "L2", "L1", "L2", "L1"))
 })
+
+test_that("max_participants keeps a reproducible seeded subsample", {
+  e <- list(min_trials_per_participant = 1, accuracy_range = c(0, 1), merge_min_prop = 0, k_max = 6)
+  d <- data.frame(Subj_idx = rep(1:10, each = 4), Stimulus = rep(1:2, 20), Response = rep(1:2, 20),
+                  Confidence = rep(1:4, 10))
+  h1 <- harmonise_dataset(d, e, max_participants = 4, seed = 7)
+  h2 <- harmonise_dataset(d, e, max_participants = 4, seed = 7)
+  expect_equal(h1$n_participants_after_exclusions, 10)
+  expect_equal(h1$n_participants_kept, 4)
+  expect_equal(sort(unique(h1$data$participant)), 1:4)
+  expect_identical(h1$data, h2$data)
+  expect_equal(harmonise_dataset(d, e)$n_participants_kept, 10)
+})

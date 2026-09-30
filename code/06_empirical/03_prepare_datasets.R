@@ -8,7 +8,7 @@
 
 suppressPackageStartupMessages(library(dplyr))
 source(here::here("code", "06_empirical", "eligibility.R"))
-e <- yaml::read_yaml(here::here("config", "v3.yml"))$empirical
+cfg3 <- yaml::read_yaml(here::here("config", "v3.yml")); e <- cfg3$empirical
 raw_dir <- here::here("data", "raw", "confidence_db")
 prep_dir <- here::here("data", "interim", "v3_empirical", "prepared")
 dir.create(prep_dir, recursive = TRUE, showWarnings = FALSE)
@@ -25,7 +25,9 @@ prep_log <- purrr::map_dfr(seq_len(nrow(sel)), function(i) {
   dcol <- if (s$difficulty_design == "recorded_levels") s$difficulty_column else NULL
   h <- harmonise_dataset(d, e, difficulty_col = dcol, exclude_filter = s$exclude_filter,
                          conf_range = c(s$conf_min, s$conf_max),
-                         rank_within_subject = isTRUE(s$rank_within_subject))
+                         rank_within_subject = isTRUE(s$rank_within_subject),
+                         max_participants = e$max_participants_for_fit,
+                         seed = cfg3$seed_base_v3 + sum(utf8ToInt(s$dataset)))
   h$dataset <- s$dataset; h$set <- s$set
   # Data checks (plan §5.5): coding must agree with the dataset's own Accuracy
   # column and confidence must rise with accuracy; otherwise not usable.
@@ -38,6 +40,7 @@ prep_log <- purrr::map_dfr(seq_len(nrow(sel)), function(i) {
                  n_cond = nlevels(h$data$condition),
                  n_rows_filtered = h$n_rows_filtered,
                  n_participants_raw = h$n_participants_raw,
+                 n_participants_after_exclusions = h$n_participants_after_exclusions,
                  n_participants_kept = h$n_participants_kept,
                  n_trials = nrow(h$data), acc_agreement = h$acc_agreement,
                  conf_acc_rho = h$conf_acc_rho, checks_ok = checks_ok, usable = usable)

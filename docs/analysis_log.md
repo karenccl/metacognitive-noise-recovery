@@ -1297,3 +1297,15 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   these settings, so all empirical fits share one configuration.
 - `04_fit_dataset.R` now records a fit that errors (e.g. no draws) as status `error` instead of
   stopping, so the dataset is categorised `unreliable` by the pre-specified rule.
+- Rerun of the trials under the new settings: Maniscalco normal `pass` (975 s); Maniscalco
+  gumbel_min still 175 divergent transitions after escalation to adapt_delta 0.999 -> `fail`
+  (R-hat 1.004): a geometry problem, not a step-size one. Kept as is: by the pre-specified rule
+  this dataset is `unreliable`. Both Rouault_2018_Expt1 fits (498 participants) were still
+  sampling after 2 h (started 07:43, stopped 09:47).
+- **Deviation (plan §5.7 remedy, fixed before the main run):** `max_participants_for_fit: 100`.
+  After the pre-specified exclusions, a dataset with more than 100 participants keeps a random
+  sample of 100 (`withr::with_seed(seed_base_v3 + sum(utf8ToInt(dataset)))`, before
+  confidence-level merging). Affects 10 datasets: Bang_2019_Exp2 (167), Haddara_2022_Expt1 (397),
+  Fallow_unpub_1/2/3 (134/165/136), Kantner_2012_E3 (147), Weidemann_2016 (143), Lebreton_2018
+  (111), Rouault_2018_Expt1/2 (498/497). `prepare_log.csv` records both counts. Maniscalco_2017_expt3
+  is unaffected, so its two trial fits (already under the final settings) are kept.

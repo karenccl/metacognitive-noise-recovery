@@ -45,6 +45,7 @@ empirical:
   hierarchical_thresholds: true      # REQUIRED for real data (participants differ in criteria)
   # Deviations fixed after the two trial datasets (plan §5.7; docs/analysis_log.md
   # 2026-09-30), before the main empirical run, applied to every fit and refit:
+  max_participants_for_fit: 100      # seeded participant subsample above this (N = 498 trial > 2 h)
   init_r: 0.5                        # random inits on (-0.5, 0.5): default (-2, 2) never initialised at N = 498
   adapt_delta_start: 0.99            # plan §5.7 remedy for divergences with hierarchical thresholds
   escalation:                        # one escalation retry, as in design.yml, but stricter

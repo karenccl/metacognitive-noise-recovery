@@ -112,8 +112,11 @@ filter_rows <- function(d, exclude_filter = NA, conf_range = NULL) {
 # rank_within_subject: recode difficulty_col as the within-participant rank of
 # its value (for designs with k fixed levels calibrated per participant, so the
 # raw values differ across participants).
+# max_participants / seed: if more participants survive the exclusions, keep a
+# seeded random sample of max_participants (config/v3.yml max_participants_for_fit).
 harmonise_dataset <- function(d, e, difficulty_col = NULL, exclude_filter = NA,
-                              conf_range = NULL, rank_within_subject = FALSE) {
+                              conf_range = NULL, rank_within_subject = FALSE,
+                              max_participants = NULL, seed = NULL) {
   d <- filter_rows(standardise_names(as.data.frame(d)), exclude_filter, conf_range)
   n_rows_filtered <- attr(d, "n_rows_filtered")
   if (isTRUE(rank_within_subject)) {
@@ -147,6 +150,12 @@ harmonise_dataset <- function(d, e, difficulty_col = NULL, exclude_filter = NA,
   keep <- ps$subj_raw[ps$n >= e$min_trials_per_participant &
                       ps$acc >= e$accuracy_range[[1]] & ps$acc <= e$accuracy_range[[2]]]
   out <- out[out$subj_raw %in% keep, ]
+  n_kept_before_cap <- length(keep)
+  if (!is.null(max_participants) && length(keep) > max_participants) {
+    stopifnot(!is.null(seed))
+    keep <- withr::with_seed(seed, sample(sort(keep), max_participants))
+    out <- out[out$subj_raw %in% keep, ]
+  }
 
   # Confidence levels: merge sparse ones (after exclusions).
   cmap <- merge_sparse_levels(out$conf_raw, e$merge_min_prop, e$k_max)
@@ -165,6 +174,7 @@ harmonise_dataset <- function(d, e, difficulty_col = NULL, exclude_filter = NA,
     condition_map = tibble::tibble(label = paste0("L", seq_along(cond_levels)), raw = cond_levels),
     n_rows_filtered = n_rows_filtered,
     n_participants_raw = nrow(ps),
+    n_participants_after_exclusions = n_kept_before_cap,
     n_participants_kept = length(keep),
     acc_agreement = acc_agreement,
     conf_acc_rho = conf_acc_rho
