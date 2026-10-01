@@ -53,3 +53,21 @@ test_that("covariate formulas build an (empty) brmsfit, including gumbel_min and
   expect_s3_class(fit, "brmsfit")
   expect_true(grepl("gumbel_min_lcdf", fit$model, fixed = TRUE))
 })
+
+test_that("sd_prior adds one class-sd prior per hierarchical part and builds", {
+  skip_if_not_installed("hmetad")
+  p0 <- .build_metad_priors(4, "normal(0, 1)", "normal(0, 1)")
+  p1 <- .build_metad_priors(4, "normal(0, 1)", "normal(0, 1)", sd_prior = "normal(0, 0.5)")
+  expect_equal(nrow(p1), nrow(p0) + 3)                      # mu, dprime, c
+  p2 <- .build_metad_priors(4, "normal(0, 1)", "normal(0, 1)", sd_prior = "normal(0, 0.5)",
+                            hierarchical_thresholds = TRUE)
+  expect_equal(nrow(p2), nrow(p0) + 3 + length(hmetad::metac2_parameters(4)))
+  source(here::here("code", "01_simulate", "simulate_g0.R"))
+  d <- simulate_g0(n_participants = 4, n_trials = 40, dprime_target = 1, log_M = -1, seed = 1)
+  agg <- hmetad::aggregate_metad(d, participant, K = 4)
+  fit <- hmetad::fit_metad(.build_metad_formula(4, hierarchical_thresholds = TRUE), agg,
+                           aggregate = FALSE, K = 4, prior = p2, empty = TRUE)
+  ps <- brms::prior_summary(fit)
+  expect_true(all(ps$prior[ps$class == "sd" & ps$source == "user"] == "normal(0, 0.5)"))
+  expect_false(any(ps$prior[ps$class == "sd"] == "student_t(3, 0, 2.5)"))
+})

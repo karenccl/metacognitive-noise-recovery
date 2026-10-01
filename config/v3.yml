@@ -51,6 +51,11 @@ empirical:
   escalation:                        # one escalation retry, as in design.yml, but stricter
     adapt_delta: 0.999
     max_treedepth: 14
+  # Post-registration deviation (user decision 2026-09-30, after 16/18 fits
+  # failed diagnostics; docs/analysis_log.md). Piloted before use.
+  sd_prior: "normal(0, 0.5)"         # all participant-level SDs (default student_t(3, 0, 2.5))
+  warmup: 2000
+  iter_sampling: 2000
   loo_repair:
     max_prop_bad_k_for_reloo: 0.10   # above this, use grouped K-fold instead of reloo
   categories:

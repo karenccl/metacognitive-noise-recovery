@@ -60,7 +60,9 @@
 }
 
 .build_metad_priors <- function(K, log_M_prior, metac2_prior,
-                                log_M_b_prior = NULL) {
+                                log_M_b_prior = NULL, sd_prior = NULL,
+                                hierarchical_dprime_c = TRUE,
+                                hierarchical_thresholds = FALSE) {
   gap_params <- hmetad::metac2_parameters(K)
   gap_priors <- Reduce(`c`, lapply(
     gap_params,
@@ -70,6 +72,14 @@
   # Only when log_M has covariates: prior on its condition coefficients
   # (class "b" with no dpar = the mu / log_M part of the model).
   if (!is.null(log_M_b_prior)) pri <- pri + brms::set_prior(log_M_b_prior, class = "b")
+  # v3 empirical deviation (docs/analysis_log.md 2026-09-30): an explicit prior
+  # on every participant-level SD instead of brms's student_t(3, 0, 2.5)
+  # default. NULL (the default) leaves the v1.2.1 priors unchanged.
+  if (!is.null(sd_prior)) {
+    sd_dpars <- c("", if (hierarchical_dprime_c) c("dprime", "c"),
+                  if (hierarchical_thresholds) gap_params)
+    pri <- pri + Reduce(`c`, lapply(sd_dpars, function(p) brms::set_prior(sd_prior, class = "sd", dpar = p)))
+  }
   pri
 }
 
@@ -101,6 +111,7 @@ fit_one_hmetad <- function(data,
                             dprime_c_covariates = NULL,  # e.g. "difficulty"
                             log_M_covariates = NULL,     # e.g. "condition" (empirical only)
                             log_M_b_prior = if (is.null(log_M_covariates)) NULL else "normal(0, 1)",
+                            sd_prior = NULL,             # prior on all participant-level SDs
                             # ---------------------------------------------------------
                             chains = 4,
                             cores = chains,
@@ -132,7 +143,9 @@ fit_one_hmetad <- function(data,
     log_M_covariates = log_M_covariates
   )
   priors <- .build_metad_priors(K, log_M_prior = log_M_prior, metac2_prior = metac2_prior,
-                                log_M_b_prior = log_M_b_prior)
+                                log_M_b_prior = log_M_b_prior, sd_prior = sd_prior,
+                                hierarchical_dprime_c = hierarchical_dprime_c,
+                                hierarchical_thresholds = hierarchical_thresholds)
   agg <- hmetad::aggregate_metad(data, !!!rlang::syms(c(group, agg_by)), K = K)
 
   t0 <- Sys.time()
@@ -169,7 +182,7 @@ fit_one_hmetad <- function(data,
       hierarchical_dprime_c = hierarchical_dprime_c,
       hierarchical_thresholds = hierarchical_thresholds,
       agg_by = agg_by, dprime_c_covariates = dprime_c_covariates,
-      log_M_covariates = log_M_covariates,
+      log_M_covariates = log_M_covariates, sd_prior = sd_prior,
       n_units = nrow(agg), seed = seed, elapsed_secs = elapsed, agg = agg
     )
   )

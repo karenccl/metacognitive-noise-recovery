@@ -1309,3 +1309,36 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   Fallow_unpub_1/2/3 (134/165/136), Kantner_2012_E3 (147), Weidemann_2016 (143), Lebreton_2018
   (111), Rouault_2018_Expt1/2 (498/497). `prepare_log.csv` records both counts. Maniscalco_2017_expt3
   is unaffected, so its two trial fits (already under the final settings) are kept.
+
+## 2026-09-30 / 10-01 - v3 step 4 (part 4): post-registration prior deviation
+
+- **Trigger.** The main empirical run (5 shards, started 2026-09-30 09:48, configuration of
+  `acc2b8f` + `bc96f19`) was stopped at 17:40 after 16 of the first 18 completed fits failed the
+  pre-registered diagnostics. Gaussian fits: divergences in most fits (up to 3,887 of 4,000
+  draws), non-converged chains (max R-hat 2.05 Hainguerlot_2018, 1.56 Desender_2022_Exp1; bulk
+  ESS 5-7). Gumbel-min fits: mostly bulk ESS 180-370 (< 400) or R-hat 1.01-1.03. Continuing would
+  have left nearly every dataset `unreliable`, and unevenly by family (Gaussian worse), so the few
+  passing pairs would be a selected subset.
+- **What was looked at before deciding.** Only convergence diagnostics: per fit, status, flags,
+  divergence count, max R-hat, min bulk/tail ESS, tree-depth hits; for one fit (Gherman_2018
+  normal) the names, R-hat and bulk ESS of the 12 lowest-ESS parameters (the weakest was
+  `sd_participant__Intercept`, the participant-level SD of log M); and that fit's prior summary
+  (all participant-level SDs on brms's default `student_t(3, 0, 2.5)`). No LOO, elpd, log M
+  estimate or category of any empirical fit was computed or viewed.
+- **Decision (user, 2026-09-30).** Pilot an explicit SD prior plus longer chains, then refit all
+  datasets under it. `config/v3.yml$empirical`: `sd_prior: "normal(0, 0.5)"` on every
+  participant-level SD (log M, d', c, and the thresholds), `warmup: 2000`, `iter_sampling: 2000`.
+  Implemented as an optional `sd_prior` argument of `fit_one_hmetad()` / `.build_metad_priors()`
+  (NULL default = v1.2.1 priors; regression tests unchanged and passing, new test checks that
+  every SD prior is replaced).
+- **Pilot (same settings, fits kept as the real fits).** Gherman_2018 normal: fail -> pass
+  (R-hat 1.005, bulk ESS 998). Gherman_2018 gumbel_min: fail -> pass (R-hat 1.007, ESS 998).
+  Hainguerlot_2018 normal: still fail, 7,694 of 8,000 draws divergent, R-hat 1.26, ESS 13 (a
+  structural problem with that model on that dataset; it will be `unreliable` by the rule).
+  Desender_2022_Exp1 normal: interrupted when the session ended; rerun.
+- **Comparison set kept.** The 34 fits made under the pre-registered configuration are kept in
+  `data/interim/v3_empirical/fits_prereg/` (not read by any summary script); their diagnostic
+  failure rate is itself a reported result.
+- **Limitation / check.** `normal(0, 0.5)` also limits the between-participant spread of log M,
+  a setting the G0-G2 simulations (default SD prior, pooled thresholds) did not validate. A
+  small validation run under the full empirical configuration follows (next entry).
