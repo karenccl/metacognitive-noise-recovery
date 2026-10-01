@@ -1369,3 +1369,9 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
      `sd_participant__Intercept` for both families; a dataset is flagged "prior may over-shrink" if
      either 97.5% quantile exceeds 1.0. The flag is reported next to the category and does not
      change it.
+- **Heterogeneity check result** (`sdprior_hetero_{by_fit,summary}.csv`; true sd_M = 0.5,
+  sd_dprime = 0.3, log M = -1; 5 reps, same data under both priors): 10/10 pass. Default SD prior
+  vs normal(0, 0.5): log M bias -0.072 vs -0.053, coverage 5/5 vs 5/5; estimated sd_M 0.574 vs
+  0.535 (bias +0.074 vs +0.035), sd_M coverage 5/5 vs 5/5; sd_dprime 0.336 vs 0.332, coverage
+  5/5 vs 5/5. The tighter prior lowers the SD estimate by ~7% but is closer to the truth here;
+  upper 95% limits fall from ~1.0 to ~0.9. No over-shrinkage at a true SD of 0.5.
