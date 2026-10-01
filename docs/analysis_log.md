@@ -1373,5 +1373,38 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   sd_dprime = 0.3, log M = -1; 5 reps, same data under both priors): 10/10 pass. Default SD prior
   vs normal(0, 0.5): log M bias -0.072 vs -0.053, coverage 5/5 vs 5/5; estimated sd_M 0.574 vs
   0.535 (bias +0.074 vs +0.035), sd_M coverage 5/5 vs 5/5; sd_dprime 0.336 vs 0.332, coverage
-  5/5 vs 5/5. The tighter prior lowers the SD estimate by ~7% but is closer to the truth here;
-  upper 95% limits fall from ~1.0 to ~0.9. No over-shrinkage at a true SD of 0.5.
+  5/5 vs 5/5. The tighter prior lowers the SD estimate by ~7% and the upper 95% limits from ~1.0
+  to ~0.9. Conclusion: comparable; no evidence of over-shrinkage at a true SD of 0.5 (n = 5 per
+  prior). The between-prior differences in bias and SD estimate are within Monte Carlo error at
+  n = 5 and are not a finding. (An earlier version of this entry said the tighter prior was
+  "closer to the truth"; corrected 2026-10-02.)
+- **Limitation:** only one true SD (0.5) was tested. Real data with larger between-participant
+  spread in log M (SD near 1, the tail of normal(0, 0.5)) are not covered by this check; the
+  pre-specified `sd_prior_check` flag (posterior 97.5% quantile > 1.0) is the safeguard for that
+  case in the empirical analysis.
+
+## 2026-10-02 - v3: exploratory analyses pre-specified before any empirical LOO is read
+
+- **Why.** Two of the first seven fits under the new configuration show the same pattern:
+  the Gaussian fit fails only through divergences while the Gumbel-min fit on the same dataset
+  passes (Chandravadia_2020: 1,035 divergences, R-hat 1.003, ESS >= 669; Hainguerlot_2018 is
+  the other, there with R-hat and ESS also failing). If the failing family is mostly the
+  Gaussian one, the primary rule ("either family fails -> unreliable") removes datasets
+  non-randomly, and the remaining datasets would lean towards "no difference / Gaussian".
+  Divergence is a diagnostic signal, not model-comparison evidence.
+- **State when this was fixed.** Only convergence diagnostics have been seen. PSIS-LOO objects
+  are stored inside each fit record but none has been read; `05_loo_repair.R`, `06_ppc_dataset.R`
+  and `07_summarise_empirical.R` have not been run on any empirical fit.
+- **Added (exploratory; `config/v3.yml$empirical$exploratory`, `07_summarise_empirical.R`):**
+  1. Diagnostic failure rates by family, with divergences, R-hat, bulk ESS, tail ESS and tree
+     depth counted separately (`exploratory_diagnostics_by_{fit,family}.csv`), and a paired
+     table of which family failed within each dataset (neither / Gaussian only / Gumbel only /
+     both; `exploratory_diagnostics_paired.csv`) with an exact binomial test on the discordant
+     pairs, reported descriptively.
+  2. A divergence-only sensitivity categorisation (`category_div_sens`,
+     `exploratory_category_divergence_sensitivity.csv`): the same 2-SE rule, but a fit counts as
+     usable if it passed or failed only on divergences (R-hat <= 1.01, bulk and tail ESS >= 400,
+     no tree-depth hits). Reported next to the primary categories.
+- The primary categorisation and every other rule are unchanged. `05_loo_repair.R` already
+  repairs LOO for fits with status `fail` (it skips only missing fit or loo objects), so the
+  sensitivity analysis needs no change there.

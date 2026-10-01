@@ -52,6 +52,32 @@ one_dataset <- function(ds) {
     diff < -e$categories$two_se_rule * se ~ "clear_gumbel",
     TRUE ~ "inconclusive")
 
+  # EXPLORATORY sensitivity (config/v3.yml exploratory$divergence_only_sensitivity;
+  # pre-specified 2026-10-02 before any LOO was read). A fit counts as usable here
+  # if it passed, or if it failed ONLY on divergences (R-hat and bulk/tail ESS
+  # within the design.yml limits, no tree-depth hits). The primary category
+  # above is unchanged.
+  flags_of <- function(fit) if (is.null(fit$diagnostics)) NA_character_ else fit$diagnostics$flags
+  div_only <- function(fit) identical(fit$status, "fail") && identical(sort(flags_of(fit)), "divergences")
+  conv_ok <- purrr::map_lgl(f, ~ identical(.x$status, "pass") || div_only(.x))
+  category_div_sens <- dplyr::case_when(
+    !all(conv_ok) | !repaired_ok ~ "unreliable",
+    diff >  e$categories$two_se_rule * se ~ "clear_gaussian",
+    diff < -e$categories$two_se_rule * se ~ "clear_gumbel",
+    TRUE ~ "inconclusive")
+  diag_row <- function(fit, fam) {
+    fl <- flags_of(fit); d <- fit$diagnostics
+    tibble::tibble(dataset = ds, family = fam, status = fit$status,
+                   fail_divergences = "divergences" %in% fl, fail_rhat = "rhat" %in% fl,
+                   fail_bulk_ess = "bulk_ess" %in% fl, fail_tail_ess = "tail_ess" %in% fl,
+                   fail_treedepth = "max_treedepth" %in% fl, divergence_only = div_only(fit),
+                   n_divergent = if (is.null(d)) NA_real_ else d$n_divergent,
+                   max_rhat = if (is.null(d)) NA_real_ else d$max_rhat,
+                   min_ess_bulk = if (is.null(d)) NA_real_ else d$min_ess_bulk,
+                   min_ess_tail = if (is.null(d)) NA_real_ else d$min_ess_tail)
+  }
+  diagnostics <- dplyr::bind_rows(diag_row(f$normal, "normal"), diag_row(f$gumbel, "gumbel_min"))
+
   labels <- f$normal$condition_map$label
   has_draws <- !is.null(f$normal$draws_b_sd) && !is.null(f$gumbel$draws_b_sd)
   if (has_draws) {
@@ -74,6 +100,7 @@ one_dataset <- function(ds) {
     prop_bad_k_normal = if (is.null(r$normal$prop_bad_k)) NA_real_ else r$normal$prop_bad_k,
     prop_bad_k_gumbel = if (is.null(r$gumbel$prop_bad_k)) NA_real_ else r$gumbel$prop_bad_k,
     elpd_diff = diff, se = se, elpd_diff_psis = psis[1], se_psis = psis[2], category = category,
+    category_div_sens = category_div_sens,
     logM_normal = if (has_draws) mean(overall_N) else NA_real_,
     logM_gumbel = if (has_draws) mean(overall_G) else NA_real_,
     delta_logM  = if (has_draws) mean(overall_N) - mean(overall_G) else NA_real_,
@@ -94,7 +121,7 @@ one_dataset <- function(ds) {
                    excl0_normal = excl(cN), excl0_gumbel = excl(cG),
                    conclusion_flip = excl(cN) != excl(cG))
   }) else NULL
-  list(base = base, contrasts = contrasts)
+  list(base = base, contrasts = contrasts, diagnostics = diagnostics)
 }
 
 ds_list <- sort(unique(sub("__.*$", "", list.files(fit_dir, "[.]qs2$"))))
@@ -121,4 +148,35 @@ print(as.data.frame(by_ds |> group_by(set) |>
   summarise(n = n(), median_delta = median(delta_logM, na.rm = TRUE),
             prop_delta_pos = mean(delta_logM > 0, na.rm = TRUE), .groups = "drop")), digits = 3)
 cat("\nFits flagged by the pre-specified SD prior check:", sum(by_ds$flag_sd_prior), "of", nrow(by_ds), "datasets\n")
+# ---- EXPLORATORY: diagnostic failures by family (pre-specified 2026-10-02) ---
+diag_fit <- purrr::map_dfr(res, "diagnostics") |> left_join(select(sel, dataset, set), by = "dataset")
+readr::write_csv(diag_fit, file.path(out, "exploratory_diagnostics_by_fit.csv"))
+diag_rates <- diag_fit |> group_by(family) |>
+  summarise(n_fits = n(), fail_any = mean(status != "pass"),
+            fail_divergences = mean(fail_divergences), fail_rhat = mean(fail_rhat),
+            fail_bulk_ess = mean(fail_bulk_ess), fail_tail_ess = mean(fail_tail_ess),
+            fail_treedepth = mean(fail_treedepth), divergence_only = mean(divergence_only),
+            error = mean(status == "error"), .groups = "drop")
+readr::write_csv(diag_rates, file.path(out, "exploratory_diagnostics_by_family.csv"))
+# Paired: which family failed, within the same dataset.
+diag_paired <- diag_fit |> select(dataset, set, family, status) |>
+  tidyr::pivot_wider(names_from = family, values_from = status) |>
+  mutate(which_failed = case_when(normal == "pass" & gumbel_min == "pass" ~ "neither",
+                                  normal != "pass" & gumbel_min == "pass" ~ "gaussian_only",
+                                  normal == "pass" & gumbel_min != "pass" ~ "gumbel_only",
+                                  TRUE ~ "both"))
+paired_tbl <- count(diag_paired, which_failed)
+readr::write_csv(diag_paired, file.path(out, "exploratory_diagnostics_paired.csv"))
+cat("\n[Exploratory] diagnostic failure rates by family:\n"); print(as.data.frame(diag_rates), digits = 3)
+cat("\n[Exploratory] which family failed (paired by dataset):\n"); print(as.data.frame(paired_tbl))
+# McNemar-type exact test on the discordant pairs (descriptive only).
+b <- sum(diag_paired$which_failed == "gaussian_only"); c_ <- sum(diag_paired$which_failed == "gumbel_only")
+if (b + c_ > 0) cat(sprintf("Discordant pairs: Gaussian-only %d, Gumbel-only %d, exact binomial p = %.3f\n",
+                            b, c_, stats::binom.test(b, b + c_)$p.value))
+
+# ---- EXPLORATORY: divergence-only sensitivity categories ----------------------
+sens_tbl <- by_ds |> count(set, category_div_sens) |> group_by(set) |> mutate(prop = n / sum(n)) |> ungroup()
+readr::write_csv(sens_tbl, file.path(out, "exploratory_category_divergence_sensitivity.csv"))
+cat("\n[Exploratory] categories when divergence-only failures are admitted:\n"); print(as.data.frame(sens_tbl), digits = 3)
+
 if (nrow(contr)) cat("\nCondition contrasts with a conclusion flip:", sum(contr$conclusion_flip), "of", nrow(contr), "\n")

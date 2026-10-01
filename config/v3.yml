@@ -68,3 +68,9 @@ empirical:
     max_prop_bad_k_for_reloo: 0.10   # above this, use grouped K-fold instead of reloo
   categories:
     two_se_rule: 2                   # |elpd_diff| > 2 * se_diff -> "clear"
+  # EXPLORATORY analyses, pre-specified 2026-10-02 before any empirical LOO was
+  # read (07_summarise_empirical.R; docs/analysis_log.md). The primary rule above
+  # is unchanged; these are reported next to it and labelled exploratory.
+  exploratory:
+    diagnostics_by_family: true      # failure rates by family (divergences, R-hat, bulk/tail ESS separately) + paired which-family-failed table
+    divergence_only_sensitivity: true  # second categorisation admitting fits that fail ONLY on divergences (R-hat <= 1.01, bulk/tail ESS >= 400)
