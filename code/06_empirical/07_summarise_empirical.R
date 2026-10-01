@@ -61,6 +61,13 @@ one_dataset <- function(ds) {
     overall_N <- rowMeans(LN); overall_G <- rowMeans(LG)
   }
 
+  # Pre-specified prior check (config/v3.yml sd_prior_check).
+  sdq <- function(fit) {
+    v <- if (is.null(fit$draws_b_sd)) NULL else fit$draws_b_sd[[e$sd_prior_check$param]]
+    if (is.null(v)) c(NA_real_, NA_real_) else c(stats::median(v), stats::quantile(v, .975, names = FALSE))
+  }
+  sdN <- sdq(f$normal); sdG <- sdq(f$gumbel)
+
   base <- tibble::tibble(
     dataset = ds, method = r$normal$method, status_normal = statuses[["normal"]],
     status_gumbel = statuses[["gumbel"]],
@@ -72,7 +79,10 @@ one_dataset <- function(ds) {
     delta_logM  = if (has_draws) mean(overall_N) - mean(overall_G) else NA_real_,
     delta_logM_q025 = if (has_draws) quantile(overall_N - overall_G, .025, names = FALSE) else NA_real_,
     delta_logM_q975 = if (has_draws) quantile(overall_N - overall_G, .975, names = FALSE) else NA_real_,
-    n_levels = length(labels))
+    n_levels = length(labels),
+    sd_logM_median_normal = sdN[1], sd_logM_q975_normal = sdN[2],
+    sd_logM_median_gumbel = sdG[1], sd_logM_q975_gumbel = sdG[2],
+    flag_sd_prior = any(c(sdN[2], sdG[2]) > e$sd_prior_check$q975_flag_above, na.rm = TRUE))
 
   contrasts <- if (has_draws && length(labels) > 1) purrr::map_dfr(labels[-1], function(l) {
     cN <- LN[, l] - LN[, labels[1]]; cG <- LG[, l] - LG[, labels[1]]
@@ -110,4 +120,5 @@ cat("\nMedian delta_logM (normal - gumbel) by set:\n")
 print(as.data.frame(by_ds |> group_by(set) |>
   summarise(n = n(), median_delta = median(delta_logM, na.rm = TRUE),
             prop_delta_pos = mean(delta_logM > 0, na.rm = TRUE), .groups = "drop")), digits = 3)
+cat("\nFits flagged by the pre-specified SD prior check:", sum(by_ds$flag_sd_prior), "of", nrow(by_ds), "datasets\n")
 if (nrow(contr)) cat("\nCondition contrasts with a conclusion flip:", sum(contr$conclusion_flip), "of", nrow(contr), "\n")

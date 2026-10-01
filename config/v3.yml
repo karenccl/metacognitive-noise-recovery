@@ -56,6 +56,14 @@ empirical:
   sd_prior: "normal(0, 0.5)"         # all participant-level SDs (default student_t(3, 0, 2.5))
   warmup: 2000
   iter_sampling: 2000
+  # Pre-specified 2026-10-01, before any empirical LOO was computed: report the
+  # posterior of the participant-level log M SD against its prior; flag a fit
+  # ("prior may over-shrink") if the posterior 97.5% quantile exceeds this value
+  # (i.e. reaches the tail of normal(0, 0.5)). Reported next to the category; does
+  # not change it.
+  sd_prior_check:
+    param: sd_participant__Intercept
+    q975_flag_above: 1.0
   loo_repair:
     max_prop_bad_k_for_reloo: 0.10   # above this, use grouped K-fold instead of reloo
   categories:

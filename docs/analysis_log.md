@@ -1342,3 +1342,30 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
 - **Limitation / check.** `normal(0, 0.5)` also limits the between-participant spread of log M,
   a setting the G0-G2 simulations (default SD prior, pooled thresholds) did not validate. A
   small validation run under the full empirical configuration follows (next entry).
+
+## 2026-10-01 - v3: validation of the empirical configuration on G0/G2; pre-specified SD check
+
+- `code/03_recovery_analysis/v3_sdprior_validation.R` refitted 30 grid rows (G0, G2 correct, G2
+  Gaussian; N = 40, T = 200; d' 0.75 and 1.5; reps 1-5) under the full empirical configuration
+  (sd_prior normal(0, 0.5), hierarchical thresholds, 2000 + 2000 draws, init_r 0.5, adapt_delta
+  0.99) on the same simulated datasets as the stored v1 fits. `..._summary.R` ->
+  `data/processed/v3/sdprior_validation_{by_fit,summary,delta_mis}.csv`.
+- 30/30 pass, none escalated, 0 divergences, max R-hat 1.005. log M moves up by 0.004-0.023 on
+  average (v3 - v1, same data); intervals 3-5% narrower; bias v1 -> v3: G0 -0.057 -> -0.034 and
+  +0.023 -> +0.027; G2 correct -0.031 -> -0.020 and -0.056 -> -0.046; G2 Gaussian +0.179 -> +0.193
+  and +0.135 -> +0.148 (d' 0.75 / 1.5). Coverage (of 5) unchanged except G2 correct d' 1.5 4 -> 5
+  and G2 Gaussian d' 1.5 5 -> 3 (5 reps per cell: not interpretable as a pattern).
+  delta_mis (Gaussian - correct): 0.210 -> 0.213 (d' 0.75), 0.191 -> 0.194 (d' 1.5). Recovery is
+  comparable to v1.
+- **Limitation of this check (raised in review):** the G0/G2 simulators set sd_M = sd_dprime =
+  sd_c = 0, the most favourable case for a prior that pulls SDs towards 0; over-shrinkage when
+  participants really differ would not show here. Two additions, fixed now:
+  1. `v3_sdprior_hetero_validation.R`: Gaussian data with sd_M = 0.5 (log scale) and sd_dprime =
+     0.3 (N = 40, T = 200, d' 1.5, 5 reps), each fitted with the default SD prior and with
+     normal(0, 0.5); reports log M population-mean bias/coverage and SD recovery. Runs alongside
+     the main empirical fits.
+  2. **Pre-specified before any empirical LOO was computed** (`config/v3.yml$empirical$sd_prior_check`,
+     `07_summarise_empirical.R`): every dataset reports the posterior median and 97.5% quantile of
+     `sd_participant__Intercept` for both families; a dataset is flagged "prior may over-shrink" if
+     either 97.5% quantile exceeds 1.0. The flag is reported next to the category and does not
+     change it.
