@@ -1408,3 +1408,46 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
 - The primary categorisation and every other rule are unchanged. `05_loo_repair.R` already
   repairs LOO for fits with status `fail` (it skips only missing fit or loo objects), so the
   sensitivity analysis needs no change there.
+
+## 2026-10-04 - v3 step 4 (part 5): LOO repair set-up (paused; not yet run)
+
+- **Empirical fits complete** (2026-10-04 02:10): 90/90, no errors. Gaussian 11 pass / 34 fail
+  (11 divergence-only); Gumbel-min 31 pass / 14 fail (2 divergence-only). Per dataset: both pass
+  10, Gaussian-only fails 21, Gumbel-only fails 1, both fail 13; usable under the divergence-only
+  sensitivity rule 22 of 45. (Diagnostics only; no LOO read.)
+- **LOO repair method.** Pareto k > 0.7 for essentially every participant (`prop_bad` = 1.000 in
+  every dataset checked), so the pre-specified rule (> 10% bad k -> grouped K-fold) sends every
+  dataset to grouped 5-fold cross-validation: 450 refits (45 datasets x 2 families x 5 folds),
+  each on ~80% of the participants. This is the pre-specified rule and is not skipped.
+- **First launch (2026-10-04 02:20, 5 shards), stopped at 02:50 on the user's request.** It first
+  failed on `future`'s 500 MB export limit (fits are 0.55-0.86 GB): `options(future.globals.maxSize
+  = Inf)` added (sequential plan, nothing copied); failed records deleted; relaunched; paused with
+  no record written.
+- **Changes before the production run (execution only; no change to the analysis):**
+  1. Refit sampler settings passed explicitly (`loo_repair_functions.R::refit_args()`): the
+     fit's own settings, i.e. adapt_delta 0.99 / max_treedepth 12, or 0.999 / 14 for escalated
+     fits; 4 chains; 2000 warmup + 2000 draws; init_r 0.5; the fit's seed. Checked: brms 2.23's
+     `update.brmsfit` (used by `kfold()`/`reloo()`) already copies `control`, `warmup`, `iter` and
+     `chains` from the stored fit (e.g. Gherman_2018 normal: stored control adapt_delta 0.999,
+     max_treedepth 14), so the refits would not have fallen back to adapt_delta 0.8; passing them
+     makes this explicit.
+  2. Folds, method choice and the output record moved to `loo_repair_functions.R`, shared by
+     `05_loo_repair.R` and the new pilot `05a_kfold_pilot.R`, so both use identical folds, seeds
+     and settings.
+  3. Datasets processed primary set first (then sensitivity, sensitivity_unrecorded, secondary)
+     before sharding, so the primary results arrive first; folds and seeds depend only on the
+     dataset name, so the order cannot change any result. Run with 4 shards, not 5: with 5 shards
+     only ~5 GB of 31.4 GB RAM was free (each shard holds both fits of a dataset, 1-1.7 GB, plus
+     the refit in progress).
+- **Pilot before production (`05a_kfold_pilot.R`, run alone).** Gherman_2018 (30 participants,
+  both families pass) with `save_fits = TRUE`: per family x fold, adapt_delta, max_treedepth,
+  iter/warmup/chains, divergent transitions, max R-hat and min bulk ESS ->
+  `kfold_pilot_diagnostics.csv`. Both Gherman fits were escalated, so the refits should show
+  adapt_delta 0.999 / treedepth 14. Pass criterion: few or no divergences and R-hat <= 1.01; if
+  the refits diverge heavily, stop and report before the production run. The pilot writes the
+  production-format repair records for Gherman_2018 (refits dropped, ~3 GB not kept), so the
+  production run skips it. The report will state that refit convergence was checked on the pilot
+  dataset only (production refits keep no diagnostics).
+- **Time.** The production fits took ~55 h wall clock for ~85 fits on 4 shards. 450 refits on
+  ~80% of the data suggests roughly 7-10 days on 4 shards; to be updated from the measured rate.
+  The earlier 2-4 day estimate was too optimistic.

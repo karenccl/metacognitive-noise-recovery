@@ -5,16 +5,24 @@
 # dataset always use the same method (reloo and K-fold values are not comparable).
 # Resumable and shardable by dataset:
 #   Rscript code/06_empirical/05_loo_repair.R <shard> <n_shards>
+# Run with 4 shards (memory: each shard holds both fits of a dataset, 1-1.7 GB,
+# plus the refit in progress; 5 shards left < 5 GB of 31 GB free).
 
 suppressPackageStartupMessages({ library(dplyr); library(brms); library(hmetad) })
 source(here::here("code", "01_simulate", "simulate_g2_gumbel.R"))
+source(here::here("code", "06_empirical", "loo_repair_functions.R"))
 # Sampler cores via mc.cores; passing `cores` to reloo/kfold would also send it
 # to log_lik(), whose PSOCK workers lack gumbel_min_lcdf (see v3_reloo_stored_fits.R).
 options(mc.cores = 4)
+# kfold()/reloo() pass the brmsfit through future.apply; these fits are 0.5-1 GB,
+# above future's default 500 MB export limit. The plan is sequential (in-process),
+# so nothing is copied; lift the limit.
+options(future.globals.maxSize = Inf)
 args     <- commandArgs(trailingOnly = TRUE)
 shard    <- if (length(args) >= 1) as.integer(args[1]) else 1L
 n_shards <- if (length(args) >= 2) as.integer(args[2]) else 1L
 cfg3  <- yaml::read_yaml(here::here("config", "v3.yml")); e <- cfg3$empirical
+cfg   <- yaml::read_yaml(here::here("config", "design.yml"))
 k_thr <- cfg3$loo_robust$k_threshold
 fit_dir <- here::here("data", "interim", "v3_empirical", "fits")
 rep_dir <- here::here("data", "interim", "v3_empirical", "loo_repaired")
@@ -22,7 +30,16 @@ dir.create(rep_dir, recursive = TRUE, showWarnings = FALSE)
 
 fams <- c("normal", "gumbel_min")
 datasets <- sort(unique(sub("__.*$", "", list.files(fit_dir, "[.]qs2$"))))
+# Execution order only (results do not depend on it: folds and seeds are fixed
+# per dataset): primary set first, then sensitivity, sensitivity_unrecorded,
+# secondary, so the primary results are available first.
+set_order <- c("primary", "sensitivity", "sensitivity_unrecorded", "secondary")
+sel <- readr::read_csv(here::here("data", "processed", "v3", "empirical", "selected_datasets.csv"),
+                       show_col_types = FALSE)
+rank_set <- match(sel$set[match(datasets, sel$dataset)], set_order)
+datasets <- datasets[order(rank_set, datasets)]
 datasets <- datasets[(seq_along(datasets) - 1L) %% n_shards == (shard - 1L)]
+
 for (ds in datasets) {
   paths <- file.path(fit_dir, sprintf("%s__%s.qs2", ds, fams))
   outs  <- file.path(rep_dir, sprintf("%s__%s.qs2", ds, fams))
@@ -34,32 +51,19 @@ for (ds in datasets) {
                                      prop_bad_k = NA_real_, loo_repaired = NULL, ok = FALSE), outs[j])
     cat(ds, ": a fit or its loo is missing; recorded as not repaired\n"); next
   }
-  prop_bad <- purrr::map_dbl(fits, ~ mean(.x$loo$diagnostics$pareto_k > k_thr))
-  method <- if (all(prop_bad <= e$loo_repair$max_prop_bad_k_for_reloo)) "reloo" else "kfold"
-
-  if (method == "kfold") {
-    # One fold per participant (all of a participant's rows together), shared across families.
-    part <- fits[[1]]$fit$data$participant
-    stopifnot(identical(part, fits[[2]]$fit$data$participant))
-    set.seed(cfg3$seed_base_v3 + sum(utf8ToInt(ds)))
-    pf <- loo::kfold_split_random(K = cfg3$loo_robust$kfold_K, N = length(unique(part)))
-    folds <- pf[match(part, sort(unique(part)))]
-  }
+  rm_ <- repair_method(fits, e, cfg3); prop_bad <- rm_$prop_bad; method <- rm_$method
+  if (method == "kfold") folds <- make_folds(fits, ds, cfg3)
   for (j in 1:2) {
     if (file.exists(outs[j])) next
     f <- fits[[j]]; t0 <- Sys.time()
     res <- if (method == "reloo") {
-      tryCatch(brms::loo(f$fit, reloo = TRUE, k_threshold = k_thr,
-                         reloo_args = list(seed = f$seed, init_r = e$init_r)),
+      tryCatch(brms::loo(f$fit, reloo = TRUE, k_threshold = k_thr, reloo_args = refit_args(f, e, cfg)),
                error = function(err) err)
     } else {
-      tryCatch(brms::kfold(f$fit, folds = folds, seed = f$seed, init_r = e$init_r, save_fits = FALSE),
+      tryCatch(do.call(brms::kfold, c(list(f$fit, folds = folds, save_fits = FALSE), refit_args(f, e, cfg))),
                error = function(err) err)
     }
-    qs2::qs_save(list(dataset = ds, family = fams[j], method = method,
-                      prop_bad_k = prop_bad[j], loo_repaired = res,
-                      ok = !inherits(res, "error"),
-                      elapsed_secs = as.numeric(difftime(Sys.time(), t0, units = "secs"))), outs[j])
+    qs2::qs_save(repair_record(ds, fams[j], method, prop_bad[j], res, t0), outs[j])
     cat(ds, fams[j], method, sprintf("prop_bad=%.3f", prop_bad[j]), "ok:", !inherits(res, "error"), "\n")
     if (inherits(res, "error")) cat("  error:", conditionMessage(res), "\n")
   }
