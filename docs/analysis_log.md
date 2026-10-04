@@ -1482,3 +1482,12 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   fit's PPC is reported as not computed (numerical check failed). The same R-side functions feed
   `log_lik()`, so this participant's LOO contributions in this fit carry the same small numerical
   error; noted for the Schurgin_2018 sensitivity-analysis result.
+- **K-fold pilot result** (`05a_kfold_pilot.R`, Gherman_2018, 2026-10-04 11:36-13:36, run with
+  only the PPC alongside) -> `kfold_pilot_diagnostics.csv`. All 10 refits (2 families x 5 folds)
+  used adapt_delta 0.999 / max_treedepth 14 (both Gherman fits were escalated), 2000 warmup +
+  2000 draws, 4 chains, as intended. Max R-hat 1.009; min bulk ESS 761; 6 divergent transitions
+  in total over 80,000 draws (Gaussian folds 3 and 5: 4 and 2). Meets the pass criterion (few or
+  no divergences, R-hat <= 1.01), so the production run proceeds. Each family's 5 refits took
+  ~1 h. The two production-format repair records for Gherman_2018 were written (refits dropped);
+  their LOO values have not been read. Refit convergence is checked on this dataset only;
+  production refits keep no diagnostics.
