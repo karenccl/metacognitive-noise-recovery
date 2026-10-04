@@ -10,6 +10,7 @@
 # Run from the project root: Rscript code/06_empirical/07_summarise_empirical.R
 
 suppressPackageStartupMessages(library(dplyr))
+source(here::here("code", "06_empirical", "loo_repair_functions.R"))
 cfg3 <- yaml::read_yaml(here::here("config", "v3.yml")); e <- cfg3$empirical
 fit_dir <- here::here("data", "interim", "v3_empirical", "fits")
 rep_dir <- here::here("data", "interim", "v3_empirical", "loo_repaired")
@@ -57,11 +58,10 @@ one_dataset <- function(ds) {
   # if it passed, or if it failed ONLY on divergences (R-hat and bulk/tail ESS
   # within the design.yml limits, no tree-depth hits). The primary category
   # above is unchanged.
-  flags_of <- function(fit) if (is.null(fit$diagnostics)) NA_character_ else fit$diagnostics$flags
-  div_only <- function(fit) identical(fit$status, "fail") && identical(sort(flags_of(fit)), "divergences")
-  conv_ok <- purrr::map_lgl(f, ~ identical(.x$status, "pass") || div_only(.x))
+  flags_of <- fit_flags; div_only <- divergence_only           # loo_repair_functions.R
+  usable_sens <- purrr::map_lgl(f, conv_ok)
   category_div_sens <- dplyr::case_when(
-    !all(conv_ok) | !repaired_ok ~ "unreliable",
+    !all(usable_sens) | !repaired_ok ~ "unreliable",
     diff >  e$categories$two_se_rule * se ~ "clear_gaussian",
     diff < -e$categories$two_se_rule * se ~ "clear_gumbel",
     TRUE ~ "inconclusive")

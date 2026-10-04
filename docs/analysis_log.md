@@ -1451,3 +1451,23 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
 - **Time.** The production fits took ~55 h wall clock for ~85 fits on 4 shards. 450 refits on
   ~80% of the data suggests roughly 7-10 days on 4 shards; to be updated from the measured rate.
   The earlier 2-4 day estimate was too optimistic.
+- **Tiered execution order (user decision 2026-10-04; execution only).** `05b_loo_tiers.R` ->
+  `loo_repair_tiers.csv`, from fit statuses and diagnostics only (no LOO read): tier 1 = both
+  families pass (10 datasets: 2 primary, 7 secondary, 1 sensitivity_unrecorded), tier 2 = both
+  `conv_ok` but not both pass, i.e. at least one divergence-only failure (12: 3 primary, 6
+  secondary, 2 sensitivity, 1 sensitivity_unrecorded), tier 3 = at least one fit fails on R-hat,
+  ESS or tree depth (23: 12 primary, 4 secondary, 5 sensitivity, 2 sensitivity_unrecorded).
+  `05_loo_repair.R` runs tier 1, then tier 2, each primary set first, sharded 4 ways; tier 3 only
+  with `--include-tier3`. Tier-3 datasets are `unreliable` under both the primary rule and the
+  divergence-only sensitivity rule whatever their LOO, so **no pre-specified category depends on
+  tier-3 LOO**; tier 3 is deferred, to be run later only if CPU time allows. Consequences: repaired
+  LOO will exist only for tiers 1-2 (~220 refits, roughly 3.5-5 days); Fig. 9 shows tier-3
+  datasets with the unrepaired PSIS comparison, marked as such. Note: only 5 of the 17 primary
+  datasets are in tiers 1-2, so the primary categorisation will rest on few datasets.
+- The divergence-only test now lives in `loo_repair_functions.R` (`divergence_only()`,
+  `conv_ok()`) and is used by both `05b_loo_tiers.R` and `07_summarise_empirical.R`.
+- **PPC fix (`ppp_functions.R`).** stat 3 (Pearson X2/df) was `NA` in about a third of empirical
+  fits: cells where a draw's predicted probability underflows to exactly 0 and the count is also 0
+  gave 0/0. Such cells now contribute 0; a positive count with expected 0 still gives Inf.
+  `tests/test_ppp_functions.R` still reproduces the v2 p-values exactly (11/11 pass). The
+  empirical PPC run that had started with the old code was stopped and restarted.

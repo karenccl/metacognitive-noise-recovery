@@ -4,7 +4,8 @@
 # participant with folds shared by both families. The two families of a
 # dataset always use the same method (reloo and K-fold values are not comparable).
 # Resumable and shardable by dataset:
-#   Rscript code/06_empirical/05_loo_repair.R <shard> <n_shards>
+#   Rscript code/06_empirical/05_loo_repair.R <shard> <n_shards> [--include-tier3]
+# Run 05b_loo_tiers.R first.
 # Run with 4 shards (memory: each shard holds both fits of a dataset, 1-1.7 GB,
 # plus the refit in progress; 5 shards left < 5 GB of 31 GB free).
 
@@ -21,6 +22,7 @@ options(future.globals.maxSize = Inf)
 args     <- commandArgs(trailingOnly = TRUE)
 shard    <- if (length(args) >= 1) as.integer(args[1]) else 1L
 n_shards <- if (length(args) >= 2) as.integer(args[2]) else 1L
+include_tier3 <- "--include-tier3" %in% args
 cfg3  <- yaml::read_yaml(here::here("config", "v3.yml")); e <- cfg3$empirical
 cfg   <- yaml::read_yaml(here::here("config", "design.yml"))
 k_thr <- cfg3$loo_robust$k_threshold
@@ -31,13 +33,17 @@ dir.create(rep_dir, recursive = TRUE, showWarnings = FALSE)
 fams <- c("normal", "gumbel_min")
 datasets <- sort(unique(sub("__.*$", "", list.files(fit_dir, "[.]qs2$"))))
 # Execution order only (results do not depend on it: folds and seeds are fixed
-# per dataset): primary set first, then sensitivity, sensitivity_unrecorded,
-# secondary, so the primary results are available first.
+# per dataset). By tier (05b_loo_tiers.R -> loo_repair_tiers.csv: 1 both fits
+# pass, 2 divergence-only, 3 unreliable under both pre-specified rules), then
+# set (primary first), then name. Tier 3 runs only with --include-tier3: no
+# pre-specified category depends on tier-3 LOO.
 set_order <- c("primary", "sensitivity", "sensitivity_unrecorded", "secondary")
-sel <- readr::read_csv(here::here("data", "processed", "v3", "empirical", "selected_datasets.csv"),
-                       show_col_types = FALSE)
-rank_set <- match(sel$set[match(datasets, sel$dataset)], set_order)
-datasets <- datasets[order(rank_set, datasets)]
+tiers <- readr::read_csv(here::here("data", "processed", "v3", "empirical", "loo_repair_tiers.csv"),
+                         show_col_types = FALSE)
+stopifnot(setequal(tiers$dataset, datasets))
+tiers <- tiers[order(tiers$tier, match(tiers$set, set_order), tiers$dataset), ]
+if (!include_tier3) tiers <- tiers[tiers$tier < 3, ]
+datasets <- tiers$dataset
 datasets <- datasets[(seq_along(datasets) - 1L) %% n_shards == (shard - 1L)]
 
 for (ds in datasets) {

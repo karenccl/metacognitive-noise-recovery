@@ -40,3 +40,11 @@ repair_record <- function(ds, fam, method, prop_bad, res, t0) {
        ok = !inherits(res, "error"),
        elapsed_secs = as.numeric(difftime(Sys.time(), t0, units = "secs")))
 }
+
+# Convergence classes used by the divergence-only sensitivity analysis
+# (07_summarise_empirical.R) and by the LOO-repair tiers (05b_loo_tiers.R).
+# A fit is "conv_ok" if it passed, or failed ONLY on divergences (R-hat and
+# bulk/tail ESS within limits, no tree-depth hits).
+fit_flags <- function(fit) if (is.null(fit$diagnostics)) NA_character_ else fit$diagnostics$flags
+divergence_only <- function(fit) identical(fit$status, "fail") && identical(sort(fit_flags(fit)), "divergences")
+conv_ok <- function(fit) identical(fit$status, "pass") || divergence_only(fit)

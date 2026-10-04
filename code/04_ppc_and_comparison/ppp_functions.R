@@ -69,7 +69,9 @@ ppp_one_fit_general <- function(fit, agg, K, group_cols = "participant", seed, n
     d <- sweep(Y %*% A - E16, 2, tot_by_cell, `/`)
     cbind(stat1_rmse     = sqrt(rowMeans(d^2)),
           stat2_highconf = rowMeans(abs(d[, conf_top, drop = FALSE])),
-          stat3_x2_df    = rowSums((Y - E)^2 / E) / df3)
+          # 0/0 (expected and observed count both 0, e.g. a probability that
+          # underflows to 0) contributes 0; a positive count where E = 0 stays Inf.
+          stat3_x2_df    = rowSums(ifelse(E == 0 & Y == 0, 0, (Y - E)^2 / E)) / df3)
   }
 
   # Replicated data: sequential conditional binomials = one multinomial per
