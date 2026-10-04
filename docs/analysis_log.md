@@ -1471,3 +1471,14 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   gave 0/0. Such cells now contribute 0; a positive count with expected 0 still gives Inf.
   `tests/test_ppp_functions.R` still reproduces the v2 p-values exactly (11/11 pass). The
   empirical PPC run that had started with the old code was stopped and restarted.
+- **Empirical PPC run** (`06_ppc_dataset.R`, fixed code, 2026-10-04 11:58-12:19) ->
+  `data/processed/v3/empirical/ppc_by_fit.csv`: 89 of 90 fits, no `NA` statistic. Flags
+  (p < 0.05), Gaussian / Gumbel-min: stat 1 27/45 and 38/44, stat 2 18/45 and 38/44, stat 3 32/45
+  and 37/44. These are model-fit checks only; no pre-specified category uses them.
+- **Not computed: Schurgin_2018 gumbel_min** (tier 2). The PPC's built-in check (per-draw cell
+  probabilities sum to 1 within 1e-8) failed: for one participant (#17) the R-side Gumbel-min CDF
+  at extreme threshold values gives sums of 0.986-1.003 in 84 of 396,000 participant x draw groups
+  (0.02%); all other fits pass the check. The tolerance was not loosened after the fact; this
+  fit's PPC is reported as not computed (numerical check failed). The same R-side functions feed
+  `log_lik()`, so this participant's LOO contributions in this fit carry the same small numerical
+  error; noted for the Schurgin_2018 sensitivity-analysis result.
