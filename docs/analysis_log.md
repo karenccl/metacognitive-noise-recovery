@@ -1569,3 +1569,21 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   sources of the Confidence Database datasets are not yet in the bibliography (noted in §7).
 - `supplementary_methods.md`: S14 pointer to the v2.0 specification and deviations.
 - All report numbers taken from `data/processed/v3/` and the v3 analysis-log entries.
+
+## 2026-10-06 - Per-dataset citations for the empirical analysis
+
+- Citation lines were extracted from the readmes of all 45 analysed datasets: 24 distinct published
+  sources and 9 unpublished contributions. Each published source was checked against Crossref
+  (by the readme's DOI where given, else by bibliographic search), comparing title, authors, year,
+  journal, volume, issue and pages with the readme; 18 matched as given. Haddara & Rahnev (2022)
+  was first matched to its 2020 preprint and corrected to the Psychological Science article. Four
+  readmes cite preprints that Crossref links to later articles (Faivre 2018 -> Cortex 2020; Schurgin
+  2018 -> Nature Human Behaviour 2020; Siedlecka 2019 -> Consciousness and Cognition 2020; van Boxtel
+  2019 -> Orchard et al., Journal of Vision 2022); the published articles are cited and the preprint
+  DOIs recorded in comments. Lindsay, Kantner & Fallow (2014) is a book chapter not indexed by
+  Crossref; the book (doi:10.4324/9781315752808, 2014, editors) was checked, the chapter page range
+  was not.
+- `references.bib` now has 32 entries (8 previous + 24 dataset sources), generated from the Crossref
+  records rather than retyped. `supplementary_methods.md` S15 lists every analysed dataset with
+  set, N, pre-registered category and source (unpublished ones with the contributors named in their
+  readmes). Report §4.11 cites the named datasets' sources and §7 lists all of them.

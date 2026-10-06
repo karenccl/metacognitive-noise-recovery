@@ -257,3 +257,60 @@ and what had been seen when it was decided in `docs/design_decisions.md` (v3 sec
 `docs/analysis_log.md` (2026-09-29 to 2026-10-06). Two errors in the plan's draft code were
 corrected before use and logged there: the pooled d′ contrast's count of positive cells, and the
 "discrete scale" screening rule (integer values instead of 3–11 distinct values).
+
+## S15. Confidence Database datasets and their sources
+
+All 45 datasets analysed in report §4.11 (Fig. 11), by set. Source keys refer to `references.bib`; every
+published source was checked against Crossref on 2026-10-06. Where a dataset's readme cites a preprint
+that has since been published, the published article is cited (the preprint DOI is noted in
+`references.bib`). Unpublished datasets are cited as data contributed to the Confidence Database
+(Rahnev et al., 2020), with the contributors named in their readmes. N = participants analysed (after
+exclusions and the 100-participant cap); category under the pre-registered rule.
+
+| Dataset | Set | N | Category | Source |
+|---|---|---|---|---|
+| Bang_2019_Exp2 | primary | 100 | unreliable | bang2019 |
+| Desender_2022_Exp1 | primary | 37 | unreliable | desender2022 (Exp. 1) |
+| Gherman_2018 | primary | 30 | clear gaussian | gherman2018 |
+| Haddara_2022_Expt1 | primary | 100 | unreliable | haddara2022 (Exp. 1) |
+| Haddara_2022_Expt2 | primary | 75 | unreliable | haddara2022 (Exp. 2) |
+| Hainguerlot_2018 | primary | 64 | unreliable | hainguerlot2018 |
+| Hainguerlot_unpub | primary | 69 | unreliable | Unpublished; contributors M. Hainguerlot, T. Gajdos, J.-C. Vergnaud, V. de Gardelle |
+| Maniscalco_2017_expt1 | primary | 29 | unreliable | maniscalco2017 (Exp. 1) |
+| Maniscalco_2017_expt2 | primary | 41 | unreliable | maniscalco2017 (Exp. 2) |
+| Maniscalco_2017_expt3 | primary | 21 | unreliable | maniscalco2017 (Exp. 3) |
+| Maniscalco_2017_expt4 | primary | 33 | unreliable | maniscalco2017 (Exp. 4) |
+| Massoni_unpub | primary | 49 | unreliable | Unpublished; contributor S. Massoni |
+| OHora_unpub_1 | primary | 28 | clear gaussian | Unpublished; contributors D. O'Hora, A. Zgonnikov, K. Cichocki |
+| Rausch_2020 | primary | 24 | unreliable | rausch2020 |
+| Rouault_2020 | primary | 41 | unreliable | rouault2020 (behavioural session) |
+| Siedlecka_2019 | primary | 34 | unreliable | siedlecka2020 |
+| Yeon_unpub_Exp1 | primary | 22 | unreliable | Unpublished; contributors J. Yeon, Z. Ulutas, D. Rahnev |
+| Desender_2022_Exp2B | sensitivity | 99 | unreliable | desender2022 (Exp. 2B) |
+| Faivre_2018_bioRxiv | sensitivity | 35 | unreliable | faivre2020 |
+| Lebreton_2018 | sensitivity | 100 | unreliable | lebreton2018 (Exps. 1-4) |
+| Mazor_2020 | sensitivity | 46 | unreliable | mazor2020 |
+| Rouault_2018_Expt2 | sensitivity | 100 | unreliable | rouault2018 (Exp. 2) |
+| Sadeghi_2017_perception | sensitivity | 50 | unreliable | sadeghi2017 (perceptual task) |
+| Yeon_unpub_Exp2 | sensitivity | 37 | unreliable | Unpublished; contributors J. Yeon, A. Bhardwas, D. Rahnev |
+| Rouault_2018_Expt1 | sensitivity unrecorded | 100 | unreliable | rouault2018 (Exp. 1) |
+| VanBoxtel_2019_Expt1 | sensitivity unrecorded | 45 | unreliable | orchard2022 (Exp. 1) |
+| VanBoxtel_2019_Expt2 | sensitivity unrecorded | 31 | inconclusive | orchard2022 (Exp. 2) |
+| Wierzchon_2014 | sensitivity unrecorded | 81 | unreliable | wierzchon2014 |
+| Chandravadia_2020 | secondary | 85 | unreliable | chandravadia2020 |
+| Fallow_unpub_1 | secondary | 100 | unreliable | Unpublished; contributor K. Fallow (supervised by D. S. Lindsay) |
+| Fallow_unpub_2 | secondary | 100 | unreliable | Unpublished; contributor K. Fallow (supervised by D. S. Lindsay) |
+| Fallow_unpub_3 | secondary | 100 | unreliable | Unpublished; contributor K. Fallow (supervised by D. S. Lindsay) |
+| Hu_2017 | secondary | 34 | clear gaussian | hu2017 |
+| Kantner_2012_E1 | secondary | 40 | clear gumbel | kantner2012 (Exp. 1) |
+| Kantner_2012_E2 | secondary | 46 | inconclusive | kantner2012 (Exp. 2) |
+| Kantner_2012_E3 | secondary | 100 | clear gumbel | kantner2012 (Exp. 3) |
+| Kantner_2014_E1 | secondary | 86 | clear gumbel | kantner2014 (Exp. 1) |
+| Kantner_2014_E2 | secondary | 73 | clear gumbel | kantner2014 (Exp. 2) |
+| Lindsay_2014 | secondary | 46 | clear gumbel | lindsay2014 |
+| Sadeghi_2017_memory | secondary | 48 | unreliable | sadeghi2017 (memory task) |
+| Schurgin_2018 | secondary | 66 | unreliable | schurgin2020 (working-memory ROC experiment) |
+| Siedlecka_2019_Exp1 | secondary | 36 | unreliable | siedlecka2019 (Exp. 1) |
+| Siedlecka_2019_Exp2 | secondary | 55 | unreliable | siedlecka2019 (Exp. 2) |
+| Skora_unpub | secondary | 38 | unreliable | Unpublished; contributors Z. Skóra, S. Del Pin, M. Wierzchoń (preregistration osf.io/qu2hk) |
+| Weidemann_2016 | secondary | 100 | unreliable | weidemann2016 |
