@@ -84,6 +84,26 @@ on the default `rstan` backend, so CmdStan is not needed to reproduce the result
 written with `type = "all"` before real code existed (see `docs/analysis_log.md`); this is
 over-inclusion, not missing packages.
 
+## v3 (2026-09-29 to 2026-10-06)
+
+Same machine, R 4.5.0, brms 2.23.0, hmetad 0.2.1, loo 2.8.0, rstan backend (pinned). Added to
+`renv.lock` for the empirical stage: readxl 1.4.5 (with cellranger 1.1.0, rematch 2.0.0), used only
+to read the Confidence Database metadata sheet.
+
+Compute (wall clock, this laptop): exact-refit LOO on 48 stored G2 fits ~1.3 h (3 × 4 cores);
+G3 160 fits ~6.5 h (4 × 4 cores); empirical fits 90 at 2000 + 2000 draws ~55 h (4 shards, plus
+extra workers at the end); grouped 5-fold LOO repair, 22 datasets × 2 families (220 refits),
+2026-10-04 13:37 to 2026-10-06 19:24 including an overnight interruption. Settings that matter for
+reproduction: `options(mc.cores = 4)` for refits (passing `cores` to `reloo()`/`kfold()` sends it to
+`log_lik()`, whose PSOCK workers on Windows lack `gumbel_min_lcdf`), and
+`options(future.globals.maxSize = Inf)` (the empirical fits are 0.5–1 GB, above `future`'s 500 MB
+export limit). With 5 concurrent shards only ~5 GB of 31.4 GB RAM was free; 4 shards were used.
+
+Environment hazards met during v3: the project folder is synced by Synology Drive, which restored a
+deleted file from its server copy; two LOO-repair records failed at the same second with "error
+writing to connection" during an overnight shutdown and were rerun. Exclude `data/interim/` from
+sync (or pause sync) during long runs.
+
 ## Verification log
 
 | Date | Check | Result |
@@ -94,3 +114,6 @@ over-inclusion, not missing packages.
 | 2026-09-23 | `qs` install | Failed (archived on CRAN); installed `qs2` 0.3.1 instead (deviation) |
 | 2026-09-23 | `renv::init(bare = TRUE)` + `hydrate` + `snapshot(type = "all")` | 156 packages locked in `renv.lock` |
 | 2026-09-25 | `fit$backend` in saved production fits | `rstan` (see above) |
+| 2026-09-29 | Grid cell 721 refit after extending `fit_one_hmetad()` (v3 covariates) | Draws identical to stored (max abs diff 0) |
+| 2026-10-04 | brms `update.brmsfit` carries `control`, `warmup`, `iter`, `chains` from the stored fit | Confirmed from source; K-fold refits now also pass them explicitly |
+| 2026-10-04 | K-fold pilot refits (Gherman_2018, 10 refits) | adapt_delta/treedepth as intended; max R-hat 1.009; 6/80,000 divergent |

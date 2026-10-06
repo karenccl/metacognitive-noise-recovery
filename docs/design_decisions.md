@@ -726,6 +726,58 @@ further is logged as exploratory.
 **Planned outputs.** `code/04_ppc_and_comparison/g2_ppp_fullfits.R`;
 `data/processed/v2/g2_ppp_by_fit.csv`, `g2_ppp_summary.csv`; `outputs/figures/v2/fig_g2_ppp.png`.
 
+## 2026-09-29 to 2026-10-06 — v3 enhancement (plan: `docs/v3_plan.md`)
+
+All v3 constants and decision rules live in `config/v3.yml`; outputs go to `data/processed/v3/`,
+`data/interim/v3_*/` and `outputs/figures/v3/`; no v1/v2 output is overwritten. Day-by-day detail,
+including every number below, is in `docs/analysis_log.md` (entries dated 2026-09-29 to 2026-10-06).
+
+**Locked before the corresponding fits (tags pushed to GitHub on 2026-10-01).**
+
+- `v3-prereg-g3` (88cfbc5): G3 design (control d′ 1.25/1.25 vs mixture 0.5/2.0, 20 reps, four fit
+  variants) and the pooling-artefact rule (mixture pooled comparison favours Gumbel-min by > 2 SE in
+  ≥ 25% of reps and control in ≤ 10%).
+- `v3-prereg-empirical` (9c049e3): Confidence Database screening rules, the manual difficulty
+  coding (`config/empirical_manual_coding.csv`, made before any real-data fit), dataset selection,
+  participant exclusions, LOO repair rule (> 10% bad Pareto k → grouped 5-fold K-fold) and the
+  categorisation (|elpd(Gaussian) − elpd(Gumbel-min)| > 2 SE; unreliable if either fit is not
+  `pass` or the repair failed).
+
+**Deviations, in order (each logged before the step it affects).**
+
+1. *Screening (before any fit).* "Discrete scale" tested as 3–11 distinct numeric values instead of
+   integer values (probability scales such as 0.5, 0.6, …, 1 are discrete); case-insensitive column
+   names; per-dataset row filters (practice rows, catch/distractor trials, sentinel confidence
+   codes); within-participant ranking for per-participant calibrated levels (Rouault_2020); the
+   ≤ 4-level check applied to the modelled column.
+2. *Sampler, after two trial datasets (`acc2b8f`).* `init_r = 0.5` (default random inits never
+   initialised at N = 498); start at `adapt_delta = 0.99` (the plan's own remedy), escalation to
+   0.999 / treedepth 14.
+3. *Participant cap (`bc96f19`).* Datasets with > 100 participants after exclusions keep a seeded
+   random 100 (10 datasets), because the N = 498 trial exceeded 2 h per fit.
+4. *Post-registration prior change (`84cea99`, user decision).* 16 of the first 18 fits failed the
+   pre-registered diagnostics (Gaussian worst), with the participant-level log M SD the weakest
+   parameter. Decided on convergence diagnostics only (no LOO or log M viewed):
+   `normal(0, 0.5)` on every participant-level SD (default `student_t(3, 0, 2.5)`) and 2000 + 2000
+   draws. The 34 fits made under the pre-registered configuration are kept in
+   `data/interim/v3_empirical/fits_prereg/` as the comparison set. Validated on G0/G2
+   (30 refits, recovery comparable to v1) and under heterogeneity (true SD 0.5, no evidence of
+   over-shrinkage, n = 5 per prior); a larger true SD was not tested.
+5. *Pre-specified before any empirical LOO was read.* A prior-vs-posterior flag
+   (`sd_prior_check`: posterior 97.5% quantile of the log M SD > 1.0); exploratory tables of
+   diagnostic failures by family (paired); and a divergence-only sensitivity categorisation that
+   admits fits failing only on divergences. The primary rule is unchanged.
+6. *LOO repair execution (`6de3285`, `b98a56b`).* Refit settings passed explicitly (the fit's own;
+   brms's `update()` already carried them over); K-fold pilot on one dataset (refits converged);
+   tiered order: tier 1 (both fits pass) and tier 2 (divergence-only) repaired, tier 3 (unreliable
+   under both rules whatever its LOO) not repaired. No pre-specified category depends on tier 3.
+
+**Not deviations, but read with the results.** The plan's §4.7 expectation that Gaussian and
+Gumbel-min log M agree on Gaussian data was wrong (+0.45 even when the Gaussian model is correct);
+the Gaussian fits fail diagnostics far more often than Gumbel-min on real data (21 vs 1 discordant
+pairs), so the primary rule's exclusions are not random; the five Gumbel-favouring datasets come
+from one lab and paradigm.
+
 ## What this project must not claim
 
 In particular: do not claim `log_M` "recovers" σ_c numerically; do not
@@ -733,3 +785,11 @@ report 95% CI coverage for σ_c using `log_M` intervals; do not call the G1 DDM 
 "non-Gaussian" without separately establishing the empirical distributional feature tested; do
 not treat a successful MCMC fit as evidence of generative correctness without PPCs; do not make
 trial-level LOO claims when the likelihood is fit to aggregated subject-level cell counts.
+
+v3 additions: do not read the empirical delta log M (Gaussian − Gumbel-min) as evidence for either
+family (G3 shows a large positive difference when the Gaussian model is correct); do not treat
+Gaussian divergences on real data as evidence for Gumbel-min (the misspecified Gaussian converged
+in simulation); do not generalise the memory result beyond the one lab and paradigm it comes from;
+do not present the primary empirical categories without the share of unreliable datasets and the
+divergence-only sensitivity analysis; in multi-condition datasets one LOO observation is a
+participant × condition count vector, not a participant.

@@ -19,7 +19,7 @@ d$dataset <- factor(d$dataset, levels = unique(d$dataset))
 
 pA <- ggplot(d, aes(x, dataset, colour = category)) +
   geom_vline(xintercept = 0, linetype = 2, colour = "grey40") +
-  geom_errorbarh(aes(xmin = x - 2 * xse, xmax = x + 2 * xse), height = 0) +
+  geom_errorbar(aes(xmin = x - 2 * xse, xmax = x + 2 * xse), width = 0, orientation = "y") +
   geom_point(aes(shape = repaired), size = 2) +
   scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1), labels = c(`TRUE` = "repaired LOO", `FALSE` = "PSIS only"),
                      name = NULL) +

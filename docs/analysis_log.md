@@ -1540,3 +1540,20 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   Rausch_2020, Siedlecka_2019, Yeon_unpub_Exp1. Only OHora_unpub_1 is categorised (clear_gaussian;
   flagged by its Gumbel-min fit, q97.5 1.008). Reported next to its category, as pre-specified.
 - Condition contrasts: 5 of 27 change their "excludes 0" conclusion between families.
+
+## 2026-10-06 - v3 release documentation and tests
+
+- Full test suite: 129 expectations in 7 files, 0 failed, 0 errors, 0 skipped
+  (test_data_format 25, test_discretise_confidence 12, test_eligibility 38,
+  test_formula_backcompat 19, test_ppp_functions 11, test_simulate_g1_ddm 17, test_simulate_g3 7;
+  includes the PPP regression against the stored v2 p-values, which needs the stored G2 fits).
+- README: v3 status and results section (steps 1-4), repository map, v3 reproduction
+  (`run_v3.R`, Makefile v3 targets, data access), v3 diagnostic policy. design_decisions.md: v3
+  section (locked rules, tags, all deviations in order) and v3 "must not claim" items.
+  computational_environment.md: v3 packages, compute times, Windows/`future` settings, sync
+  hazard; verification-log rows. CITATION.cff: 2.0.0, dated 2026-10-06 (update the date if the
+  `v2.0.0` tag is made on another day).
+- Fig. 9: `geom_errorbarh()` (deprecated in ggplot2 4.0) replaced by
+  `geom_errorbar(orientation = "y")`; figure unchanged.
+- Not yet done: merge `v3-enhancement` into `main`, tag `v2.0.0`, Zenodo DOI; the report
+  (manuscript/) still covers v1.2 only.

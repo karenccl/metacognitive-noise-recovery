@@ -1,9 +1,11 @@
 # Metacognitive noise recovery with `hmetad`
 
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
-A reproducible R/Stan simulation study (no human data). Draft report: [manuscript/report.md](manuscript/report.md).
+A reproducible R/Stan simulation study, extended in v3 (2.0.0) with three further simulation analyses and an empirical analysis of the Confidence Database. Draft report: [manuscript/report.md](manuscript/report.md) (covers v1.2; the v3 results below are not yet written into the report).
 
-**Status (2026-09-29, v1.2):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; the current release is tag `v1.2.1` (v1.2.0 plus engineering fixes). The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4); v1.2 adds a practical single-model check with replicated data. RQ1 is a validity check.
+**Status (2026-10-06, v3 on branch `v3-enhancement`):** v3 analyses, tables and Figs. 6–9 are complete and pushed; the release (merge to `main`, tag `v2.0.0`) is pending. v3 adds: the misspecification shift relative to the correct model (step 1), exact-refit LOO robustness (step 2), a difficulty-mixture simulation G3 (step 3), and the empirical comparison of Gaussian vs Gumbel-min on real data (step 4). See the v3 section below, `docs/v3_plan.md`, and `docs/design_decisions.md` (v3 section, including all deviations).
+
+**Status of v1.2 (2026-09-29):** all 1,440 fits, analyses, figures, report and supplement are complete and pushed; the current release is tag `v1.2.1` (v1.2.0 plus engineering fixes). The report is a draft and has not been peer reviewed; references were checked against Crossref on 2026-09-28. See [docs/deliverables_checklist.md](docs/deliverables_checklist.md). The main finding is RQ2: Gaussian misspecification is visible to LOO and biases `log_M`, and aggregate PPC discrepancy also carries the signal when compared with the correct model, although it looks small in absolute terms. v1.1 reverses the v1.0 claim that aggregate PPC did not reveal the misspecification (report §4.4); v1.2 adds a practical single-model check with replicated data. RQ1 is a validity check.
 
 ## Question
 
@@ -42,22 +44,42 @@ Results are conditional on the simulated processes. Full limitations are in the 
 - LOO Pareto-k values are unreliable for a substantial share of observations.
 - One seed base, one environment, rstan only; no JAGS cross-check or real-data illustration.
 
+## v3 results (all from `data/processed/v3/`; figures in `outputs/figures/v3/`)
+
+Simulation (no new human data):
+
+- **Misspecification shift, same dataset (step 1, Fig. 6).** log M(Gaussian) − log M(correct) is +0.19 to +0.25 at d′ = 0.75 and +0.11 to +0.15 at d′ = 1.5; larger at low d′ in 6/6 cells (pooled +0.097, SE 0.011). It does not shrink with more trials (slope on log₂T ≈ 0), while the Gaussian intervals narrow, so the share of Gaussian intervals missing the truth rises with T (0.13 → 0.35 at d′ = 0.75). The correct fit's small negative bias matches G0's.
+- **LOO robustness (step 2, Fig. 7).** On the 24 stored G2 pairs, 142 exact leave-one-participant-out refits left every PSIS conclusion unchanged (sign and > 2 SE agreement 24/24; median |Δelpd| 0.03).
+- **Difficulty mixture G3 (step 3, Fig. 8).** Pooling trials of two difficulties (d′ 0.5 and 2.0) did not make LOO prefer Gumbel-min: 0/20 replications under both mixture and control; the true Gaussian model won by > 2 SE in 20/20 everywhere. Pre-specified verdict: no pooling artefact. On Gaussian data the misspecified Gumbel-min fit sits ~0.46 below the true log M, so a large between-family log M difference is not by itself evidence for either family.
+
+Empirical (Confidence Database, Rahnev et al., 2020; Fig. 9):
+
+- 45 usable datasets (17 primary perception, 7 staircase, 4 unrecorded-difficulty, 17 memory). Rules, coding and selection were fixed and tagged (`v3-prereg-empirical`) before any real-data fit. Grouped 5-fold cross-validation by participant.
+- **Most datasets could not be categorised.** Under the pre-registered rule (both families must pass diagnostics), 15/17 primary datasets are unreliable. The 2 categorised primary datasets favour the Gaussian model. In memory, 5 favour Gumbel-min, all from one lab and paradigm (old/new recognition, 3-level confidence), 1 favours Gaussian.
+- **The failures are one-sided.** The Gaussian fit failed diagnostics in 76% of datasets vs 31% for Gumbel-min (21 vs 1 datasets where only one family failed), so the primary rule's exclusions are not random. Admitting fits that fail only on divergences (pre-specified sensitivity): primary 3 Gaussian, 2 inconclusive; memory 6 Gaussian, 5 Gumbel-min, 2 inconclusive; no dataset changes direction.
+- **Post-registration deviation.** After 16/18 initial fits failed diagnostics, all participant-level SDs got a `normal(0, 0.5)` prior and chains were lengthened (decided on convergence diagnostics only; validated in simulation; the original fits are kept as a comparison set). Details and all other deviations: `docs/design_decisions.md`.
+
+v3 limitations: the empirical primary result rests on 2 (or 5 under the sensitivity rule) perception datasets; the memory result on one lab; Gaussian divergences on real data are a diagnostic signal, not evidence for Gumbel-min; the SD-prior check under heterogeneity tested one true SD (0.5) with 5 replications; LOO repair was not run for the 23 datasets that are unreliable under both rules; refit convergence was checked on one pilot dataset only.
+
 ## Repository map
 
 ```text
-code/00_setup/               config loading, grid construction
-code/01_simulate/            G0/G1/G2 generators, confidence discretisation, DDM calibration
-code/02_fit/                 fit wrapper, diagnostics, per-cell runner, concurrent grid runner
-code/03_recovery_analysis/   compile results, G1 primary metrics, prior and K=6 (G1 re-binning) sensitivity
-code/04_ppc_and_comparison/  LOO comparison, PPCs (incl. all-G2 PPC, v1.1), diagnostics summary
-code/05_figures/             the five headline figures
-config/                      design.yml (all constants), grid.csv (1,440 rows)
-data/processed/              compact result tables (tracked); v2/ holds the v1.1 all-G2 PPC tables
-data/interim/                per-fit result files (git-ignored, ~1,440 files)
-outputs/                     figures (figures/v2/: Fig. 6), calibration/benchmark tables
-docs/                        design decisions, analysis log, computational environment
-tests/                       testthat unit tests (generators, discretisation, fit-wrapper inputs)
-manuscript/                  report, references, supplementary methods
+code/00_setup/               config loading, grid construction (incl. G3 grid, v3)
+code/01_simulate/            G0/G1/G2/G3 generators, confidence discretisation, DDM calibration
+code/02_fit/                 fit wrapper (v3: optional covariates, SD prior), diagnostics, runners (incl. G3)
+code/03_recovery_analysis/   compile results, G1 metrics, sensitivity; v3: relative bias, SD-prior validations
+code/04_ppc_and_comparison/  LOO comparison, PPCs; v3: exact-refit LOO, G3 summary, generalised PPP functions
+code/05_figures/             headline figures 1-5; v3: figures 6-9
+code/06_empirical/           v3 Confidence Database pipeline: screen, select, prepare, fit, LOO repair, PPC, summary
+config/                      design.yml, grid.csv; v3.yml (v3 constants and rules), grid_g3.csv,
+                             empirical_manual_coding.csv (difficulty coding, fixed before any real-data fit)
+data/processed/              compact result tables (tracked); v2/ v1.1-1.2 PPC tables; v3/ and v3/empirical/
+data/raw/confidence_db/      Confidence Database (git-ignored; see docs/data_access_confidence_db.md)
+data/interim/                per-fit result files (git-ignored); v3_* subfolders for v3
+outputs/                     figures (figures/v2/, figures/v3/: Figs. 6-9), calibration/benchmark tables
+docs/                        design decisions, analysis log, computational environment, v3 plan, data access
+tests/                       testthat unit tests (generators, fit-wrapper back-compatibility, PPP, eligibility)
+manuscript/                  report, references, supplementary methods (v1.2)
 ```
 
 ## Installation
@@ -91,9 +113,15 @@ make robustness  # prior sweep (~20 min) and K=6 refits (~75 min)
 
 The full grid took about 26 hours on one 22-core Windows machine (5 concurrent fits × 4 chains, about 55 fits/hour, thermally throttled). Lower `execution.max_concurrent_fits` in `config/design.yml` on a smaller machine. Only replications 1–2 of each cell keep the full `brmsfit`; every fit keeps a compact record (posterior draws for population-level effects and SDs, aggregated counts, diagnostics).
 
+### v3
+
+Everything that needs no refitting (summaries, Figs. 6–9, tests) re-runs with `Rscript code/run_v3.R`, given the v3 fit files in `data/interim/v3_*`. The Makefile targets `v3-relbias`, `v3-reloo`, `v3-g3`, `v3-empirical-screen`, `v3-empirical-fit`, `v3-empirical-summary` and `v3-figures` regenerate everything from scratch. The empirical stage needs the Confidence Database in `data/raw/confidence_db/` (download and checksums: `docs/data_access_confidence_db.md`; raw data are not redistributed here). Long steps are resumable and shardable (`<shard> <n_shards>` arguments); measured times: G3 ~6.5 h, empirical fits ~55 h, grouped K-fold LOO repair (tiers 1–2) ~2 days on the same machine. Run `05b_loo_tiers.R` before `05_loo_repair.R`. Keep the machine awake during long runs and exclude `data/interim/` from any file-sync service.
+
 ## Diagnostic and failure policy
 
 A fit passes if max R-hat < 1.01, bulk and tail ESS ≥ 400, and there are no divergences or maximum-treedepth hits. A flagged fit is refitted once with `adapt_delta = 0.99` and treedepth 14; if still flagged it is labelled `fail`. Pre-specified analysis rule: the primary analysis includes `pass` and `fail` fits (failures flagged), the sensitivity analysis is pass-only, and `error` rows would count as convergence failures. Diagnostics and elapsed time describe each row's final attempt only.
+
+The v3 empirical fits use the same diagnostic thresholds with stricter sampling (`adapt_delta` 0.99, escalation 0.999 / treedepth 14, `init_r` 0.5, 2000 + 2000 draws) and a different use of failures: a dataset is categorised only if both families pass (divergence-only failures admitted in the pre-specified sensitivity analysis); see `config/v3.yml`.
 
 ## Licence and citation
 
