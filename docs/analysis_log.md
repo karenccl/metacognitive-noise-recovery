@@ -1504,3 +1504,39 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   gumbel_min) rerun on 2026-10-06 from 08:34; all ok (Schurgin_2018 gumbel_min took 10.8 h).
   The deleted Schurgin record briefly reappeared (Synology Drive restored it from its server copy)
   and was overwritten by the rerun. All 44 records were re-read and checked `ok` afterwards.
+
+## 2026-10-06 - v3 step 4 (part 6): empirical summary (pre-specified + exploratory)
+
+- `07_summarise_empirical.R` (2026-10-06, first read of any repaired LOO) ->
+  `data/processed/v3/empirical/empirical_by_dataset.csv`, `empirical_category_summary.csv`,
+  `empirical_condition_contrasts.csv`, `exploratory_diagnostics_{by_fit,by_family,paired}.csv`,
+  `exploratory_category_divergence_sensitivity.csv`. All 22 repaired comparisons use grouped
+  5-fold K-fold. Category counts reconcile with the tiers (10 tier-1 datasets categorised under
+  the primary rule, 22 under the divergence-only rule).
+- **Primary rule** (elpd(Gaussian) - elpd(Gumbel-min), 2 SE; unreliable if either fit not pass):
+  primary 2 clear_gaussian / 15 unreliable (Gherman_2018 +132 SE 50; OHora_unpub_1 +133 SE 40);
+  secondary 1 clear_gaussian (Hu_2017) / 5 clear_gumbel / 1 inconclusive / 10 unreliable;
+  sensitivity 7/7 unreliable; sensitivity_unrecorded 1 inconclusive / 3 unreliable.
+- The 5 clear_gumbel datasets are all old/new word or painting recognition from one lab
+  (Kantner_2012_E1/E3, Kantner_2014_E1/E2, Lindsay_2014; elpd_diff -82 to -251), with 3-level
+  confidence derived from a 6-point old/new scale. They are not independent; the memory result
+  rests on one paradigm.
+- **Divergence-only sensitivity (exploratory):** primary 3 clear_gaussian / 2 inconclusive / 12
+  unreliable; secondary 6 clear_gaussian / 5 clear_gumbel / 2 inconclusive / 4 unreliable;
+  sensitivity 1 clear_gaussian / 1 inconclusive / 5 unreliable; sensitivity_unrecorded 1
+  clear_gaussian / 1 inconclusive / 2 unreliable. No dataset changes direction between rules;
+  the extra datasets admitted all come out clear_gaussian or inconclusive.
+- **Diagnostics by family (exploratory):** failure rate Gaussian 0.76 vs Gumbel-min 0.31
+  (divergences 0.67 vs 0.18; R-hat 0.49 vs 0.24; bulk ESS 0.33 vs 0.13; tail ESS 0.27 vs 0.04).
+  Paired: Gaussian-only failures 21, Gumbel-only 1, both 13, neither 10 (exact binomial on
+  discordant pairs p < 0.001; descriptive).
+- **delta_logM (Gaussian - Gumbel-min):** median by set 0.47 primary, 0.14 secondary, 0.38
+  sensitivity, 0.43 sensitivity_unrecorded; positive in all perception datasets. In the 5
+  clear_gumbel datasets it is small and negative (-0.04 to -0.18). Note from G3: a large positive
+  family difference also arises when the Gaussian model is correct, so delta_logM is not evidence
+  for either family by itself.
+- **Pre-specified SD-prior check:** 5 of 45 datasets flagged (posterior 97.5% quantile of the
+  participant-level log M SD > 1.0 in either family): Desender_2022_Exp1, OHora_unpub_1,
+  Rausch_2020, Siedlecka_2019, Yeon_unpub_Exp1. Only OHora_unpub_1 is categorised (clear_gaussian;
+  flagged by its Gumbel-min fit, q97.5 1.008). Reported next to its category, as pre-specified.
+- Condition contrasts: 5 of 27 change their "excludes 0" conclusion between families.

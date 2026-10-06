@@ -1,0 +1,10 @@
+set,category,n,prop
+primary,clear_gaussian,2,0.11764705882352941
+primary,unreliable,15,0.8823529411764706
+secondary,clear_gaussian,1,0.058823529411764705
+secondary,clear_gumbel,5,0.29411764705882354
+secondary,inconclusive,1,0.058823529411764705
+secondary,unreliable,10,0.5882352941176471
+sensitivity,unreliable,7,1
+sensitivity_unrecorded,inconclusive,1,0.25
+sensitivity_unrecorded,unreliable,3,0.75

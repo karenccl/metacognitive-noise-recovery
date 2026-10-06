@@ -1,0 +1,14 @@
+set,category_div_sens,n,prop
+primary,clear_gaussian,3,0.17647058823529413
+primary,inconclusive,2,0.11764705882352941
+primary,unreliable,12,0.7058823529411765
+secondary,clear_gaussian,6,0.35294117647058826
+secondary,clear_gumbel,5,0.29411764705882354
+secondary,inconclusive,2,0.11764705882352941
+secondary,unreliable,4,0.23529411764705882
+sensitivity,clear_gaussian,1,0.14285714285714285
+sensitivity,inconclusive,1,0.14285714285714285
+sensitivity,unreliable,5,0.7142857142857143
+sensitivity_unrecorded,clear_gaussian,1,0.25
+sensitivity_unrecorded,inconclusive,1,0.25
+sensitivity_unrecorded,unreliable,2,0.5
