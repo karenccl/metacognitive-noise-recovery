@@ -1557,3 +1557,15 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   `geom_errorbar(orientation = "y")`; figure unchanged.
 - Not yet done: merge `v3-enhancement` into `main`, tag `v2.0.0`, Zenodo DOI; the report
   (manuscript/) still covers v1.2 only.
+
+## 2026-10-06 - Report draft v2.0
+
+- `manuscript/report.md`: header and abstract extended; §2 v2.0 questions (incl. RQ4); new §3.6
+  (methods of the four extensions, the empirical pipeline and every deviation); §4.3 Pareto-k
+  caveat updated; new §4.8-4.11 (relative bias, exact-refit LOO, G3, empirical); discussion
+  paragraph on the extensions; limitations (v), (xi) updated and (xiii) added; next steps revised;
+  reproducibility statement extended. Report Figs. 8-11 = `outputs/figures/v3/fig_6`-`fig_9`.
+- `references.bib`: Rahnev et al. (2020), verified against Crossref 2026-10-06. The per-dataset
+  sources of the Confidence Database datasets are not yet in the bibliography (noted in §7).
+- `supplementary_methods.md`: S14 pointer to the v2.0 specification and deviations.
+- All report numbers taken from `data/processed/v3/` and the v3 analysis-log entries.

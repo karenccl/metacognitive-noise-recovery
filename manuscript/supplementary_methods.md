@@ -244,3 +244,16 @@ Each is recorded with its date in `docs/analysis_log.md`.
    the error was reading a small absolute discrepancy as no signal. Report §4.4; `analysis_log.md`,
    2026-09-28. v1.2 then tested a practical (non-oracle) check with replicated data on 24 datasets
    (report §4.4, Fig. 7).
+
+## S14. v2.0 extensions (pointer)
+
+The v2.0 methods are summarised in report §3.6. Their full specification, with every constant and
+pre-specified rule, is `config/v3.yml` and `docs/v3_plan.md`; the empirical screening and coding
+rules are `code/06_empirical/eligibility.R` (unit-tested in `tests/test_eligibility.R`) and
+`config/empirical_manual_coding.csv` (one row per coded dataset, with the reason for each code);
+data access is `docs/data_access_confidence_db.md`. Every deviation from the v2.0 registration,
+including the post-registration SD prior and its two validation checks, is listed with its trigger
+and what had been seen when it was decided in `docs/design_decisions.md` (v3 section) and dated in
+`docs/analysis_log.md` (2026-09-29 to 2026-10-06). Two errors in the plan's draft code were
+corrected before use and logged there: the pooled d′ contrast's count of positive cells, and the
+"discrete scale" screening rule (integer values instead of 3–11 distinct values).

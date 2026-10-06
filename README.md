@@ -1,7 +1,7 @@
 # Metacognitive noise recovery with `hmetad`
 
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
-A reproducible R/Stan simulation study, extended in v3 (2.0.0) with three further simulation analyses and an empirical analysis of the Confidence Database. Draft report: [manuscript/report.md](manuscript/report.md) (covers v1.2; the v3 results below are not yet written into the report).
+A reproducible R/Stan simulation study, extended in v3 (2.0.0) with three further simulation analyses and an empirical analysis of the Confidence Database. Draft report: [manuscript/report.md](manuscript/report.md) (draft v2.0, including the v3 results: §§3.6 and 4.8–4.11).
 
 **Status (2026-10-06, v3 on branch `v3-enhancement`):** v3 analyses, tables and Figs. 6–9 are complete and pushed; the release (merge to `main`, tag `v2.0.0`) is pending. v3 adds: the misspecification shift relative to the correct model (step 1), exact-refit LOO robustness (step 2), a difficulty-mixture simulation G3 (step 3), and the empirical comparison of Gaussian vs Gumbel-min on real data (step 4). See the v3 section below, `docs/v3_plan.md`, and `docs/design_decisions.md` (v3 section, including all deviations).
 
