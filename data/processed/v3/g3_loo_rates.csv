@@ -1,0 +1,5 @@
+condition,agg,n,n_missing,prop_favors_gumbel_2se,prop_favors_normal_2se,prop_favors_gumbel,mean_elpd_diff,median_elpd_diff
+control,difficulty,20,0,0,1,0,31.92802543259299,30.17727367010296
+control,pooled,20,0,0,1,0,31.876588781291353,30.75360330986646
+mixture,difficulty,20,0,0,1,0,56.465427321860396,57.06147662842726
+mixture,pooled,20,0,0,1,0,28.441490190770907,28.732390920118785

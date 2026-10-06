@@ -1096,3 +1096,494 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   runs `g2_ppp_fullfits.R` (~15 min).
 - Tests: `testthat::test_dir("tests")` 54 pass, 0 fail. `make` itself is not installed on this
   machine, so the targets were run as their underlying `Rscript` commands, not through `make`.
+
+## 2026-09-29 - v3 set-up: branch, locked constants, API checks
+
+- Branch `v3-enhancement` from `main` (v1.2.1). Plan: `docs/v3_plan.md`. Constants and
+  pre-specified rules: `config/v3.yml` (committed before any v3 fit).
+- Environment: R 4.5.0, brms 2.23.0, hmetad 0.2.1, loo 2.8.0 (renv library active).
+- API checks (plan §1.3), all "yes", so the main code paths are used:
+  - (a) `brms:::loo.brmsfit` has `reloo`, `k_threshold`, `reloo_args`.
+  - (b) `brms:::reloo.brmsfit` sets `ll_args$allow_new_levels <- TRUE` itself, with
+    `sample_new_levels` defaulting to `"gaussian"`; `kfold.brmsfit` calls `log_lik(...,
+    allow_new_levels = TRUE)`. No extra argument needed. reloo refits run through
+    `future.apply::future_lapply` (sequential unless a `future` plan is set).
+  - (c) `hmetad::aggregate_metad(data, ...)` takes tidy-select grouping columns;
+    `aggregate_metad(d, participant, difficulty, K = 4)` gives one row per participant x
+    difficulty and is identical to the `!!!rlang::syms(...)` form.
+  - (d) `hmetad::epred_draws_metad(object, newdata, ...)` forwards `...` to
+    `tidybayes::epred_draws()`, so `ndraws` (and `seed`) are accepted.
+
+## 2026-09-29 - v3 step 1: relative misspecification bias (no refitting)
+
+- Script `code/03_recovery_analysis/relative_bias.R`; outputs in `data/processed/v3/`:
+  `g2_relative_bias_by_fit.csv`, `g2_relative_bias_by_cell.csv` (primary + pass-only),
+  `g2_dprime_contrast_by_NT.csv`, `g2_dprime_contrast_pooled.csv`, `g2_delta_persistence_lm.csv`,
+  `g2_confidently_wrong.csv`, `g2_baseline_vs_g0.csv`.
+- Integrity checks passed: 240 paired datasets, same `sim_seed` for both variants, no error rows.
+- `delta_mis` (Gaussian - correct, same dataset): +0.19 to +0.25 in the six d' = 0.75 cells,
+  +0.11 to +0.15 in the six d' = 1.5 cells, matching the plan's sanity-check ranges.
+- d' contrast (low - high, independent-sample SE): positive in 6/6 N x T cells (z 2.4 to 7.9);
+  pooled +0.097 (SE 0.011).
+- Persistence: slope on log2(T) = +0.0003 (95% CI -0.013 to +0.014); intercept 0.22; N term
+  -0.006 (CI includes 0); d' = 1.5 term -0.097 (CI -0.118 to -0.075). The misspecification shift
+  does not shrink with more trials, while the Gaussian interval narrows (mean width 0.99 -> 0.49
+  at d' = 0.75), so the share of Gaussian intervals excluding the truth rises from 0.13 at T = 100
+  to 0.35 at T = 400 (d' = 0.75; 0.05 -> 0.33 at d' = 1.5).
+- Baseline: the correct (Gumbel) fit's own bias is -0.007 to -0.092; the difference from the G0
+  bias in the same cell is within 2 SE in all 12 cells, so the small negative baseline is common
+  to correctly specified fits and not a G2-specific effect.
+- **Deviation from the plan's code:** in the pooled contrast, `n_cells_positive` was computed after
+  `diff_low_minus_high` had been overwritten by its mean inside `summarise()`, so it counted a
+  scalar (reported 1). Reordered; now 6.
+- Understanding checks (plan §2.4):
+  1. Each cell has its own seeds, so a low-d' and a high-d' replication with the same `rep_id` share
+     no data; pairing them would claim a correlation that does not exist. The contrast is between
+     two independent means, so the variances add.
+  2. A slope of -0.01 with a CI covering 0 means no detectable shrinkage over a fourfold increase
+     in T: the shift behaves like a pseudo-true displacement, not a small-sample bias. A slope of
+     -0.05 with a CI excluding 0 would mean the shift shrinks with data (about 0.1 over the grid),
+     i.e. partly a finite-sample effect. The observed slope is +0.0003, the first case.
+  3. It shows the correct-model baseline error is the same small negative bias seen in G0, so it
+     belongs to the fitting procedure (prior/shrinkage), not to the Gumbel generator. `delta_mis`
+     then isolates the misspecification effect.
+
+## 2026-09-29 - v3: fit wrapper extension (covariates / multi-column aggregation)
+
+- `fit_one_hmetad()` gains `agg_by`, `dprime_c_covariates`, `log_M_covariates`, `log_M_b_prior`
+  (defaults NULL = v1.2.1 behaviour); `.build_metad_formula()` / `.build_metad_priors()` extended.
+  The record now also stores `agg_by` and the covariate lists.
+- Regression fixture `tests/fixtures/formula_k4_v121.rds` was written from the unmodified v1.2.1
+  code and committed first (f1f9d01). `tests/test_formula_backcompat.R`: default formula and priors
+  identical to the fixture; covariates land only in the intended formula parts; a covariate model
+  (condition on dprime/c and log_M, hierarchical thresholds, gumbel_min) builds an empty brmsfit.
+- Reproducibility check (plan §4.2 step E): grid cell 721 refitted with the modified code via
+  `run_one_cell.R`; `draws_b_sd` identical to the stored record (max abs diff 0), identical `agg`,
+  status `pass`, max R-hat 1.00206. Original file restored (md5 591034d8... unchanged).
+- Tests: 76 pass, 0 fail (includes the new `test_simulate_g3.R`).
+
+## 2026-09-30 - v3 step 2: exact-refit LOO on the 48 stored G2 fits
+
+- Scripts: `code/04_ppc_and_comparison/v3_reloo_stored_fits.R` (3 shards x 4 cores, ~1.3 h wall
+  clock; records in `data/interim/v3_reloo/`), `v3_loo_robust_summary.R`. Outputs:
+  `data/processed/v3/g2_loo_psis_vs_exact_by_pair.csv`, `g2_loo_psis_vs_exact_summary.csv`,
+  `g2_pareto_k_by_cell.csv`.
+- 30 of 48 fits had at least one participant with Pareto k > 0.7; 142 leave-one-participant-out
+  refits in total (4 to 13 per affected fit), all succeeded. Refit seeds = the stored fit's seed.
+- Result (sign as in `g2_elpd_comparison.csv`: > 0 favours the correct model): correct favoured in
+  23/24 pairs under both PSIS and exact LOO; > 2 SE in 16/24 under both. Sign agreement 24/24,
+  2-SE agreement 24/24, median |change| 0.028 elpd, max 0.87 (N = 40, T = 200, d' = 0.75, rep 1:
+  20.77 -> 19.91, SE 6.6).
+- Decision (plan §3.5): `twose_agreement` = 1.00 >= 0.9 and the favour rate moves 0 points, so the
+  PSIS-LOO conclusion stands on this subset; the optional K-fold (§3.4) is not run. The remaining
+  216 pairs have no stored fit and cannot be refitted; their Pareto k profile by cell is in
+  `g2_pareto_k_by_cell.csv`.
+- **Deviations from the plan's code** (brms 2.23.0):
+  1. `reloo_args = list(check = FALSE, ...)` errors ("formal argument 'check' matched by multiple
+     actual arguments"): `loo.brmsfit` already passes `check`. Removed.
+  2. Passing `cores = 4` in `reloo_args` also reaches `log_lik()`, which on Windows then runs on a
+     PSOCK cluster whose workers lack `gumbel_min_lcdf` ("object 'gumbel_min_lcdf' not found").
+     Sampler cores now come from `options(mc.cores = 4)` (brm's default); `log_lik()` stays
+     serial. Refit seed passed as `reloo_args = list(seed = r$seed)`.
+  3. The brms-version fallback to `brms::reloo()` was dropped: the §1.3 check showed
+     `loo(reloo = TRUE)` exists.
+- reloo sets the refitted participants' Pareto k to 0 in `loo_exact` (checked on the trial fit).
+
+## 2026-09-30 - v3 step 4 (part 1): data access, screening, manual coding (no fit)
+
+- Confidence Database downloaded 2026-09-30 from OSF `s46pr` (361 files, 255 MB, all md5-verified;
+  licence CC0 1.0). Record: `docs/data_access_confidence_db.md`; manifest
+  `data/processed/v3/empirical/raw_manifest.csv`. `readxl` (+ `cellranger`, `rematch`) added to
+  `renv.lock` (additions only).
+- Metadata sheet checked before use: file `Database_Information.xlsx`, sheet
+  `Database_Information`, columns `Name_in_database` and `Category` (the plan's guesses were right).
+  Four datasets have no metadata row (Bocheva_unpub_Expt1/2, Rahnev_2021, Zheng_2023_NOC); with
+  no category they cannot enter any set.
+- Screening (`01_screen_datasets.R` -> `screening_table.csv`): 66 of 180 auto-eligible; 33
+  perception, 20 memory, 13 other categories.
+- **Deviations from the plan's screening code (fixed before any real-data fit):**
+  1. `rule_discrete` used `conf_integer`. The rule in `config/v3.yml` is "discrete scales only;
+     3-11 levels", but the integer test rejects discrete probability scales (0.5, 0.6, ..., 1:
+     Hainguerlot_2018/unpub, Lebreton_2018, Massoni_unpub). The rule is now "numeric with 3-11
+     distinct values". Four more datasets eligible.
+  2. `standardise_names()`: case-insensitive renaming of the required/optional columns and
+     `subject_id` -> `Subj_idx` (e.g. Xue_2024 uses `stimulus`, `confidence`). Datasets with one
+     column per task still fail the required-column rule.
+  3. Row filters, fixed per dataset in `config/empirical_manual_coding.csv` and applied by
+     `filter_rows()` before the participant exclusions: practice rows (`Training == 1`)
+     whenever that column exists; an optional `exclude_filter` (catch trials in Bang_2019_Exp2;
+     training and distractor rows in Siedlecka_2019_Exp1/2); the valid confidence range
+     `conf_min`-`conf_max`, which drops sentinel codes (0 = "error" in Gajdos_2019, 999 in
+     Rouault_2020, values outside 1-5 in Weidemann_2016). Without these, practice trials and
+     sentinel codes would enter the model as confidence levels.
+  4. `rank_within_subject`: Rouault_2020 has two fixed difficulty levels calibrated per
+     participant (raw values differ across participants), so the level is the within-participant
+     rank.
+  5. The <= 4-level check uses the levels of the difficulty column actually modelled (after the
+     row filters), not the `Condition` column's count.
+  6. `03_prepare_datasets.R` marks a dataset unusable if `acc_agreement < 0.99` or
+     `conf_acc_rho <= 0` (the plan's §5.5 checks, made automatic).
+- Manual coding (`config/empirical_manual_coding.csv`, 53 datasets = every auto-eligible
+  perception or memory dataset): coded from each readme, the metadata sheet, and counts of distinct
+  difficulty values per participant (to tell a per-participant calibration from a trial-by-trial
+  staircase). No model had been fitted to any real dataset. Perception (33): 19 constant or
+  recorded_levels, 7 staircase, 4 unrecorded_varied (more than 4 difficulty levels), 3 unclear
+  (Desender_2021_Cognit: scale differs by condition; OHora_unpub_2: signed wager; Zheng_2023:
+  binary confidence). Memory (20): 19 constant or recorded_levels (Kantner_2010 and
+  Kantner_unpub2 have 6 conditions and fall to the 4-level rule), 1 unrecorded_varied. Where the
+  modelled condition is not difficulty (speed/accuracy instruction, feedback, rating order,
+  material), the notes say so; the plan allows any discrete factor with <= 4 levels.
+- Selection (`02_select_datasets.R`) is written but not run: it reads the G3 verdict (plan
+  §4.7: perception `unrecorded_varied` datasets enter a separate `sensitivity_unrecorded` set
+  only if G3 finds no pooling artefact), so it runs after the G3 summary, then the
+  `v3-prereg-empirical` tag.
+
+## 2026-09-30 - v3 step 3: G3 difficulty-mixture simulation (result)
+
+- Rules locked in `config/v3.yml` and tagged `v3-prereg-g3` before any G3 fit. 160 fits
+  (2 conditions x 20 reps x 4 variants), 4 shards x 4 cores, ~6.5 h. Outputs:
+  `data/processed/v3/g3_by_fit.csv`, `g3_loo_by_rep.csv`, `g3_loo_rates.csv`, `g3_bias.csv`,
+  `g3_delta_logM.csv`, `g3_verdict.txt`; Fig. 8.
+- One fit (g3_id 15, control rep 4, normal_difficulty) first ended with status `error`:
+  "cannot open the connection" / "port 11908 cannot be opened" (rstan's local socket while four
+  fits ran concurrently), not a sampling failure. The error record was deleted and the same id
+  rerun with the same seeds: `pass`. All 160 fits now pass or were escalated to pass (2 escalated).
+- **Verdict (pre-specified rule): no pooling artefact.** The pooled comparison favoured Gumbel-min
+  by > 2 SE in 0/20 mixture and 0/20 control replications; the Gaussian (true) model was favoured
+  by > 2 SE in 20/20 in every condition x aggregation (median elpd difference +28.7 mixture pooled,
+  +30.8 control pooled, +57.1 mixture with difficulty modelled).
+- Gaussian (correct) fits: log M bias -0.014 to -0.017, coverage 0.85-1.00. Gumbel-min fits on the
+  Gaussian data: bias -0.46 to -0.50, coverage 0.
+- **Plan checkpoint §4.7 not met as written.** The plan expected the difficulty-version
+  delta log M (normal - gumbel) to be about 0 "because the data are Gaussian". It is +0.45 to
+  +0.48 (MCSE 0.01) in every condition and aggregation. Investigated before step 4: the correctly
+  specified Gaussian fits are unbiased, so the non-zero difference is the misspecified Gumbel
+  fit's shift, the mirror image of G2 (there the Gaussian fit on Gumbel data was shifted by
+  +0.11 to +0.25). A zero family difference was never implied by Gaussian data; the pipeline shows
+  no fault, so step 4 proceeds. Consequence for the empirical analysis: the family difference in
+  log M is large whichever family is wrong, so `delta_logM` must be read together with the LOO
+  preference, not as evidence by itself.
+- Consequence for step 4 (plan §4.7, rule written into `02_select_datasets.R` before the verdict):
+  perception datasets coded `unrecorded_varied` enter the separate `sensitivity_unrecorded` set.
+
+## 2026-09-30 - v3 step 4 (part 2): selection, preparation, pre-registration tag
+
+- `02_select_datasets.R` (G3 verdict = no artefact): 19 primary, 7 sensitivity (staircase),
+  4 sensitivity_unrecorded, 17 secondary (memory), 5 excluded (3 perception `unclear`;
+  Kantner_2010 and Kantner_unpub2 with 6 conditions). OHora_unpub_2 was dropped earlier by
+  `conf_higher_is_more = FALSE`. 19 primary <= 20, so no sampling.
+- `03_prepare_datasets.R` -> `prepare_log.csv`: 45 of 47 usable. Gajdos_2019 and OHora_2017 keep
+  19 participants after the pre-specified exclusions (< min_participants 20) and drop out of the
+  primary set (17 primary remain). All data checks passed: `acc_agreement` = 1 wherever the dataset
+  has an Accuracy column (19 datasets), and `conf_acc_rho` > 0 everywhere (0.10 to 0.40).
+- Tag `v3-prereg-empirical` placed on this commit, before any model was fitted to real data.
+
+## 2026-09-30 - v3 step 4 (part 3): trial fits and sampler deviations (before the main run)
+
+- Trial fits (plan §5.7) on the smallest (Maniscalco_2017_expt3, 21 participants) and largest
+  (Rouault_2018_Expt1, 498 participants) prepared datasets, both families, default settings:
+  - Maniscalco normal: pass (554 s). Maniscalco gumbel_min: 145 divergent transitions at
+    adapt_delta 0.95 and again after escalation to 0.99 -> `fail` (R-hat 1.00, min bulk ESS 1287).
+  - Rouault normal: no chain initialised ("Rejecting initial value ... multinomial_logit_lpmf:
+    log-probabilities parameter is -inf"); the fit had no draws and the script stopped. With 498
+    participants and participant-level thresholds, Stan's default random inits on (-2, 2) almost
+    always push some participant's type-2 cell probability to zero. A one-chain test with
+    `init_r = 0.5` initialised after 2 rejections and sampled normally.
+  - Rouault gumbel_min was still sampling after ~65 min when the trials were stopped.
+- **Deviations, fixed in `config/v3.yml$empirical` before the main run and applied to every
+  empirical fit and every reloo/K-fold refit:** `init_r: 0.5`; `adapt_delta_start: 0.99` (the
+  plan's own §5.7 remedy); escalation retry at adapt_delta 0.999 / max_treedepth 14 (design.yml's
+  0.99 / 14 is already the starting point). The four trial fits were discarded and are redone under
+  these settings, so all empirical fits share one configuration.
+- `04_fit_dataset.R` now records a fit that errors (e.g. no draws) as status `error` instead of
+  stopping, so the dataset is categorised `unreliable` by the pre-specified rule.
+- Rerun of the trials under the new settings: Maniscalco normal `pass` (975 s); Maniscalco
+  gumbel_min still 175 divergent transitions after escalation to adapt_delta 0.999 -> `fail`
+  (R-hat 1.004): a geometry problem, not a step-size one. Kept as is: by the pre-specified rule
+  this dataset is `unreliable`. Both Rouault_2018_Expt1 fits (498 participants) were still
+  sampling after 2 h (started 07:43, stopped 09:47).
+- **Deviation (plan §5.7 remedy, fixed before the main run):** `max_participants_for_fit: 100`.
+  After the pre-specified exclusions, a dataset with more than 100 participants keeps a random
+  sample of 100 (`withr::with_seed(seed_base_v3 + sum(utf8ToInt(dataset)))`, before
+  confidence-level merging). Affects 10 datasets: Bang_2019_Exp2 (167), Haddara_2022_Expt1 (397),
+  Fallow_unpub_1/2/3 (134/165/136), Kantner_2012_E3 (147), Weidemann_2016 (143), Lebreton_2018
+  (111), Rouault_2018_Expt1/2 (498/497). `prepare_log.csv` records both counts. Maniscalco_2017_expt3
+  is unaffected, so its two trial fits (already under the final settings) are kept.
+
+## 2026-09-30 / 10-01 - v3 step 4 (part 4): post-registration prior deviation
+
+- **Trigger.** The main empirical run (5 shards, started 2026-09-30 09:48, configuration of
+  `acc2b8f` + `bc96f19`) was stopped at 17:40 after 16 of the first 18 completed fits failed the
+  pre-registered diagnostics. Gaussian fits: divergences in most fits (up to 3,887 of 4,000
+  draws), non-converged chains (max R-hat 2.05 Hainguerlot_2018, 1.56 Desender_2022_Exp1; bulk
+  ESS 5-7). Gumbel-min fits: mostly bulk ESS 180-370 (< 400) or R-hat 1.01-1.03. Continuing would
+  have left nearly every dataset `unreliable`, and unevenly by family (Gaussian worse), so the few
+  passing pairs would be a selected subset.
+- **What was looked at before deciding.** Only convergence diagnostics: per fit, status, flags,
+  divergence count, max R-hat, min bulk/tail ESS, tree-depth hits; for one fit (Gherman_2018
+  normal) the names, R-hat and bulk ESS of the 12 lowest-ESS parameters (the weakest was
+  `sd_participant__Intercept`, the participant-level SD of log M); and that fit's prior summary
+  (all participant-level SDs on brms's default `student_t(3, 0, 2.5)`). No LOO, elpd, log M
+  estimate or category of any empirical fit was computed or viewed.
+- **Decision (user, 2026-09-30).** Pilot an explicit SD prior plus longer chains, then refit all
+  datasets under it. `config/v3.yml$empirical`: `sd_prior: "normal(0, 0.5)"` on every
+  participant-level SD (log M, d', c, and the thresholds), `warmup: 2000`, `iter_sampling: 2000`.
+  Implemented as an optional `sd_prior` argument of `fit_one_hmetad()` / `.build_metad_priors()`
+  (NULL default = v1.2.1 priors; regression tests unchanged and passing, new test checks that
+  every SD prior is replaced).
+- **Pilot (same settings, fits kept as the real fits).** Gherman_2018 normal: fail -> pass
+  (R-hat 1.005, bulk ESS 998). Gherman_2018 gumbel_min: fail -> pass (R-hat 1.007, ESS 998).
+  Hainguerlot_2018 normal: still fail, 7,694 of 8,000 draws divergent, R-hat 1.26, ESS 13 (a
+  structural problem with that model on that dataset; it will be `unreliable` by the rule).
+  Desender_2022_Exp1 normal: interrupted when the session ended; rerun.
+- **Comparison set kept.** The 34 fits made under the pre-registered configuration are kept in
+  `data/interim/v3_empirical/fits_prereg/` (not read by any summary script); their diagnostic
+  failure rate is itself a reported result.
+- **Limitation / check.** `normal(0, 0.5)` also limits the between-participant spread of log M,
+  a setting the G0-G2 simulations (default SD prior, pooled thresholds) did not validate. A
+  small validation run under the full empirical configuration follows (next entry).
+
+## 2026-10-01 - v3: validation of the empirical configuration on G0/G2; pre-specified SD check
+
+- `code/03_recovery_analysis/v3_sdprior_validation.R` refitted 30 grid rows (G0, G2 correct, G2
+  Gaussian; N = 40, T = 200; d' 0.75 and 1.5; reps 1-5) under the full empirical configuration
+  (sd_prior normal(0, 0.5), hierarchical thresholds, 2000 + 2000 draws, init_r 0.5, adapt_delta
+  0.99) on the same simulated datasets as the stored v1 fits. `..._summary.R` ->
+  `data/processed/v3/sdprior_validation_{by_fit,summary,delta_mis}.csv`.
+- 30/30 pass, none escalated, 0 divergences, max R-hat 1.005. log M moves up by 0.004-0.023 on
+  average (v3 - v1, same data); intervals 3-5% narrower; bias v1 -> v3: G0 -0.057 -> -0.034 and
+  +0.023 -> +0.027; G2 correct -0.031 -> -0.020 and -0.056 -> -0.046; G2 Gaussian +0.179 -> +0.193
+  and +0.135 -> +0.148 (d' 0.75 / 1.5). Coverage (of 5) unchanged except G2 correct d' 1.5 4 -> 5
+  and G2 Gaussian d' 1.5 5 -> 3 (5 reps per cell: not interpretable as a pattern).
+  delta_mis (Gaussian - correct): 0.210 -> 0.213 (d' 0.75), 0.191 -> 0.194 (d' 1.5). Recovery is
+  comparable to v1.
+- **Limitation of this check (raised in review):** the G0/G2 simulators set sd_M = sd_dprime =
+  sd_c = 0, the most favourable case for a prior that pulls SDs towards 0; over-shrinkage when
+  participants really differ would not show here. Two additions, fixed now:
+  1. `v3_sdprior_hetero_validation.R`: Gaussian data with sd_M = 0.5 (log scale) and sd_dprime =
+     0.3 (N = 40, T = 200, d' 1.5, 5 reps), each fitted with the default SD prior and with
+     normal(0, 0.5); reports log M population-mean bias/coverage and SD recovery. Runs alongside
+     the main empirical fits.
+  2. **Pre-specified before any empirical LOO was computed** (`config/v3.yml$empirical$sd_prior_check`,
+     `07_summarise_empirical.R`): every dataset reports the posterior median and 97.5% quantile of
+     `sd_participant__Intercept` for both families; a dataset is flagged "prior may over-shrink" if
+     either 97.5% quantile exceeds 1.0. The flag is reported next to the category and does not
+     change it.
+- **Heterogeneity check result** (`sdprior_hetero_{by_fit,summary}.csv`; true sd_M = 0.5,
+  sd_dprime = 0.3, log M = -1; 5 reps, same data under both priors): 10/10 pass. Default SD prior
+  vs normal(0, 0.5): log M bias -0.072 vs -0.053, coverage 5/5 vs 5/5; estimated sd_M 0.574 vs
+  0.535 (bias +0.074 vs +0.035), sd_M coverage 5/5 vs 5/5; sd_dprime 0.336 vs 0.332, coverage
+  5/5 vs 5/5. The tighter prior lowers the SD estimate by ~7% and the upper 95% limits from ~1.0
+  to ~0.9. Conclusion: comparable; no evidence of over-shrinkage at a true SD of 0.5 (n = 5 per
+  prior). The between-prior differences in bias and SD estimate are within Monte Carlo error at
+  n = 5 and are not a finding. (An earlier version of this entry said the tighter prior was
+  "closer to the truth"; corrected 2026-10-02.)
+- **Limitation:** only one true SD (0.5) was tested. Real data with larger between-participant
+  spread in log M (SD near 1, the tail of normal(0, 0.5)) are not covered by this check; the
+  pre-specified `sd_prior_check` flag (posterior 97.5% quantile > 1.0) is the safeguard for that
+  case in the empirical analysis.
+
+## 2026-10-02 - v3: exploratory analyses pre-specified before any empirical LOO is read
+
+- **Why.** Two of the first seven fits under the new configuration show the same pattern:
+  the Gaussian fit fails only through divergences while the Gumbel-min fit on the same dataset
+  passes (Chandravadia_2020: 1,035 divergences, R-hat 1.003, ESS >= 669; Hainguerlot_2018 is
+  the other, there with R-hat and ESS also failing). If the failing family is mostly the
+  Gaussian one, the primary rule ("either family fails -> unreliable") removes datasets
+  non-randomly, and the remaining datasets would lean towards "no difference / Gaussian".
+  Divergence is a diagnostic signal, not model-comparison evidence.
+- **State when this was fixed.** Only convergence diagnostics have been seen. PSIS-LOO objects
+  are stored inside each fit record but none has been read; `05_loo_repair.R`, `06_ppc_dataset.R`
+  and `07_summarise_empirical.R` have not been run on any empirical fit.
+- **Added (exploratory; `config/v3.yml$empirical$exploratory`, `07_summarise_empirical.R`):**
+  1. Diagnostic failure rates by family, with divergences, R-hat, bulk ESS, tail ESS and tree
+     depth counted separately (`exploratory_diagnostics_by_{fit,family}.csv`), and a paired
+     table of which family failed within each dataset (neither / Gaussian only / Gumbel only /
+     both; `exploratory_diagnostics_paired.csv`) with an exact binomial test on the discordant
+     pairs, reported descriptively.
+  2. A divergence-only sensitivity categorisation (`category_div_sens`,
+     `exploratory_category_divergence_sensitivity.csv`): the same 2-SE rule, but a fit counts as
+     usable if it passed or failed only on divergences (R-hat <= 1.01, bulk and tail ESS >= 400,
+     no tree-depth hits). Reported next to the primary categories.
+- The primary categorisation and every other rule are unchanged. `05_loo_repair.R` already
+  repairs LOO for fits with status `fail` (it skips only missing fit or loo objects), so the
+  sensitivity analysis needs no change there.
+
+## 2026-10-04 - v3 step 4 (part 5): LOO repair set-up (paused; not yet run)
+
+- **Empirical fits complete** (2026-10-04 02:10): 90/90, no errors. Gaussian 11 pass / 34 fail
+  (11 divergence-only); Gumbel-min 31 pass / 14 fail (2 divergence-only). Per dataset: both pass
+  10, Gaussian-only fails 21, Gumbel-only fails 1, both fail 13; usable under the divergence-only
+  sensitivity rule 22 of 45. (Diagnostics only; no LOO read.)
+- **LOO repair method.** Pareto k > 0.7 for essentially every participant (`prop_bad` = 1.000 in
+  every dataset checked), so the pre-specified rule (> 10% bad k -> grouped K-fold) sends every
+  dataset to grouped 5-fold cross-validation: 450 refits (45 datasets x 2 families x 5 folds),
+  each on ~80% of the participants. This is the pre-specified rule and is not skipped.
+- **First launch (2026-10-04 02:20, 5 shards), stopped at 02:50 on the user's request.** It first
+  failed on `future`'s 500 MB export limit (fits are 0.55-0.86 GB): `options(future.globals.maxSize
+  = Inf)` added (sequential plan, nothing copied); failed records deleted; relaunched; paused with
+  no record written.
+- **Changes before the production run (execution only; no change to the analysis):**
+  1. Refit sampler settings passed explicitly (`loo_repair_functions.R::refit_args()`): the
+     fit's own settings, i.e. adapt_delta 0.99 / max_treedepth 12, or 0.999 / 14 for escalated
+     fits; 4 chains; 2000 warmup + 2000 draws; init_r 0.5; the fit's seed. Checked: brms 2.23's
+     `update.brmsfit` (used by `kfold()`/`reloo()`) already copies `control`, `warmup`, `iter` and
+     `chains` from the stored fit (e.g. Gherman_2018 normal: stored control adapt_delta 0.999,
+     max_treedepth 14), so the refits would not have fallen back to adapt_delta 0.8; passing them
+     makes this explicit.
+  2. Folds, method choice and the output record moved to `loo_repair_functions.R`, shared by
+     `05_loo_repair.R` and the new pilot `05a_kfold_pilot.R`, so both use identical folds, seeds
+     and settings.
+  3. Datasets processed primary set first (then sensitivity, sensitivity_unrecorded, secondary)
+     before sharding, so the primary results arrive first; folds and seeds depend only on the
+     dataset name, so the order cannot change any result. Run with 4 shards, not 5: with 5 shards
+     only ~5 GB of 31.4 GB RAM was free (each shard holds both fits of a dataset, 1-1.7 GB, plus
+     the refit in progress).
+- **Pilot before production (`05a_kfold_pilot.R`, run alone).** Gherman_2018 (30 participants,
+  both families pass) with `save_fits = TRUE`: per family x fold, adapt_delta, max_treedepth,
+  iter/warmup/chains, divergent transitions, max R-hat and min bulk ESS ->
+  `kfold_pilot_diagnostics.csv`. Both Gherman fits were escalated, so the refits should show
+  adapt_delta 0.999 / treedepth 14. Pass criterion: few or no divergences and R-hat <= 1.01; if
+  the refits diverge heavily, stop and report before the production run. The pilot writes the
+  production-format repair records for Gherman_2018 (refits dropped, ~3 GB not kept), so the
+  production run skips it. The report will state that refit convergence was checked on the pilot
+  dataset only (production refits keep no diagnostics).
+- **Time.** The production fits took ~55 h wall clock for ~85 fits on 4 shards. 450 refits on
+  ~80% of the data suggests roughly 7-10 days on 4 shards; to be updated from the measured rate.
+  The earlier 2-4 day estimate was too optimistic.
+- **Tiered execution order (user decision 2026-10-04; execution only).** `05b_loo_tiers.R` ->
+  `loo_repair_tiers.csv`, from fit statuses and diagnostics only (no LOO read): tier 1 = both
+  families pass (10 datasets: 2 primary, 7 secondary, 1 sensitivity_unrecorded), tier 2 = both
+  `conv_ok` but not both pass, i.e. at least one divergence-only failure (12: 3 primary, 6
+  secondary, 2 sensitivity, 1 sensitivity_unrecorded), tier 3 = at least one fit fails on R-hat,
+  ESS or tree depth (23: 12 primary, 4 secondary, 5 sensitivity, 2 sensitivity_unrecorded).
+  `05_loo_repair.R` runs tier 1, then tier 2, each primary set first, sharded 4 ways; tier 3 only
+  with `--include-tier3`. Tier-3 datasets are `unreliable` under both the primary rule and the
+  divergence-only sensitivity rule whatever their LOO, so **no pre-specified category depends on
+  tier-3 LOO**; tier 3 is deferred, to be run later only if CPU time allows. Consequences: repaired
+  LOO will exist only for tiers 1-2 (~220 refits, roughly 3.5-5 days); Fig. 9 shows tier-3
+  datasets with the unrepaired PSIS comparison, marked as such. Note: only 5 of the 17 primary
+  datasets are in tiers 1-2, so the primary categorisation will rest on few datasets.
+- The divergence-only test now lives in `loo_repair_functions.R` (`divergence_only()`,
+  `conv_ok()`) and is used by both `05b_loo_tiers.R` and `07_summarise_empirical.R`.
+- **PPC fix (`ppp_functions.R`).** stat 3 (Pearson X2/df) was `NA` in about a third of empirical
+  fits: cells where a draw's predicted probability underflows to exactly 0 and the count is also 0
+  gave 0/0. Such cells now contribute 0; a positive count with expected 0 still gives Inf.
+  `tests/test_ppp_functions.R` still reproduces the v2 p-values exactly (11/11 pass). The
+  empirical PPC run that had started with the old code was stopped and restarted.
+- **Empirical PPC run** (`06_ppc_dataset.R`, fixed code, 2026-10-04 11:58-12:19) ->
+  `data/processed/v3/empirical/ppc_by_fit.csv`: 89 of 90 fits, no `NA` statistic. Flags
+  (p < 0.05), Gaussian / Gumbel-min: stat 1 27/45 and 38/44, stat 2 18/45 and 38/44, stat 3 32/45
+  and 37/44. These are model-fit checks only; no pre-specified category uses them.
+- **Not computed: Schurgin_2018 gumbel_min** (tier 2). The PPC's built-in check (per-draw cell
+  probabilities sum to 1 within 1e-8) failed: for one participant (#17) the R-side Gumbel-min CDF
+  at extreme threshold values gives sums of 0.986-1.003 in 84 of 396,000 participant x draw groups
+  (0.02%); all other fits pass the check. The tolerance was not loosened after the fact; this
+  fit's PPC is reported as not computed (numerical check failed). The same R-side functions feed
+  `log_lik()`, so this participant's LOO contributions in this fit carry the same small numerical
+  error; noted for the Schurgin_2018 sensitivity-analysis result.
+- **K-fold pilot result** (`05a_kfold_pilot.R`, Gherman_2018, 2026-10-04 11:36-13:36, run with
+  only the PPC alongside) -> `kfold_pilot_diagnostics.csv`. All 10 refits (2 families x 5 folds)
+  used adapt_delta 0.999 / max_treedepth 14 (both Gherman fits were escalated), 2000 warmup +
+  2000 draws, 4 chains, as intended. Max R-hat 1.009; min bulk ESS 761; 6 divergent transitions
+  in total over 80,000 draws (Gaussian folds 3 and 5: 4 and 2). Meets the pass criterion (few or
+  no divergences, R-hat <= 1.01), so the production run proceeds. Each family's 5 refits took
+  ~1 h. The two production-format repair records for Gherman_2018 were written (refits dropped);
+  their LOO values have not been read. Refit convergence is checked on this dataset only;
+  production refits keep no diagnostics.
+- **LOO repair complete (tiers 1-2)**, 2026-10-04 13:37 -> 2026-10-06 19:24: 44/44 repair records
+  (22 datasets x 2 families, grouped 5-fold K-fold), all `ok`. Tier 3 (23 datasets) not run, as
+  decided. No repaired LOO value has been read yet.
+- Execution notes: on 2026-10-05 21:00 two extra workers took Fallow_unpub_2 and
+  Siedlecka_2019_Exp2 from shard 2's queue (`05_loo_repair.R --dataset NAME`, added for this;
+  results are identical whoever computes them, since folds and seeds depend only on the dataset
+  name). At 2026-10-06 00:10 two running records failed at the same second with "error writing to
+  connection" (Fallow_unpub_2 normal after 1.0 h, Schurgin_2018 gumbel_min after 8.0 h); the
+  laptop was shut down that night. Not a modelling failure; disk had 159 GB free. The two failed
+  records were deleted and the three outstanding records (Fallow_unpub_2 x 2, Schurgin_2018
+  gumbel_min) rerun on 2026-10-06 from 08:34; all ok (Schurgin_2018 gumbel_min took 10.8 h).
+  The deleted Schurgin record briefly reappeared (Synology Drive restored it from its server copy)
+  and was overwritten by the rerun. All 44 records were re-read and checked `ok` afterwards.
+
+## 2026-10-06 - v3 step 4 (part 6): empirical summary (pre-specified + exploratory)
+
+- `07_summarise_empirical.R` (2026-10-06, first read of any repaired LOO) ->
+  `data/processed/v3/empirical/empirical_by_dataset.csv`, `empirical_category_summary.csv`,
+  `empirical_condition_contrasts.csv`, `exploratory_diagnostics_{by_fit,by_family,paired}.csv`,
+  `exploratory_category_divergence_sensitivity.csv`. All 22 repaired comparisons use grouped
+  5-fold K-fold. Category counts reconcile with the tiers (10 tier-1 datasets categorised under
+  the primary rule, 22 under the divergence-only rule).
+- **Primary rule** (elpd(Gaussian) - elpd(Gumbel-min), 2 SE; unreliable if either fit not pass):
+  primary 2 clear_gaussian / 15 unreliable (Gherman_2018 +132 SE 50; OHora_unpub_1 +133 SE 40);
+  secondary 1 clear_gaussian (Hu_2017) / 5 clear_gumbel / 1 inconclusive / 10 unreliable;
+  sensitivity 7/7 unreliable; sensitivity_unrecorded 1 inconclusive / 3 unreliable.
+- The 5 clear_gumbel datasets are all old/new word or painting recognition from one lab
+  (Kantner_2012_E1/E3, Kantner_2014_E1/E2, Lindsay_2014; elpd_diff -82 to -251), with 3-level
+  confidence derived from a 6-point old/new scale. They are not independent; the memory result
+  rests on one paradigm.
+- **Divergence-only sensitivity (exploratory):** primary 3 clear_gaussian / 2 inconclusive / 12
+  unreliable; secondary 6 clear_gaussian / 5 clear_gumbel / 2 inconclusive / 4 unreliable;
+  sensitivity 1 clear_gaussian / 1 inconclusive / 5 unreliable; sensitivity_unrecorded 1
+  clear_gaussian / 1 inconclusive / 2 unreliable. No dataset changes direction between rules;
+  the extra datasets admitted all come out clear_gaussian or inconclusive.
+- **Diagnostics by family (exploratory):** failure rate Gaussian 0.76 vs Gumbel-min 0.31
+  (divergences 0.67 vs 0.18; R-hat 0.49 vs 0.24; bulk ESS 0.33 vs 0.13; tail ESS 0.27 vs 0.04).
+  Paired: Gaussian-only failures 21, Gumbel-only 1, both 13, neither 10 (exact binomial on
+  discordant pairs p < 0.001; descriptive).
+- **delta_logM (Gaussian - Gumbel-min):** median by set 0.47 primary, 0.14 secondary, 0.38
+  sensitivity, 0.43 sensitivity_unrecorded; positive in all perception datasets. In the 5
+  clear_gumbel datasets it is small and negative (-0.04 to -0.18). Note from G3: a large positive
+  family difference also arises when the Gaussian model is correct, so delta_logM is not evidence
+  for either family by itself.
+- **Pre-specified SD-prior check:** 5 of 45 datasets flagged (posterior 97.5% quantile of the
+  participant-level log M SD > 1.0 in either family): Desender_2022_Exp1, OHora_unpub_1,
+  Rausch_2020, Siedlecka_2019, Yeon_unpub_Exp1. Only OHora_unpub_1 is categorised (clear_gaussian;
+  flagged by its Gumbel-min fit, q97.5 1.008). Reported next to its category, as pre-specified.
+- Condition contrasts: 5 of 27 change their "excludes 0" conclusion between families.
+
+## 2026-10-06 - v3 release documentation and tests
+
+- Full test suite: 129 expectations in 7 files, 0 failed, 0 errors, 0 skipped
+  (test_data_format 25, test_discretise_confidence 12, test_eligibility 38,
+  test_formula_backcompat 19, test_ppp_functions 11, test_simulate_g1_ddm 17, test_simulate_g3 7;
+  includes the PPP regression against the stored v2 p-values, which needs the stored G2 fits).
+- README: v3 status and results section (steps 1-4), repository map, v3 reproduction
+  (`run_v3.R`, Makefile v3 targets, data access), v3 diagnostic policy. design_decisions.md: v3
+  section (locked rules, tags, all deviations in order) and v3 "must not claim" items.
+  computational_environment.md: v3 packages, compute times, Windows/`future` settings, sync
+  hazard; verification-log rows. CITATION.cff: 2.0.0, dated 2026-10-06 (update the date if the
+  `v2.0.0` tag is made on another day).
+- Fig. 9: `geom_errorbarh()` (deprecated in ggplot2 4.0) replaced by
+  `geom_errorbar(orientation = "y")`; figure unchanged.
+- Not yet done: merge `v3-enhancement` into `main`, tag `v2.0.0`, Zenodo DOI; the report
+  (manuscript/) still covers v1.2 only.
+
+## 2026-10-06 - Report draft v2.0
+
+- `manuscript/report.md`: header and abstract extended; §2 v2.0 questions (incl. RQ4); new §3.6
+  (methods of the four extensions, the empirical pipeline and every deviation); §4.3 Pareto-k
+  caveat updated; new §4.8-4.11 (relative bias, exact-refit LOO, G3, empirical); discussion
+  paragraph on the extensions; limitations (v), (xi) updated and (xiii) added; next steps revised;
+  reproducibility statement extended. Report Figs. 8-11 = `outputs/figures/v3/fig_6`-`fig_9`.
+- `references.bib`: Rahnev et al. (2020), verified against Crossref 2026-10-06. The per-dataset
+  sources of the Confidence Database datasets are not yet in the bibliography (noted in §7).
+- `supplementary_methods.md`: S14 pointer to the v2.0 specification and deviations.
+- All report numbers taken from `data/processed/v3/` and the v3 analysis-log entries.
+
+## 2026-10-06 - Per-dataset citations for the empirical analysis
+
+- Citation lines were extracted from the readmes of all 45 analysed datasets: 24 distinct published
+  sources and 9 unpublished contributions. Each published source was checked against Crossref
+  (by the readme's DOI where given, else by bibliographic search), comparing title, authors, year,
+  journal, volume, issue and pages with the readme; 18 matched as given. Haddara & Rahnev (2022)
+  was first matched to its 2020 preprint and corrected to the Psychological Science article. Four
+  readmes cite preprints that Crossref links to later articles (Faivre 2018 -> Cortex 2020; Schurgin
+  2018 -> Nature Human Behaviour 2020; Siedlecka 2019 -> Consciousness and Cognition 2020; van Boxtel
+  2019 -> Orchard et al., Journal of Vision 2022); the published articles are cited and the preprint
+  DOIs recorded in comments. Lindsay, Kantner & Fallow (2014) is a book chapter not indexed by
+  Crossref; the book (doi:10.4324/9781315752808, 2014, editors) was checked, the chapter page range
+  was not.
+- `references.bib` now has 32 entries (8 previous + 24 dataset sources), generated from the Crossref
+  records rather than retyped. `supplementary_methods.md` S15 lists every analysed dataset with
+  set, N, pre-registered category and source (unpublished ones with the contributors named in their
+  readmes). Report §4.11 cites the named datasets' sources and §7 lists all of them.
