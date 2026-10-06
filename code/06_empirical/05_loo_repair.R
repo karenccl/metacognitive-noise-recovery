@@ -4,7 +4,7 @@
 # participant with folds shared by both families. The two families of a
 # dataset always use the same method (reloo and K-fold values are not comparable).
 # Resumable and shardable by dataset:
-#   Rscript code/06_empirical/05_loo_repair.R <shard> <n_shards> [--include-tier3]
+#   Rscript code/06_empirical/05_loo_repair.R <shard> <n_shards> [--include-tier3] [--dataset NAME]
 # Run 05b_loo_tiers.R first.
 # Run with 4 shards (memory: each shard holds both fits of a dataset, 1-1.7 GB,
 # plus the refit in progress; 5 shards left < 5 GB of 31 GB free).
@@ -45,6 +45,9 @@ tiers <- tiers[order(tiers$tier, match(tiers$set, set_order), tiers$dataset), ]
 if (!include_tier3) tiers <- tiers[tiers$tier < 3, ]
 datasets <- tiers$dataset
 datasets <- datasets[(seq_along(datasets) - 1L) %% n_shards == (shard - 1L)]
+# Optional: --dataset NAME runs just that dataset (extra worker; results are
+# identical whoever computes them, since folds and seeds depend only on the name).
+if ("--dataset" %in% args) datasets <- args[which(args == "--dataset") + 1L]
 
 for (ds in datasets) {
   paths <- file.path(fit_dir, sprintf("%s__%s.qs2", ds, fams))

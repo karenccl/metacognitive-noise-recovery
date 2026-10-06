@@ -1491,3 +1491,16 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   ~1 h. The two production-format repair records for Gherman_2018 were written (refits dropped);
   their LOO values have not been read. Refit convergence is checked on this dataset only;
   production refits keep no diagnostics.
+- **LOO repair complete (tiers 1-2)**, 2026-10-04 13:37 -> 2026-10-06 19:24: 44/44 repair records
+  (22 datasets x 2 families, grouped 5-fold K-fold), all `ok`. Tier 3 (23 datasets) not run, as
+  decided. No repaired LOO value has been read yet.
+- Execution notes: on 2026-10-05 21:00 two extra workers took Fallow_unpub_2 and
+  Siedlecka_2019_Exp2 from shard 2's queue (`05_loo_repair.R --dataset NAME`, added for this;
+  results are identical whoever computes them, since folds and seeds depend only on the dataset
+  name). At 2026-10-06 00:10 two running records failed at the same second with "error writing to
+  connection" (Fallow_unpub_2 normal after 1.0 h, Schurgin_2018 gumbel_min after 8.0 h); the
+  laptop was shut down that night. Not a modelling failure; disk had 159 GB free. The two failed
+  records were deleted and the three outstanding records (Fallow_unpub_2 x 2, Schurgin_2018
+  gumbel_min) rerun on 2026-10-06 from 08:34; all ok (Schurgin_2018 gumbel_min took 10.8 h).
+  The deleted Schurgin record briefly reappeared (Synology Drive restored it from its server copy)
+  and was overwritten by the rerun. All 44 records were re-read and checked `ok` afterwards.
