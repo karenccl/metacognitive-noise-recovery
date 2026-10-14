@@ -1,0 +1,3 @@
+max cell FPR (misspecified) = 0.150
+pooled FPR misspecified = 0.033, correct = 0.025, excess = 0.008
+framing rule met in B: FALSE

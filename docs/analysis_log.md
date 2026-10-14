@@ -1596,3 +1596,87 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   positioning, external reader) committed for the record and marked paused. None of it has been run: no
   `config/v3b.yml`, no `v3b-prereg` tag, no v3b fits.
 - `docs/enhancement_plan_v2.md` committed for the record, marked superseded.
+
+## 2026-10-15 - v3b set-up: work packages B and C resumed; rules locked before any v3b analysis
+
+- Plan: `docs/v3b_plan.md` (status updated: B and C resumed, D deferred). Branch `v3b-confound`
+  from `main` (`ccf73cf`). Constants and the framing rule: `config/v3b.yml` (B and C only; the
+  `g4` section is left out and work package D is listed in `docs/deferred.md`). Tag `v3b-prereg`
+  placed on this commit before any v3b analysis was run.
+- **Already known before this commit (not a pre-specified finding):** the v3 step 1 d' contrast
+  in Delta_mis (+0.097, SE 0.011, low minus high d'), the per-cell Delta_mis and baseline bias
+  tables (`data/processed/v3/g2_relative_bias_by_cell.csv`), and G2 coverage by family.
+- **Not yet computed:** any false-positive rate for a between-group difference (separate fits, B,
+  or one model with a group covariate, C); any two-group fit.
+- **Sanity band for B, fixed now:** B's misspecified `mean_diff` (log M high-d' minus low-d') is
+  (Delta_mis high - Delta_mis low) + (correct-model bias high - low) ~= -0.097 + ~0.03, so a value
+  between about -0.10 and -0.05 is consistent with correct pairing; only a positive value would
+  indicate a reversed pairing. The correct model's `mean_diff` is expected to be small and positive
+  (~+0.03, its negative bias being larger at low d').
+- Fits in C use the v1 production settings (`config/design.yml`, as for G2): pooled thresholds,
+  default SD priors, 1000 + 1000 draws; group enters d', c and log M through the v3
+  `fit_one_hmetad()` covariate options.
+
+## 2026-10-15 - v3b work package B: spurious group differences under separate fits (result)
+
+- `code/03_recovery_analysis/v3b_dprime_confound_reanalysis.R` (plan §2.2, unchanged) on the 480
+  stored G2 records (all present, 4,000 draws each; 2 correct-family fits `fail`, no `error`).
+  Outputs: `data/processed/v3b/b_dprime_confound_{by_pair,by_cell,pooled,paired}.csv`,
+  `b_framing_rule.txt`. 120 low-d'/high-d' pairs per family (same N, T, rep; independent
+  posteriors, draws paired at random, seed 20261010).
+- Sanity band (fixed in the set-up entry): misspecified `mean_diff` = -0.065 (MCSE 0.016),
+  inside -0.10 to -0.05; correct `mean_diff` = +0.032 (MCSE 0.014), as predicted. Pairing correct.
+- **False-positive rate** (95% interval of log M(high d') - log M(low d') excludes 0; truth 0):
+  misspecified 4/120 = 0.033 (Wilson 0.013-0.083), correct 3/120 = 0.025 (0.009-0.071). By cell the
+  misspecified rate is 0 in four cells, 0.05 at N = 40/T = 200 and 0.15 (3/20) at N = 40/T = 400;
+  the correct model 0.05 and 0.10 in the same two cells. Pass-only identical. Paired: both
+  negative 113, misspecified only 4, correct only 3, both 0.
+- **Framing rule (pre-specified) for B: not met** (max cell FPR 0.15 < 0.20; pooled excess 0.008
+  < 0.10). The overall verdict also depends on C.
+- Cosmetic: the Wilson lower limit prints as -1.4e-17 when k = 0 (floating point); read as 0.
+- Understanding checks (plan §2.4):
+  1. The two cells are separate datasets fitted separately, so their posteriors are independent and
+     any pairing of draws samples the joint posterior of the difference. If both fits used the
+     same data, the posteriors would be dependent and random pairing would misstate the spread.
+  2. The correct model also has a small d'-dependent bias (here +0.032), and the 95% intervals are
+     not exactly calibrated for a difference; the misspecification effect is the excess over the
+     correct model under identical conditions, not the distance from 0.05.
+  3. The highest misspecified rate is at N = 40, T = 400, the narrowest posteriors: the shift does
+     not shrink with data (v3 step 1) while the intervals do, so a fixed bias becomes "significant"
+     more often as data grow, the same "more confidently wrong" pattern. At these sample sizes the
+     shift (~0.07) is still small relative to the width of a difference of two posteriors.
+
+## 2026-10-15 - v3b work package C: two groups in one model (result)
+
+- 40 fits (`code/02_fit/run_v3b_jobs.R`; 20 reps x correct / misspecified on the same data; groups
+  of 20 with d' 0.75 and 1.5, T = 200, true log M = -1 in both; v1 production settings). Trial jobs
+  1-2 confirmed the parameter names `b_groupB`, `b_dprime_groupB`, `b_c_groupB` (no change to the
+  summary script needed). All 40 `pass`, none escalated; ~4.5 min per fit, 4 shards, ~50 min.
+- `v3b_two_group_summary.R` -> `data/processed/v3b/c_two_group_{by_fit,summary,paired}.csv`,
+  `c_framing_rule.txt`. False-positive rate for b_groupB (95% CrI excludes 0; truth 0):
+  misspecified 2/20 = 0.10 (Wilson 0.03-0.30), correct 1/20 = 0.05 (0.01-0.24); excess 0.05.
+  Mean b_groupB: misspecified -0.119 (MCSE 0.046), correct -0.047 (MCSE 0.046). Paired: neither 18,
+  misspecified only 1, both 1. Pass-only identical (all pass).
+- **Framing rule (pre-specified, B or C): not met** (B: max cell FPR 0.15 < 0.20, pooled excess
+  0.008; C: excess 0.05 < 0.10). Pre-specified wording applies (plan §3.8): the misspecification
+  bias is mainly a shift common to both groups; group comparisons are largely robust at these
+  sample sizes, but absolute log M values (e.g. against 1, or across studies) are affected.
+- Observation (not part of the rule): the Gaussian group difference is negative in both B (-0.065)
+  and C (-0.119), as the d'-dependence of Delta_mis predicts; it rarely excludes 0 because a
+  between-group difference has a wide posterior at N = 20 per group. Larger groups or more trials
+  would raise the rate (B's highest cell, N = 40/T = 400, was 0.15); this was not tested beyond
+  the grid.
+- Understanding checks (plan §3.9):
+  1. Both groups are simulated with the same generating log M (design.yml truth), so the true
+     group difference in log M is 0. If the correct model's rate were clearly above 5%, candidate
+     causes would be a d'-dependent bias of the correctly specified hierarchical model itself
+     (shrinkage through the shared participant SDs, the flat d'/c priors), interval miscalibration
+     for a contrast, or Monte Carlo noise with 20 replications (Wilson upper limit 0.24 for 1/20).
+  2. The groups differ in d' by design, so d' (and c) need their own group effects. With a group
+     effect on log M only, the d' difference would be absorbed into the participant random effects
+     (inflating their SD) and any misfit of d' could leak into the log M group effect, since
+     meta-d' = M x d': the test would then confound the d' difference with a log M difference.
+- Write-up: Fig. 12 (`code/05_figures/fig_10_dprime_confound.R`, panels combined with gridExtra
+  as in figs 6-9; the plan's patchwork is not in renv.lock), report §3.7 (methods) and §4.12
+  (results, pre-specified "common shift" wording) plus one discussion sentence; README v3 results
+  line and status. Tests: 133 expectations in 8 files, 0 failed, 0 errors, 0 skipped.
