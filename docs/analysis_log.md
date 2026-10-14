@@ -1587,3 +1587,12 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   records rather than retyped. `supplementary_methods.md` S15 lists every analysed dataset with
   set, N, pre-registered category and source (unpublished ones with the contributors named in their
   readmes). Report §4.11 cites the named datasets' sources and §7 lists all of them.
+
+## 2026-10-14 - Status: working paper; pre-submission plan paused
+
+- Decision (user): not submitting for now. `v2.0.0` stays the current release; no Zenodo DOI is minted.
+- README status updated: working paper, not submitted, not peer reviewed.
+- `docs/v3b_plan.md` (pre-submission additions: d' confound re-analysis, two-group model, unequal-variance G4,
+  positioning, external reader) committed for the record and marked paused. None of it has been run: no
+  `config/v3b.yml`, no `v3b-prereg` tag, no v3b fits.
+- `docs/enhancement_plan_v2.md` committed for the record, marked superseded.
