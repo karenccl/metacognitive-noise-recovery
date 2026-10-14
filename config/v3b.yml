@@ -1,0 +1,33 @@
+# v3b pre-submission additions (docs/v3b_plan.md). Locked before any v3b analysis
+# (tag v3b-prereg). Simulation-only; fits use the v1 production settings in
+# config/design.yml (same as G2), NOT the empirical configuration in config/v3.yml.
+# Work package D (G4, unequal variance) deferred; see docs/v3b_plan.md and docs/deferred.md.
+version: v3b
+seed_base_v3b: 20261003
+
+sign_conventions:
+  diff_high_minus_low: "log_M(high-d' group) - log_M(low-d' group); truth = 0; same sign as b_groupB"
+  elpd_diff: "elpd(normal) - elpd(gumbel_min); positive = Gaussian preferred (as in v3)"
+
+# Work package B: spurious group differences when two groups that differ only in
+# d' are fitted SEPARATELY (common practice), using the stored G2 fits.
+reanalysis:
+  interval: 0.95
+  pair_seed_offset: 7              # seed for the random pairing of posterior draws
+  statuses_primary: [pass, fail]   # as in v3 relative_bias.R; sensitivity = pass only
+
+# Work package C: the same question in ONE model with a group covariate.
+two_group:
+  n_per_group: 20
+  n_trials: 200
+  dprime_groups: {A: 0.75, B: 1.5}  # A = low d', B = high d'; true log_M equal (design.yml truth)
+  replications: 20
+  fit_variants: [correct, misspecified]   # gumbel_min, normal
+
+# Pre-specified framing rule for B + C (decides the headline wording, not whether
+# the result is reported). "Practically relevant spurious-difference problem" if the
+# misspecified false-positive rate is >= 0.20 in any N x T cell of B, OR its pooled
+# rate exceeds the correct model's by >= 0.10 in B or in C.
+framing_rule:
+  cell_fpr_min: 0.20
+  pooled_excess_min: 0.10

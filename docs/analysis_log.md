@@ -1596,3 +1596,23 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   positioning, external reader) committed for the record and marked paused. None of it has been run: no
   `config/v3b.yml`, no `v3b-prereg` tag, no v3b fits.
 - `docs/enhancement_plan_v2.md` committed for the record, marked superseded.
+
+## 2026-10-15 - v3b set-up: work packages B and C resumed; rules locked before any v3b analysis
+
+- Plan: `docs/v3b_plan.md` (status updated: B and C resumed, D deferred). Branch `v3b-confound`
+  from `main` (`ccf73cf`). Constants and the framing rule: `config/v3b.yml` (B and C only; the
+  `g4` section is left out and work package D is listed in `docs/deferred.md`). Tag `v3b-prereg`
+  placed on this commit before any v3b analysis was run.
+- **Already known before this commit (not a pre-specified finding):** the v3 step 1 d' contrast
+  in Delta_mis (+0.097, SE 0.011, low minus high d'), the per-cell Delta_mis and baseline bias
+  tables (`data/processed/v3/g2_relative_bias_by_cell.csv`), and G2 coverage by family.
+- **Not yet computed:** any false-positive rate for a between-group difference (separate fits, B,
+  or one model with a group covariate, C); any two-group fit.
+- **Sanity band for B, fixed now:** B's misspecified `mean_diff` (log M high-d' minus low-d') is
+  (Delta_mis high - Delta_mis low) + (correct-model bias high - low) ~= -0.097 + ~0.03, so a value
+  between about -0.10 and -0.05 is consistent with correct pairing; only a positive value would
+  indicate a reversed pairing. The correct model's `mean_diff` is expected to be small and positive
+  (~+0.03, its negative bias being larger at low d').
+- Fits in C use the v1 production settings (`config/design.yml`, as for G2): pooled thresholds,
+  default SD priors, 1000 + 1000 draws; group enters d', c and log M through the v3
+  `fit_one_hmetad()` covariate options.
