@@ -1,0 +1,4 @@
+correct,misspecified,n_pairs
+FALSE,FALSE,113
+FALSE,TRUE,4
+TRUE,FALSE,3

@@ -1616,3 +1616,32 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
 - Fits in C use the v1 production settings (`config/design.yml`, as for G2): pooled thresholds,
   default SD priors, 1000 + 1000 draws; group enters d', c and log M through the v3
   `fit_one_hmetad()` covariate options.
+
+## 2026-10-15 - v3b work package B: spurious group differences under separate fits (result)
+
+- `code/03_recovery_analysis/v3b_dprime_confound_reanalysis.R` (plan §2.2, unchanged) on the 480
+  stored G2 records (all present, 4,000 draws each; 2 correct-family fits `fail`, no `error`).
+  Outputs: `data/processed/v3b/b_dprime_confound_{by_pair,by_cell,pooled,paired}.csv`,
+  `b_framing_rule.txt`. 120 low-d'/high-d' pairs per family (same N, T, rep; independent
+  posteriors, draws paired at random, seed 20261010).
+- Sanity band (fixed in the set-up entry): misspecified `mean_diff` = -0.065 (MCSE 0.016),
+  inside -0.10 to -0.05; correct `mean_diff` = +0.032 (MCSE 0.014), as predicted. Pairing correct.
+- **False-positive rate** (95% interval of log M(high d') - log M(low d') excludes 0; truth 0):
+  misspecified 4/120 = 0.033 (Wilson 0.013-0.083), correct 3/120 = 0.025 (0.009-0.071). By cell the
+  misspecified rate is 0 in four cells, 0.05 at N = 40/T = 200 and 0.15 (3/20) at N = 40/T = 400;
+  the correct model 0.05 and 0.10 in the same two cells. Pass-only identical. Paired: both
+  negative 113, misspecified only 4, correct only 3, both 0.
+- **Framing rule (pre-specified) for B: not met** (max cell FPR 0.15 < 0.20; pooled excess 0.008
+  < 0.10). The overall verdict also depends on C.
+- Cosmetic: the Wilson lower limit prints as -1.4e-17 when k = 0 (floating point); read as 0.
+- Understanding checks (plan §2.4):
+  1. The two cells are separate datasets fitted separately, so their posteriors are independent and
+     any pairing of draws samples the joint posterior of the difference. If both fits used the
+     same data, the posteriors would be dependent and random pairing would misstate the spread.
+  2. The correct model also has a small d'-dependent bias (here +0.032), and the 95% intervals are
+     not exactly calibrated for a difference; the misspecification effect is the excess over the
+     correct model under identical conditions, not the distance from 0.05.
+  3. The highest misspecified rate is at N = 40, T = 400, the narrowest posteriors: the shift does
+     not shrink with data (v3 step 1) while the intervals do, so a fixed bias becomes "significant"
+     more often as data grow, the same "more confidently wrong" pattern. At these sample sizes the
+     shift (~0.07) is still small relative to the width of a difference of two posteriors.
