@@ -1645,3 +1645,38 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
      not shrink with data (v3 step 1) while the intervals do, so a fixed bias becomes "significant"
      more often as data grow, the same "more confidently wrong" pattern. At these sample sizes the
      shift (~0.07) is still small relative to the width of a difference of two posteriors.
+
+## 2026-10-15 - v3b work package C: two groups in one model (result)
+
+- 40 fits (`code/02_fit/run_v3b_jobs.R`; 20 reps x correct / misspecified on the same data; groups
+  of 20 with d' 0.75 and 1.5, T = 200, true log M = -1 in both; v1 production settings). Trial jobs
+  1-2 confirmed the parameter names `b_groupB`, `b_dprime_groupB`, `b_c_groupB` (no change to the
+  summary script needed). All 40 `pass`, none escalated; ~4.5 min per fit, 4 shards, ~50 min.
+- `v3b_two_group_summary.R` -> `data/processed/v3b/c_two_group_{by_fit,summary,paired}.csv`,
+  `c_framing_rule.txt`. False-positive rate for b_groupB (95% CrI excludes 0; truth 0):
+  misspecified 2/20 = 0.10 (Wilson 0.03-0.30), correct 1/20 = 0.05 (0.01-0.24); excess 0.05.
+  Mean b_groupB: misspecified -0.119 (MCSE 0.046), correct -0.047 (MCSE 0.046). Paired: neither 18,
+  misspecified only 1, both 1. Pass-only identical (all pass).
+- **Framing rule (pre-specified, B or C): not met** (B: max cell FPR 0.15 < 0.20, pooled excess
+  0.008; C: excess 0.05 < 0.10). Pre-specified wording applies (plan §3.8): the misspecification
+  bias is mainly a shift common to both groups; group comparisons are largely robust at these
+  sample sizes, but absolute log M values (e.g. against 1, or across studies) are affected.
+- Observation (not part of the rule): the Gaussian group difference is negative in both B (-0.065)
+  and C (-0.119), as the d'-dependence of Delta_mis predicts; it rarely excludes 0 because a
+  between-group difference has a wide posterior at N = 20 per group. Larger groups or more trials
+  would raise the rate (B's highest cell, N = 40/T = 400, was 0.15); this was not tested beyond
+  the grid.
+- Understanding checks (plan §3.9):
+  1. Both groups are simulated with the same generating log M (design.yml truth), so the true
+     group difference in log M is 0. If the correct model's rate were clearly above 5%, candidate
+     causes would be a d'-dependent bias of the correctly specified hierarchical model itself
+     (shrinkage through the shared participant SDs, the flat d'/c priors), interval miscalibration
+     for a contrast, or Monte Carlo noise with 20 replications (Wilson upper limit 0.24 for 1/20).
+  2. The groups differ in d' by design, so d' (and c) need their own group effects. With a group
+     effect on log M only, the d' difference would be absorbed into the participant random effects
+     (inflating their SD) and any misfit of d' could leak into the log M group effect, since
+     meta-d' = M x d': the test would then confound the d' difference with a log M difference.
+- Write-up: Fig. 12 (`code/05_figures/fig_10_dprime_confound.R`, panels combined with gridExtra
+  as in figs 6-9; the plan's patchwork is not in renv.lock), report §3.7 (methods) and §4.12
+  (results, pre-specified "common shift" wording) plus one discussion sentence; README v3 results
+  line and status. Tests: 133 expectations in 8 files, 0 failed, 0 errors, 0 skipped.
