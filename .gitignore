@@ -17,3 +17,7 @@ renv/staging/
 renv/python/
 Rplots.pdf
 
+
+# Submission manuscript drafts (kept local, not versioned)
+manuscript/paper*.md
+manuscript/paper*.docx
