@@ -1680,3 +1680,18 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   as in figs 6-9; the plan's patchwork is not in renv.lock), report §3.7 (methods) and §4.12
   (results, pre-specified "common shift" wording) plus one discussion sentence; README v3 results
   line and status. Tests: 133 expectations in 8 files, 0 failed, 0 errors, 0 skipped.
+
+### 2026-10-15 — v3b B + C: wording revised after review (verdict unchanged)
+- External review: "comparisons ... were largely robust" claimed more than the data support. The
+  verdict (framing rule not met) and the pre-specified "common shift" wording stay; §4.12, the
+  discussion sentence and the README line now say "no evidence of practically relevant inflation at
+  these sizes; estimates imprecise" and give the Wilson intervals.
+- Added after the results (descriptive, not part of the rule): the d'-dependent part of the bias,
+  misspecified - correct difference on the same data. B -0.097 (MCSE 0.011, 120 pairs), C -0.072
+  (0.015, 20 replications); `data/processed/v3b/{b,c}_differential_bias.csv`, written by the two
+  summary scripts. Clearly non-zero, but small relative to a group difference's posterior SD at
+  N = 20-40, T <= 400.
+- C's Gaussian group effect (-0.119) vs B's mean difference (-0.065): the reviewer suggested the
+  shared thresholds in C (hierarchical_thresholds = false, no group term on the gaps) as a cause.
+  The misspecified - correct difference is similar in B and C, and the gap (~0.05, SE ~0.05) is
+  within Monte Carlo error; reported as not interpreted.

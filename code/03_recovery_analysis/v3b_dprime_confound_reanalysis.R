@@ -97,6 +97,17 @@ paired <- prim |>
   count(correct, misspecified, name = "n_pairs")
 readr::write_csv(paired, file.path(out, "b_dprime_confound_paired.csv"))
 
+# Descriptive, added after the results (not part of the framing rule): the
+# d'-dependent part of the Gaussian bias, as misspecified - correct difference
+# on the same simulated datasets.
+differential <- prim |>
+  select(n_participants, n_trials, rep_id, fit_variant, diff_mean) |>
+  tidyr::pivot_wider(names_from = fit_variant, values_from = diff_mean) |>
+  mutate(d = misspecified - correct) |>
+  summarise(n = sum(!is.na(d)), mean_mis_minus_cor = mean(d, na.rm = TRUE),
+            mcse = sd(d, na.rm = TRUE) / sqrt(n))
+readr::write_csv(differential, file.path(out, "b_differential_bias.csv"))
+
 # ---- Pre-specified framing rule (config/v3b.yml framing_rule) --------------
 fr <- cfgb$framing_rule
 cell_max_mis <- max(by_cell$fpr[by_cell$analysis == "primary" & by_cell$fit_variant == "misspecified"])
