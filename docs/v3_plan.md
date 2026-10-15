@@ -1,73 +1,73 @@
-# Project 1 v3 強化：程式實作指南
+# Project 1 v3 enhancements: coding implementation guide
 
-> 範圍：**只涵蓋程式與分析**（文獻定位、寫作、投稿不在此文件）。
-> 對應 repo：`metacognitive-noise-recovery`（目前 `main` = `v1.2.1`，已有 `v2-extensions` 分支）。
-> 本輪命名為 **v3**，所有新輸出放在 `v3` 子資料夾，避免和既有 `v2` 輸出混淆。
-> 寫於 2026-09-29。依你 repo 現有程式碼（`fit_hmetad.R`、`run_one_cell.R`、`loo_comparison.R`、`g2_ppp_fullfits.R`）設計。
-
----
-
-## 目錄
-
-- [0. 總覽與規則](#0-總覽與規則)
-- [1. 環境準備（半天）](#1-環境準備半天)
-- [2. 步驟 1：相對偏差重新分析（1–2 天，不需新擬合）](#2-步驟-1相對偏差重新分析12-天不需新擬合)
-- [3. 步驟 2：LOO 穩健化（1–2 天，含背景運算）](#3-步驟-2loo-穩健化12-天含背景運算)
-- [4. 步驟 3：難度混合模擬 G3（1–2 天）](#4-步驟-3難度混合模擬-g312-天)
-- [5. 步驟 4：Confidence Database 實證分析（1–2 週）](#5-步驟-4confidence-database-實證分析12-週)
-- [6. 步驟 5：新圖表](#6-步驟-5新圖表)
-- [7. Makefile、測試與收尾](#7-makefile測試與收尾)
-- [附錄 A：常見錯誤排除](#附錄-a常見錯誤排除)
-- [附錄 B：決定點總表](#附錄-b決定點總表)
+> Scope: **covers code and analysis only** (literature positioning, writing and submission are not in this document).
+> Corresponding repo: `metacognitive-noise-recovery` (currently `main` = `v1.2.1`, with an existing `v2-extensions` branch).
+> This round is named **v3**; all new outputs go in `v3` subfolders to avoid confusion with existing `v2` outputs.
+> Written on 2026-09-29. Designed around the existing code in your repo (`fit_hmetad.R`, `run_one_cell.R`, `loo_comparison.R`, `g2_ppp_fullfits.R`).
 
 ---
 
-## 0. 總覽與規則
+## Contents
 
-### 0.1 四個工作包
+- [0. Overview and rules](#0-overview-and-rules)
+- [1. Environment setup (half a day)](#1-environment-setup-half-a-day)
+- [2. Step 1: Relative bias re-analysis (1–2 days, no new fits)](#2-step-1-relative-bias-re-analysis-12-days-no-new-fits)
+- [3. Step 2: LOO robustness checks (1–2 days, with background computation)](#3-step-2-loo-robustness-checks-12-days-with-background-computation)
+- [4. Step 3: Difficulty-mixture simulation G3 (1–2 days)](#4-step-3-difficulty-mixture-simulation-g3-12-days)
+- [5. Step 4: Confidence Database empirical analysis (1–2 weeks)](#5-step-4-confidence-database-empirical-analysis-12-weeks)
+- [6. Step 5: New figures](#6-step-5-new-figures)
+- [7. Makefile, tests and wrap-up](#7-makefile-tests-and-wrap-up)
+- [Appendix A: Troubleshooting common errors](#appendix-a-troubleshooting-common-errors)
+- [Appendix B: Summary of decision points](#appendix-b-summary-of-decision-points)
 
-| 步驟 | 回答的問題 | 需要新擬合？ | 預估時間 |
+---
+
+## 0. Overview and rules
+
+### 0.1 Four work packages
+
+| Step | Question answered | New fits needed? | Estimated time |
 |---|---|---|---|
-| 1 相對偏差 | 錯設本身造成多少偏差？隨 d′、N、T 如何變化？ | 否 | 1–2 天 |
-| 2 LOO 穩健化 | 96.2% 的 LOO 結果在 Pareto-k 問題下還成立嗎？ | 是（~150 次重擬合，背景跑） | 1–2 天 |
-| 3 G3 混合模擬 | 合併不同難度的試次，是否會讓 LOO 假性偏好 Gumbel-min？ | 是（160 次） | 1–2 天 |
-| 4 實證分析 | 真實資料偏好哪個分佈？換分佈後 log(M) 和條件差異改變多少？ | 是（每資料集 2 次） | 1–2 週 |
+| 1 Relative bias | How much bias does the misspecification itself cause? How does it vary with d′, N and T? | No | 1–2 days |
+| 2 LOO robustness | Does the 96.2% LOO result still hold given the Pareto-k problems? | Yes (~150 refits, run in the background) | 1–2 days |
+| 3 G3 mixture simulation | Does pooling trials of different difficulty make LOO spuriously prefer Gumbel-min? | Yes (160 fits) | 1–2 days |
+| 4 Empirical analysis | Which distribution do real data prefer? How much do log(M) and condition differences change when the distribution is swapped? | Yes (2 per dataset) | 1–2 weeks |
 
-**順序不可調換**：步驟 3 的結果決定步驟 4 如何處理難度；步驟 2 的方法會在步驟 4 重用。
+**The order cannot be changed**: the results of step 3 determine how step 4 handles difficulty; the methods from step 2 are reused in step 4.
 
-### 0.2 固定規則（整個 v3 都適用）
+### 0.2 Fixed rules (apply throughout v3)
 
-1. **分支**：從 `main` 開新分支 `v3-enhancement`。每完成一個子步驟就 commit 一次。
-2. **不改動既有輸出**：v1/v2 的 `data/processed/*.csv` 與圖不覆寫。新東西寫到：
-   - `data/processed/v3/`（小型結果表，進 Git）
-   - `data/interim/v3_*/`（每次擬合的檔案，已被 `.gitignore` 的 `*.qs2` 規則排除）
+1. **Branch**: create a new branch `v3-enhancement` from `main`. Commit once after each sub-step is completed.
+2. **Do not alter existing outputs**: do not overwrite the v1/v2 `data/processed/*.csv` files or figures. Write new material to:
+   - `data/processed/v3/` (small result tables, tracked in Git)
+   - `data/interim/v3_*/` (per-fit files, already excluded by the `*.qs2` rule in `.gitignore`)
    - `outputs/figures/v3/`
-   - 注意：`compile_results.R` 用的是**非遞迴**的 `list.files(data/interim)`，所以放在子資料夾的 v3 檔案不會污染既有彙整。
-3. **修改既有函式時必須向下相容**：預設參數下的行為要和 v1.2.1 完全一樣（第 4.2 節有回歸測試）。
-4. **先寫規則、再看結果**：G3 和實證分析的判斷規則寫進 `config/v3.yml` 並 commit + tag，之後才跑擬合。
-5. **每一步都在 `docs/analysis_log.md` 記一段**：日期、跑了什麼、結果檔名、任何偏離計劃之處。
-6. **符號慣例（全 v3 統一，寫進 `config/v3.yml`）**：
-   - `delta_mis = log_M(高斯) − log_M(正確/Gumbel)`：正值 = 高斯模型高估。
-   - `elpd_diff = elpd(高斯) − elpd(Gumbel)`：**正值 = 偏好高斯**。
-     ⚠️ 這和既有 `g2_elpd_comparison.csv` 的 `elpd_diff_correct_minus_mis` 方向相反（那裡正值 = 偏好正確 = Gumbel）。實證分析沒有「正確模型」，所以改以家族命名。畫圖或寫報告時務必標清楚。
+   - Note: `compile_results.R` uses a **non-recursive** `list.files(data/interim)`, so v3 files in subfolders will not contaminate the existing compilation.
+3. **Changes to existing functions must be backward compatible**: with default arguments, behaviour must be exactly the same as in v1.2.1 (section 4.2 has a regression test).
+4. **Write the rules first, then look at the results**: the decision rules for G3 and the empirical analysis are written into `config/v3.yml` and committed + tagged before any fits are run.
+5. **Log every step in `docs/analysis_log.md`**: date, what was run, result filenames, and any deviations from the plan.
+6. **Sign conventions (uniform across v3, written into `config/v3.yml`)**:
+   - `delta_mis = log_M(Gaussian) − log_M(correct/Gumbel)`: positive = the Gaussian model overestimates.
+   - `elpd_diff = elpd(Gaussian) − elpd(Gumbel)`: **positive = Gaussian preferred**.
+     ⚠️ This is the opposite direction to `elpd_diff_correct_minus_mis` in the existing `g2_elpd_comparison.csv` (there, positive = correct preferred = Gumbel). The empirical analysis has no "correct model", so the comparison is named by family instead. Always label this clearly in figures and reports.
 
-### 0.3 新增檔案一覽
+### 0.3 Overview of new files
 
 ```text
-config/v3.yml                                   # 所有 v3 常數與事先規定的規則
-config/grid_g3.csv                              # G3 網格（由腳本產生）
-config/empirical_manual_coding.csv              # 手動編碼的資料集難度設計（擬合前完成）
+config/v3.yml                                   # all v3 constants and pre-specified rules
+config/grid_g3.csv                              # G3 grid (generated by a script)
+config/empirical_manual_coding.csv              # manually coded difficulty designs of the datasets (completed before fitting)
 code/00_setup/03_create_grid_g3.R
 code/01_simulate/simulate_g3_mixture.R
-code/02_fit/fit_hmetad.R                        # 修改：新增共變項/多欄聚合參數（向下相容）
+code/02_fit/fit_hmetad.R                        # modified: adds covariate/multi-column aggregation arguments (backward compatible)
 code/02_fit/run_one_cell_g3.R
 code/03_recovery_analysis/relative_bias.R
 code/04_ppc_and_comparison/v3_reloo_stored_fits.R
-code/04_ppc_and_comparison/v3_kfold_stored_fits.R   # 可選
+code/04_ppc_and_comparison/v3_kfold_stored_fits.R   # optional
 code/04_ppc_and_comparison/v3_loo_robust_summary.R
-code/04_ppc_and_comparison/ppp_functions.R      # 由 g2_ppp_fullfits.R 抽出並泛化到任意 K
+code/04_ppc_and_comparison/ppp_functions.R      # extracted from g2_ppp_fullfits.R and generalised to any K
 code/04_ppc_and_comparison/v3_g3_summary.R
-code/06_empirical/eligibility.R                 # 純函式：篩選規則、merge_sparse_levels、harmonise
+code/06_empirical/eligibility.R                 # pure functions: screening rules, merge_sparse_levels, harmonise
 code/06_empirical/01_screen_datasets.R
 code/06_empirical/02_select_datasets.R
 code/06_empirical/03_prepare_datasets.R
@@ -82,16 +82,16 @@ code/05_figures/fig_9_empirical.R
 tests/test_formula_backcompat.R
 tests/test_ppp_functions.R
 tests/test_eligibility.R
-tests/fixtures/formula_k4_v121.rds              # 修改 fit_hmetad.R 之前產生
-docs/v3_plan.md                                 # 就是這份文件
+tests/fixtures/formula_k4_v121.rds              # generated before modifying fit_hmetad.R
+docs/v3_plan.md                                 # this document
 docs/data_access_confidence_db.md
 ```
 
 ---
 
-## 1. 環境準備（半天）
+## 1. Environment setup (half a day)
 
-### 1.1 開分支
+### 1.1 Create the branch
 
 ```bash
 cd metacognitive-noise-recovery
@@ -100,49 +100,49 @@ git pull
 git checkout -b v3-enhancement
 ```
 
-### 1.2 安裝新套件並更新 lockfile
+### 1.2 Install new packages and update the lockfile
 
-在 R（專案根目錄，確認 `.libPaths()` 指向 `renv/library/`）：
+In R (from the project root, after confirming that `.libPaths()` points to `renv/library/`):
 
 ```r
-.libPaths()                 # 第一個路徑必須在 renv/library/ 底下
-renv::install(c("readxl"))  # 讀 Confidence Database 的說明試算表
+.libPaths()                 # the first path must be under renv/library/
+renv::install(c("readxl"))  # to read the Confidence Database description spreadsheets
 renv::snapshot()
 ```
 
-`loo`、`brms`、`hmetad`、`qs2`、`posterior`、`testthat` 已在 lockfile 內。
+`loo`, `brms`, `hmetad`, `qs2`, `posterior` and `testthat` are already in the lockfile.
 
-### 1.3 API 確認（每個套件版本行為可能不同，先確認再寫碼）
+### 1.3 API checks (behaviour may differ between package versions, so check before writing code)
 
-在 R console 逐條執行，**把輸出貼進 `docs/analysis_log.md`**：
+Run each line in the R console and **paste the output into `docs/analysis_log.md`**:
 
 ```r
 library(brms); library(hmetad)
 packageVersion("brms"); packageVersion("hmetad"); packageVersion("loo")
 
-# (a) loo() 是否有 reloo 參數，reloo 的參數長什麼樣
+# (a) whether loo() has a reloo argument, and what the reloo arguments look like
 args(brms:::loo.brmsfit)
 args(brms::reloo)
-# (b) reloo / kfold 預測被留出的受試者時是否允許新層級（new levels）
+# (b) whether reloo / kfold allow new levels when predicting held-out participants
 grep("allow_new_levels", deparse(brms:::reloo.brmsloo), value = TRUE)
 grep("allow_new_levels", deparse(brms:::kfold.brmsfit), value = TRUE)
-# 若 (b) 沒有找到，這兩個函式可能透過 ... 轉傳；看函式本體確認 ... 傳到 log_lik()
-# (c) aggregate_metad 能否接受多個分組欄位
+# If (b) finds nothing, these functions may pass it on via ...; check the function body to confirm ... is passed to log_lik()
+# (c) whether aggregate_metad accepts multiple grouping columns
 args(hmetad::aggregate_metad)
-# (d) epred_draws_metad 是否支援 ndraws（實證資料很大時需要抽樣）
+# (d) whether epred_draws_metad supports ndraws (subsampling is needed when empirical data are large)
 args(hmetad::epred_draws_metad)
 ```
 
-判斷：
+Decision:
 
-| 檢查 | 若為「是」 | 若為「否」 |
+| Check | If "yes" | If "no" |
 |---|---|---|
-| (a) `loo.brmsfit` 有 `reloo` | 用 3.2 節的主要寫法 | 用 `brms::reloo(loo_obj, fit = fit, ...)` 的替代寫法（3.2 節有） |
-| (b) 有 `allow_new_levels = TRUE` | 不用額外傳參數 | 在呼叫時手動加 `allow_new_levels = TRUE`；若報錯「unused argument」，記錄下來並只用 kfold |
-| (c) `...` 是 tidy-select 分組 | 4.2 節的修改可直接用 | 先在 R 端 `interaction()` 成單一欄位再聚合（4.2 節末尾有備案） |
-| (d) 有 `ndraws` | 實證 PPC 用 `ndraws = 1000` | 先 `brms::as_draws_df()` 抽樣後用 `subset_draws()` 做較小的 fit 副本 |
+| (a) `loo.brmsfit` has `reloo` | Use the main form in section 3.2 | Use the alternative form `brms::reloo(loo_obj, fit = fit, ...)` (given in section 3.2) |
+| (b) has `allow_new_levels = TRUE` | No extra argument needed | Add `allow_new_levels = TRUE` manually in the call; if it errors with "unused argument", log this and use kfold only |
+| (c) `...` is tidy-select grouping | The changes in section 4.2 can be used directly | First combine into a single column with `interaction()` in R, then aggregate (fallback at the end of section 4.2) |
+| (d) has `ndraws` | Use `ndraws = 1000` for the empirical PPC | First subsample with `brms::as_draws_df()`, then use `subset_draws()` to make a smaller copy of the fit |
 
-### 1.4 建立 `config/v3.yml`
+### 1.4 Create `config/v3.yml`
 
 ```yaml
 # v3 enhancement constants (docs/v3_plan.md). Locked before any v3 fit.
@@ -194,7 +194,7 @@ empirical:
     two_se_rule: 2                   # |elpd_diff| > 2 * se_diff -> "clear"
 ```
 
-Commit：
+Commit:
 
 ```bash
 git add config/v3.yml docs/v3_plan.md renv.lock
@@ -203,11 +203,11 @@ git commit -m "v3: add plan and locked v3 constants"
 
 ---
 
-## 2. 步驟 1：相對偏差重新分析（1–2 天，不需新擬合）
+## 2. Step 1: Relative bias re-analysis (1–2 days, no new fits)
 
-### 2.1 為什麼
+### 2.1 Why
 
-目前報告的「偏差 +0.06 到 +0.20」是**相對真值**，裡面混了兩樣東西：錯設本身，以及連正確模型都有的基線偏差（G0 也有的小幅負偏差）。把兩者拆開，主要結論才乾淨。
+The currently reported "bias of +0.06 to +0.20" is **relative to the true value**, and it mixes two things: the misspecification itself, and the baseline bias that even the correct model has (the small negative bias also seen in G0). Separating the two makes the main conclusion clean.
 
 ### 2.2 `code/03_recovery_analysis/relative_bias.R`
 
@@ -337,23 +337,23 @@ cat("\n=== Persistence lm ===\n"); print(persist)
 cat("\nDone. Outputs in data/processed/v3/\n")
 ```
 
-### 2.3 執行與預期
+### 2.3 Running and expected results
 
 ```bash
 Rscript code/03_recovery_analysis/relative_bias.R
 ```
 
-用上次在對話中快速算的數字做健全性檢查（該計算是跨 d′ 配對，此腳本改成獨立樣本，數值會很接近但 SE 略不同）：
+Sanity-check against the numbers quickly computed in our previous conversation (that calculation paired across d′; this script uses independent samples instead, so the values will be very close but the SEs slightly different):
 
-- `delta_mean` 在 d′ = 0.75 的六格約 +0.19 到 +0.25，d′ = 1.5 約 +0.11 到 +0.15。
-- `pooled$diff_low_minus_high` 約 +0.10。
-- 若差很多 → 先檢查 `pivot_wider` 是否把兩個 variant 配對錯（`stopifnot` 應該會先擋下）。
+- `delta_mean` is about +0.19 to +0.25 in the six d′ = 0.75 cells, and about +0.11 to +0.15 at d′ = 1.5.
+- `pooled$diff_low_minus_high` is about +0.10.
+- If they differ a lot → first check whether `pivot_wider` paired the two variants incorrectly (the `stopifnot` should catch this first).
 
-### 2.4 理解檢查（寫進 analysis_log）
+### 2.4 Understanding check (write into analysis_log)
 
-1. 為什麼跨 d′ 的差異要用獨立樣本 SE，而不是配對？
-2. `persist` 的 `log2(n_trials)` 斜率若為 −0.01（CI 含 0），代表什麼？若為 −0.05（CI 不含 0）呢？
-3. 如果 `baseline_cmp$diff` 在所有格都接近 0，對「G0 負偏差」的解讀有什麼幫助？
+1. Why should the cross-d′ difference use an independent-samples SE rather than a paired one?
+2. If the `log2(n_trials)` slope in `persist` is −0.01 (CI includes 0), what does that mean? What if it is −0.05 (CI excludes 0)?
+3. If `baseline_cmp$diff` is close to 0 in all cells, how does that help with interpreting the "G0 negative bias"?
 
 ### 2.5 Commit
 
@@ -364,17 +364,17 @@ git commit -m "v3 step 1: relative misspecification bias, d' contrast, persisten
 
 ---
 
-## 3. 步驟 2：LOO 穩健化（1–2 天，含背景運算）
+## 3. Step 2: LOO robustness checks (1–2 days, with background computation)
 
-### 3.1 為什麼與限制
+### 3.1 Rationale and limitations
 
-- 181/240 個正確模型擬合至少有一個 Pareto k > 0.7。PSIS-LOO 對這些受試者的估計不可靠。
-- **只有 rep 1–2 保留完整 `brmsfit`**（48 個擬合 = 24 對），所以精確修補只能在這 24 對上做。其他 216 對只能報告 k 值統計，並說明「在 24 對子集上，修補後結論是否改變」。
-- 這裡的 LOO 單位是**一位受試者**（`loo_comparison.R` 已驗證）。留出一位受試者 = 預測一個新受試者，需要對其隨機效應積分，因此必須允許新層級（第 1.3 節檢查 (b)）。
+- 181/240 correct-model fits have at least one Pareto k > 0.7. The PSIS-LOO estimates for these participants are unreliable.
+- **Only reps 1–2 kept the full `brmsfit`** (48 fits = 24 pairs), so exact repair can only be done on these 24 pairs. For the other 216 pairs you can only report k-value statistics and state "whether the conclusion changes after repair in the 24-pair subset".
+- The LOO unit here is **one participant** (verified in `loo_comparison.R`). Leaving out one participant = predicting a new participant, which requires integrating over their random effects, so new levels must be allowed (section 1.3, check (b)).
 
 ### 3.2 `code/04_ppc_and_comparison/v3_reloo_stored_fits.R`
 
-`reloo` 只會對 k > 0.7 的受試者重新擬合模型（排除該受試者），得到精確的 leave-one-participant-out 值，其餘受試者沿用 PSIS 值。平均每個擬合約 3 位受試者需要重擬合。
+`reloo` refits the model (excluding that participant) only for participants with k > 0.7, giving exact leave-one-participant-out values; the remaining participants keep their PSIS values. On average, about 3 participants per fit need refitting.
 
 ```r
 # v3 step 2a: exact refits (reloo) for participants with Pareto k > 0.7 on
@@ -438,18 +438,18 @@ for (f in files) {
 }
 ```
 
-**先試一個檔案**（很重要，順便計時）：
+**Try one file first** (important, and it also gives you a timing):
 
 ```bash
 Rscript code/04_ppc_and_comparison/v3_reloo_stored_fits.R 1 48
 ```
 
-檢查：
-- 產生的 `rec$loo_exact` 的 `diagnostics$pareto_k`，被重擬合的受試者應顯示為 0 或 NA（視 brms 版本）。
-- 若報錯 `new levels` 相關訊息 → 在 `reloo_args` 裡加 `allow_new_levels = TRUE, sample_new_levels = "uncertainty"`。
-- 若報錯與 `gumbel_min_lcdf` 找不到有關 → 確認有 `source(simulate_g2_gumbel.R)`。
+Check:
+- In the resulting `rec$loo_exact`, `diagnostics$pareto_k` for the refitted participants should show 0 or NA (depending on the brms version).
+- If you get an error mentioning `new levels` → add `allow_new_levels = TRUE, sample_new_levels = "uncertainty"` to `reloo_args`.
+- If you get an error about `gumbel_min_lcdf` not being found → make sure `source(simulate_g2_gumbel.R)` is present.
 
-試跑成功後，開 3 個終端機平行跑（每個佔 4 核心，22 核心的機器留足餘裕）：
+Once the trial run succeeds, open 3 terminals and run in parallel (each uses 4 cores, leaving plenty of headroom on a 22-core machine):
 
 ```bash
 Rscript code/04_ppc_and_comparison/v3_reloo_stored_fits.R 1 3
@@ -457,7 +457,7 @@ Rscript code/04_ppc_and_comparison/v3_reloo_stored_fits.R 2 3
 Rscript code/04_ppc_and_comparison/v3_reloo_stored_fits.R 3 3
 ```
 
-預估：約 150 次重擬合 × 2–3 分鐘 ÷ 3 ≈ 2–3 小時。
+Estimate: about 150 refits × 2–3 minutes ÷ 3 ≈ 2–3 hours.
 
 ### 3.3 `code/04_ppc_and_comparison/v3_loo_robust_summary.R`
 
@@ -518,9 +518,9 @@ pk_cell <- pk |>
 readr::write_csv(pk_cell, file.path(out, "g2_pareto_k_by_cell.csv"))
 ```
 
-### 3.4 可選：participant-level K-fold（`v3_kfold_stored_fits.R`）
+### 3.4 Optional: participant-level K-fold (`v3_kfold_stored_fits.R`)
 
-只有在 3.3 發現 PSIS 與精確值**結論不一致**（`twose_agreement` < 0.9）時才做。重點：**同一對的兩個模型必須用相同的 fold 分配**。
+Do this only if 3.3 finds that PSIS and exact values **lead to different conclusions** (`twose_agreement` < 0.9). Key point: **both models in a pair must use the same fold assignment**.
 
 ```r
 suppressPackageStartupMessages({ library(dplyr); library(brms); library(hmetad) })
@@ -542,12 +542,12 @@ for (f in files) {
 }
 ```
 
-注意：`cell_id` 在兩個 variant 之間是否相同？`loo_comparison.R` 是用 `(cell_id, rep_id)` 配對，代表相同。若不確定，改用 `sim_seed` 當種子來源。成本：24 × 5 次重擬合 ≈ 4–6 小時。
+Note: is `cell_id` the same across the two variants? `loo_comparison.R` pairs by `(cell_id, rep_id)`, which implies that it is. If unsure, use `sim_seed` as the seed source instead. Cost: 24 × 5 refits ≈ 4–6 hours.
 
-### 3.5 決定點
+### 3.5 Decision point
 
-- `twose_agreement ≥ 0.9` 且 `prop_favor_exact` 與 PSIS 相差 < 10 個百分點 → 報告「修補後定性結論不變」，進入步驟 3。
-- 否則 → 做 3.4 K-fold，並在報告中以 K-fold 為主要 LOO 結果。**不要停下**，這本身就是結果。
+- `twose_agreement ≥ 0.9` and `prop_favor_exact` within 10 percentage points of PSIS → report "qualitative conclusions unchanged after repair" and move on to step 3.
+- Otherwise → do the K-fold in 3.4 and use K-fold as the primary LOO result in the report. **Do not stop**: this is a result in itself.
 
 ```bash
 git add code/04_ppc_and_comparison/v3_* data/processed/v3/g2_loo_* data/processed/v3/g2_pareto_k_by_cell.csv
@@ -556,26 +556,26 @@ git commit -m "v3 step 2: exact-refit LOO on stored G2 fits; Pareto k by cell"
 
 ---
 
-## 4. 步驟 3：難度混合模擬 G3（1–2 天）
+## 4. Step 3: Difficulty-mixture simulation G3 (1–2 days)
 
-### 4.1 為什麼
+### 4.1 Why
 
-真實資料常把不同難度的試次合併。多個不同 d′ 的高斯分佈混合後，形狀本身就不是高斯。若這會讓 LOO 偏好 Gumbel-min，實證結果就可能是假象。G3 直接測這件事，同時檢驗「把難度放進模型」能否消除假象。
+Real data often pool trials of different difficulty. A mixture of several Gaussians with different d′ is itself not Gaussian in shape. If this makes LOO prefer Gumbel-min, the empirical results could be an artefact. G3 tests this directly, and also checks whether "putting difficulty into the model" removes the artefact.
 
-設計：`control`（兩半 d′ 都是 1.25）vs `mixture`（0.5 和 2.0，平均相同）× 20 次重複 × 4 種擬合：
+Design: `control` (d′ = 1.25 in both halves) vs `mixture` (0.5 and 2.0, same mean) × 20 replications × 4 fits:
 
-| 擬合 | 分佈 | 資料聚合 | d′/c 共變項 |
+| Fit | Distribution | Data aggregation | d′/c covariate |
 |---|---|---|---|
-| `normal_pooled` | normal | 受試者 | 無 |
-| `gumbel_pooled` | gumbel_min | 受試者 | 無 |
-| `normal_difficulty` | normal | 受試者 × 難度 | difficulty |
-| `gumbel_difficulty` | gumbel_min | 受試者 × 難度 | difficulty |
+| `normal_pooled` | normal | participant | none |
+| `gumbel_pooled` | gumbel_min | participant | none |
+| `normal_difficulty` | normal | participant × difficulty | difficulty |
+| `gumbel_difficulty` | gumbel_min | participant × difficulty | difficulty |
 
-⚠️ **LOO 只能在相同資料上比較**：pooled 兩者互比、difficulty 兩者互比。pooled 和 difficulty 的聚合計數不同，似然函數不在同一資料上，不能互比 ELPD。
+⚠️ **LOO can only be compared on the same data**: compare the two pooled fits with each other, and the two difficulty fits with each other. Pooled and difficulty fits have different aggregated counts, so their likelihoods are not on the same data and their ELPDs cannot be compared.
 
-### 4.2 修改 `code/02_fit/fit_hmetad.R`（向下相容）
+### 4.2 Modify `code/02_fit/fit_hmetad.R` (backward compatible)
 
-**步驟 A：修改之前**先存下 v1.2.1 的公式當作測試基準：
+**Step A: before modifying anything**, save the v1.2.1 formulas as a test baseline:
 
 ```r
 source(here::here("code", "02_fit", "fit_hmetad.R"))
@@ -593,7 +593,7 @@ git add tests/fixtures/formula_k4_v121.rds
 git commit -m "tests: snapshot v1.2.1 formula/prior output before extending fit wrapper"
 ```
 
-**步驟 B：替換 `.build_metad_formula` 和 `.build_metad_priors`**：
+**Step B: replace `.build_metad_formula` and `.build_metad_priors`**:
 
 ```r
 .build_metad_formula <- function(K, group = "participant",
@@ -631,7 +631,7 @@ git commit -m "tests: snapshot v1.2.1 formula/prior output before extending fit 
 }
 ```
 
-**步驟 C：`fit_one_hmetad()` 新增四個參數**（放在 `extra_stanvars` 之前），並改兩處：
+**Step C: add four arguments to `fit_one_hmetad()`** (placed before `extra_stanvars`), and change two places:
 
 ```r
 fit_one_hmetad <- function(data, K = 4, group = "participant",
@@ -670,17 +670,17 @@ fit_one_hmetad <- function(data, K = 4, group = "participant",
   # ... the rest of the function is unchanged ...
 ```
 
-在 `base_record` 的 list 裡加上 `agg_by = agg_by, dprime_c_covariates = dprime_c_covariates, log_M_covariates = log_M_covariates`，方便之後追溯。
+Add `agg_by = agg_by, dprime_c_covariates = dprime_c_covariates, log_M_covariates = log_M_covariates` to the `base_record` list, for later traceability.
 
-**備案**（若第 1.3 節檢查 (c) 顯示 `aggregate_metad` 不能多欄分組）：在呼叫前自己建一個合併欄位，
+**Fallback** (if check (c) in section 1.3 shows that `aggregate_metad` cannot group by multiple columns): build a combined column yourself before the call,
 
 ```r
 data$pgroup <- interaction(data[[group]], data[[agg_by]], drop = TRUE, sep = "_")
 ```
 
-然後用 `pgroup` 聚合，再把 `participant` 和 `difficulty` 從 `pgroup` 拆回 `agg` 的欄位。這比較麻煩，優先確認 (c)。
+Then aggregate by `pgroup`, and split `participant` and `difficulty` back out of `pgroup` into columns of `agg`. This is more cumbersome, so confirm (c) first.
 
-**步驟 D：`tests/test_formula_backcompat.R`**
+**Step D: `tests/test_formula_backcompat.R`**
 
 ```r
 source(here::here("code", "02_fit", "fit_hmetad.R"))
@@ -702,7 +702,7 @@ test_that("covariates enter the intended parts of the formula", {
 })
 ```
 
-（`print(bf)` 的精確格式依 brms 版本而定；若第二個測試的正則式不符，先 `print()` 看實際輸出再調整。第一個測試不需要調整。）
+(The exact format of `print(bf)` depends on the brms version; if the regex in the second test does not match, `print()` the actual output first and adjust. The first test needs no adjustment.)
 
 ```bash
 Rscript -e 'testthat::test_dir("tests")'
@@ -710,7 +710,7 @@ git add code/02_fit/fit_hmetad.R tests/test_formula_backcompat.R
 git commit -m "fit wrapper: optional agg_by/covariates (defaults reproduce v1.2.1; regression test)"
 ```
 
-**步驟 E（強烈建議）：重現性抽查**。用修改後的程式碼重跑 grid 721（`run_one_cell.R` 會跳過已存在的輸出，所以先把原檔案暫時搬走），確認 draws 與原檔完全相同，然後把原檔搬回來。README 記載 v1.2.1 曾對 cell 721 做過相同檢查，照同一方式。
+**Step E (strongly recommended): reproducibility spot check**. Rerun grid 721 with the modified code (`run_one_cell.R` skips existing outputs, so temporarily move the original file away first), confirm that the draws are identical to the original file, then move the original file back. The README records that the same check was done on cell 721 for v1.2.1; follow the same procedure.
 
 ### 4.3 `code/01_simulate/simulate_g3_mixture.R`
 
@@ -739,7 +739,7 @@ simulate_g3_mixture <- function(n_participants, n_trials_per_level, dprimes,
 }
 ```
 
-加一個測試到 `tests/test_simulate_g3.R`：每位受試者每個難度有 `n_trials_per_level` 筆（或 `sim_metad_participant` 的等價定義，先 `table(d$participant, d$difficulty)` 看）；`mixture` 的 L1 準確率 < L2 準確率。
+Add a test to `tests/test_simulate_g3.R`: each participant has `n_trials_per_level` rows per difficulty level (or the equivalent definition in `sim_metad_participant`; check with `table(d$participant, d$difficulty)` first); in `mixture`, L1 accuracy < L2 accuracy.
 
 ### 4.4 `code/00_setup/03_create_grid_g3.R`
 
@@ -842,14 +842,14 @@ qs2::qs_save(result, out_path)
 cat("Saved", out_path, "status:", result$status, "\n")
 ```
 
-**先試兩個**：一個 `normal_difficulty`、一個 `gumbel_pooled`，確認都能跑、`b_Intercept` 存在、`loo` 不是 NULL。
+**Try two first**: one `normal_difficulty` and one `gumbel_pooled`; confirm that both run, `b_Intercept` exists and `loo` is not NULL.
 
 ```bash
 Rscript code/00_setup/03_create_grid_g3.R
 Rscript code/02_fit/run_one_cell_g3.R 3   # check which id is which in config/grid_g3.csv first
 ```
 
-**正式跑**（Windows 沒有 `make` 時，用一個小的 PowerShell 迴圈分成 4 份在 4 個終端機跑）。建一個 `code/02_fit/run_g3_shard.R`：
+**Full run** (if Windows has no `make`, use a small PowerShell loop to split the work into 4 parts across 4 terminals). Create `code/02_fit/run_g3_shard.R`:
 
 ```r
 args <- commandArgs(trailingOnly = TRUE)
@@ -865,7 +865,7 @@ Rscript code/02_fit/run_g3_shard.R 1 4    # terminal 1
 Rscript code/02_fit/run_g3_shard.R 2 4    # terminal 2  ... up to 4
 ```
 
-預估：160 次 × ~2.5 分鐘 ÷ 4 ≈ 2 小時（受散熱影響可能 3 小時）。可中斷後重跑，已完成的會跳過。
+Estimate: 160 fits × ~2.5 minutes ÷ 4 ≈ 2 hours (possibly 3 hours because of thermal throttling). It can be interrupted and rerun; completed fits are skipped.
 
 ### 4.6 `code/04_ppc_and_comparison/v3_g3_summary.R`
 
@@ -937,11 +937,11 @@ readr::write_csv(bias_tbl, file.path(out, "g3_bias.csv"))
 print(bias_tbl)
 ```
 
-### 4.7 如何解讀 G3（決定點）
+### 4.7 How to interpret G3 (decision point)
 
-- **有假象**（合併時常偏好 Gumbel，控制組很少）→ 實證分析**必須**把難度放進模型；難度未記錄的資料集一律排除。這本身也是論文的一個發現。
-- **沒有假象** → 實證分析仍然照原計劃放入難度（有記錄就放），但難度未記錄的資料集可以放進敏感度分析，而不是直接排除。
-- 無論哪種，`difficulty` 版本的 Δlog(M)（normal − gumbel）應該接近 0，因為資料本來就是高斯。若不接近 0，要先查清楚才進入步驟 4。
+- **Artefact present** (pooled fits often prefer Gumbel, the control condition rarely does) → the empirical analysis **must** put difficulty into the model; datasets without recorded difficulty are all excluded. This is itself a finding for the paper.
+- **No artefact** → the empirical analysis still includes difficulty as originally planned (where it is recorded), but datasets without recorded difficulty can go into a sensitivity analysis rather than being excluded outright.
+- Either way, Δlog(M) (normal − gumbel) for the `difficulty` versions should be close to 0, because the data are Gaussian by construction. If it is not close to 0, investigate before moving on to step 4.
 
 ```bash
 git add code/00_setup/03_create_grid_g3.R config/grid_g3.csv code/01_simulate/simulate_g3_mixture.R \
@@ -952,27 +952,27 @@ git commit -m "v3 step 3: G3 difficulty-mixture simulation and pre-specified art
 
 ---
 
-## 5. 步驟 4：Confidence Database 實證分析（1–2 週）
+## 5. Step 4: Confidence Database empirical analysis (1–2 weeks)
 
-### 5.0 階段總覽
+### 5.0 Stage overview
 
 ```text
-5.1 下載與紀錄 → 5.2 自動篩選 → 5.3 手動編碼難度設計 → 5.4 選定資料集（tag 預先規定）
-→ 5.5 整理成 hmetad 格式 → 5.6 PPC 函式泛化 → 5.7 擬合（先試跑 2 個）
-→ 5.8 LOO 修補 → 5.9 PPC → 5.10 彙整與分類
+5.1 Download and record → 5.2 Automatic screening → 5.3 Manual coding of difficulty design → 5.4 Dataset selection (pre-specified tag)
+→ 5.5 Convert to hmetad format → 5.6 Generalise PPC functions → 5.7 Fit (trial run on 2 datasets first)
+→ 5.8 LOO repair → 5.9 PPC → 5.10 Summarise and categorise
 ```
 
-**5.4 的 tag 打下去之前，不可以擬合任何真實資料。**
+**Do not fit any real data before the 5.4 tag has been created.**
 
-### 5.1 下載與紀錄
+### 5.1 Download and record
 
-1. 到 Confidence Database 的 OSF 頁面（Rahnev et al., 2020, *Nature Human Behaviour* 的資料連結）下載：
-   - 所有 `data_*.csv`
-   - 資料庫的說明試算表（資料集層級的 metadata，例如類別、信心量表、論文出處）
-   - 所有資料集的 readme（若有）
-2. 放到 `data/raw/confidence_db/`（`.gitignore` 已排除 `data/raw/*`）。
-3. 建立 `docs/data_access_confidence_db.md`，記錄：下載日期、OSF 網址、資料庫版本、**授權條款（到 OSF 頁面確認，照抄）**、引用方式（資料庫論文 + 每個使用資料集的原始論文）。
-4. 產生雜湊值清單，讓別人能確認拿到相同檔案：
+1. Go to the Confidence Database OSF page (the data link from Rahnev et al., 2020, *Nature Human Behaviour*) and download:
+   - All `data_*.csv` files
+   - The database information spreadsheet (dataset-level metadata, e.g. category, confidence scale, source publication)
+   - The readme for every dataset (if available)
+2. Put them in `data/raw/confidence_db/` (`.gitignore` already excludes `data/raw/*`).
+3. Create `docs/data_access_confidence_db.md`, recording: download date, OSF URL, database version, **licence terms (check on the OSF page and copy them verbatim)**, and how to cite (the database paper + the original paper for each dataset used).
+4. Generate a list of hashes so others can confirm they have the same files:
 
 ```r
 files <- list.files(here::here("data", "raw", "confidence_db"), full.names = TRUE)
@@ -982,9 +982,9 @@ dir.create(here::here("data", "processed", "v3", "empirical"), recursive = TRUE,
 readr::write_csv(manifest, here::here("data", "processed", "v3", "empirical", "raw_manifest.csv"))
 ```
 
-5. **先手動打開 2–3 個 CSV**，確認欄位名稱。以下程式假設標準欄位為 `Subj_idx`、`Stimulus`、`Response`、`Confidence`，部分資料集有 `Condition`、`Accuracy`。若實際名稱不同，改 `eligibility.R` 最上方的 `REQUIRED_COLS`，並記錄在 analysis_log。
+5. **Open 2–3 CSVs by hand first** to confirm the column names. The code below assumes the standard columns are `Subj_idx`, `Stimulus`, `Response` and `Confidence`, with `Condition` and `Accuracy` present in some datasets. If the actual names differ, change `REQUIRED_COLS` at the top of `eligibility.R` and record this in the analysis_log.
 
-### 5.2 `code/06_empirical/eligibility.R`（純函式，全部可測）
+### 5.2 `code/06_empirical/eligibility.R` (pure functions, all testable)
 
 ```r
 # Pure functions for the empirical stage: no file I/O, all unit-tested.
@@ -1154,7 +1154,7 @@ test_that("auto rules reject continuous confidence and non-binary tasks", {
 Rscript -e 'testthat::test_dir("tests")'
 ```
 
-### 5.4 自動篩選 → 手動編碼 → 選定（然後 tag）
+### 5.4 Automatic screening → manual coding → selection (then tag)
 
 **`code/06_empirical/01_screen_datasets.R`**
 
@@ -1186,26 +1186,26 @@ cat("Auto-eligible:", sum(screen$auto_eligible, na.rm = TRUE), "of", nrow(screen
 print(count(filter(screen, auto_eligible), category))
 ```
 
-⚠️ 說明試算表的檔名、工作表和欄位名（上面的 `Database_Information.xlsx`、`Name_in_database`、`Category`）**是推測的**，請先用 `readxl::excel_sheets()` 和 `names()` 看實際名稱再改。
+⚠️ The file name, sheet name and column names of the information spreadsheet (`Database_Information.xlsx`, `Name_in_database` and `Category` above) **are guesses**. Check the actual names with `readxl::excel_sheets()` and `names()` first, then edit them.
 
-**手動編碼**：對每個 `auto_eligible` 且 `category == "perception"`（加上你想做次要分析的 memory）的資料集，讀它的 readme 或原始論文的 Methods，填 `config/empirical_manual_coding.csv`：
+**Manual coding**: for every dataset that is `auto_eligible` and has `category == "perception"` (plus memory, if you want the secondary analysis), read its readme or the Methods section of the original paper and fill in `config/empirical_manual_coding.csv`:
 
 ```csv
 dataset,difficulty_design,difficulty_column,conf_higher_is_more,notes,coded_on
 Example_2019,recorded_levels,Condition,TRUE,"3 contrast levels in Condition",2026-10-xx
 ```
 
-`difficulty_design` 只能是以下之一：
+`difficulty_design` must be one of the following:
 
-| 值 | 意思 | 用途 |
+| Value | Meaning | Use |
 |---|---|---|
-| `constant` | 全程單一難度 | 主要分析 |
-| `recorded_levels` | 多個難度，且有欄位記錄（≤ 4 級） | 主要分析，難度放入模型 |
-| `staircase` | 階梯法逐試次調整難度 | 敏感度分析 |
-| `unrecorded_varied` | 難度有變化但沒記錄 | 排除（若 G3 無假象，可進敏感度分析） |
-| `unclear` | 無法判斷 | 排除 |
+| `constant` | A single difficulty level throughout | Primary analysis |
+| `recorded_levels` | Several difficulty levels, recorded in a column (≤ 4 levels) | Primary analysis, with difficulty included in the model |
+| `staircase` | Difficulty adjusted trial by trial with a staircase procedure | Sensitivity analysis |
+| `unrecorded_varied` | Difficulty varies but is not recorded | Excluded (may enter the sensitivity analysis if G3 shows no artefact) |
+| `unclear` | Cannot be determined | Excluded |
 
-**編碼時不可以看任何模型結果。** 若 `Condition` 同時包含非難度的操弄（例如注意力提示），在 `notes` 註明；只要它是 ≤ 4 級的離散因子，仍可作為 `condition` 放入 d′、c 和 log(M)。
+**Do not look at any model results while coding.** If `Condition` also contains manipulations other than difficulty (e.g. attentional cues), note this in `notes`; as long as it is a discrete factor with ≤ 4 levels, it can still enter d′, c and log(M) as `condition`.
 
 **`code/06_empirical/02_select_datasets.R`**
 
@@ -1238,7 +1238,7 @@ readr::write_csv(cand, file.path(out_dir, "selected_datasets.csv"))
 print(count(cand, set))
 ```
 
-**預先規定的 tag（在任何真實資料擬合之前）**：
+**Pre-specified tag (before fitting any real data)**:
 
 ```bash
 git add code/06_empirical config/empirical_manual_coding.csv tests/test_eligibility.R \
@@ -1249,7 +1249,7 @@ git tag v3-prereg-empirical
 git push origin v3-enhancement --tags
 ```
 
-（可選：把這個 commit 的 `config/v3.yml` + `selected_datasets.csv` 上傳到 OSF 註冊，時間戳記更可信。）
+(Optional: upload `config/v3.yml` + `selected_datasets.csv` from this commit to an OSF registration for a more credible timestamp.)
 
 ### 5.5 `code/06_empirical/03_prepare_datasets.R`
 
@@ -1285,13 +1285,13 @@ readr::write_csv(prep_log, here::here("data", "processed", "v3", "empirical", "p
 print(prep_log, n = Inf)
 ```
 
-檢查 `prepare_log.csv`：
-- `acc_agreement` 應該 ≥ 0.99。若低，代表 stimulus/response 編碼方向和資料集的 Accuracy 定義不同，**停下來查**。
-- `conf_acc_rho` 應為正。若 ≤ 0，這個資料集的信心方向或欄位有問題，排除並記錄。
+Check `prepare_log.csv`:
+- `acc_agreement` should be ≥ 0.99. If it is lower, the stimulus/response coding direction differs from the dataset's own definition of Accuracy: **stop and investigate**.
+- `conf_acc_rho` should be positive. If it is ≤ 0, something is wrong with this dataset's confidence direction or columns: exclude it and record this.
 
-### 5.6 泛化 PPC 函式：`code/04_ppc_and_comparison/ppp_functions.R`
+### 5.6 Generalised PPC functions: `code/04_ppc_and_comparison/ppp_functions.R`
 
-`g2_ppp_fullfits.R` 寫死了 K = 4（`col_map`、每組 8 欄、16 個格子、`1:7` 迴圈）且只以 participant 分組。實證資料的 K 會變，還有 condition 分組。抽出並泛化：
+`g2_ppp_fullfits.R` hard-codes K = 4 (`col_map`, 8 columns per group, 16 cells, the `1:7` loop) and groups by participant only. In the empirical data K varies, and there is also grouping by condition. Extract and generalise it:
 
 ```r
 # Generalised replicated-data posterior predictive p-values for hmetad fits
@@ -1380,9 +1380,9 @@ ppp_one_fit_general <- function(fit, agg, K, group_cols = "participant", seed, n
 }
 ```
 
-注意 `n_ps[seq(1, n_cols, by = width)]` 依賴「同一組 × 刺激的 `width` 個欄位連續排列」，這由上面的 `arrange()` 保證（與原腳本相同的假設）。
+Note that `n_ps[seq(1, n_cols, by = width)]` relies on "the `width` columns for the same group × stimulus being contiguous", which is guaranteed by the `arrange()` above (the same assumption as the original script).
 
-**`tests/test_ppp_functions.R`（回歸測試，必做）**
+**`tests/test_ppp_functions.R` (regression test, essential)**
 
 ```r
 source(here::here("code", "04_ppc_and_comparison", "ppp_functions.R"))
@@ -1417,7 +1417,7 @@ test_that("generalised PPP reproduces the stored v2 p-values on stored G2 fits",
 })
 ```
 
-第二個測試通過，才代表泛化版本沒有改變 v1.2 的結果。若不通過，最常見的原因是 `arrange()` 順序或 `set.seed` 的位置和原腳本不同。
+Only if the second test passes do you know that the generalised version has not changed the v1.2 results. If it fails, the most common cause is that the `arrange()` order or the position of `set.seed` differs from the original script.
 
 ### 5.7 `code/06_empirical/04_fit_dataset.R`
 
@@ -1479,9 +1479,9 @@ qs2::qs_save(a, out_path)   # full fit kept: needed for LOO repair and PPC
 cat(dataset, family, "status:", a$status, " elapsed:", round(a$elapsed_secs), "s\n")
 ```
 
-**LOO 單位**：多條件時資料按「受試者 × 條件」聚合，所以一個 LOO 觀察值 = 一位受試者在一個條件下的計數，和模擬（一位受試者）不同。這要寫進報告。K-fold 修補時則以受試者為單位分組（5.8）。
+**LOO unit**: with multiple conditions the data are aggregated by "participant × condition", so one LOO observation = the counts of one participant in one condition, which differs from the simulations (one participant). This must be stated in the report. For the K-fold repair, folds are grouped by participant instead (5.8).
 
-**試跑**：選 `prepare_log.csv` 中受試者最少和最多的兩個資料集，各跑兩個家族：
+**Trial run**: choose the two datasets in `prepare_log.csv` with the fewest and the most participants, and run both families on each:
 
 ```bash
 Rscript code/06_empirical/04_fit_dataset.R <smallest_dataset> normal
@@ -1490,12 +1490,12 @@ Rscript code/06_empirical/04_fit_dataset.R <largest_dataset> normal
 Rscript code/06_empirical/04_fit_dataset.R <largest_dataset> gumbel_min
 ```
 
-試跑決定點：
-- 四個都跑完、`status` 為 `pass` 或經升級後 `pass` → 繼續。
-- 最大的資料集一次超過 ~2 小時 → 在 `config/v3.yml` 加一條 `max_participants_for_fit`，**寫進 analysis_log 並在正式跑之前 commit**，超過者隨機抽受試者（固定種子）。這是對預先規定的偏離，要明確記錄。
-- `hierarchical_thresholds = TRUE` 造成大量 divergence → 記錄，先試 `adapt_delta = 0.99` 作為起始值（同樣要記錄為偏離）。
+Trial-run decision points:
+- All four runs finish with `status` of `pass`, or `pass` after escalation → continue.
+- The largest dataset takes more than ~2 hours for one run → add a `max_participants_for_fit` entry to `config/v3.yml`, **record it in the analysis_log and commit it before the main run**; for datasets above the limit, randomly sample participants (fixed seed). This is a deviation from the pre-specified plan and must be recorded explicitly.
+- `hierarchical_thresholds = TRUE` causes many divergences → record this, and first try `adapt_delta = 0.99` as the starting value (also recorded as a deviation).
 
-正式跑用與 G3 相同的分片方式，`code/06_empirical/run_empirical_shard.R`：
+For the main run, use the same sharding approach as G3, `code/06_empirical/run_empirical_shard.R`:
 
 ```r
 args <- commandArgs(trailingOnly = TRUE)
@@ -1562,7 +1562,7 @@ for (ds in datasets) {
 }
 ```
 
-⚠️ `reloo` 和 `kfold` 的結果不能互相比較。同一資料集的兩個家族**一定用同一種方法**（上面程式碼已保證）。
+⚠️ `reloo` and `kfold` results cannot be compared with each other. The two families for the same dataset **must always use the same method** (the code above guarantees this).
 
 ### 5.9 `code/06_empirical/06_ppc_dataset.R`
 
@@ -1586,7 +1586,7 @@ ppc <- purrr::map_dfr(files, function(f) {
 readr::write_csv(ppc, here::here("data", "processed", "v3", "empirical", "ppc_by_fit.csv"))
 ```
 
-先對一個擬合執行 `names(a$agg)`，確認除了分組欄位與 `N`、`N_0`、`N_1` 之外沒有其他欄位；若有，把它們加進 `setdiff()` 的排除清單。
+First run `names(a$agg)` on one fit to confirm that there are no columns other than the grouping columns and `N`, `N_0`, `N_1`; if there are, add them to the exclusion list in `setdiff()`.
 
 ### 5.10 `code/06_empirical/07_summarise_empirical.R`
 
@@ -1667,12 +1667,12 @@ print(by_ds |> group_by(set) |> summarise(median_delta = median(delta_logM), n =
 cat("\nCondition contrasts with a conclusion flip:", sum(contr$conclusion_flip), "of", nrow(contr), "\n")
 ```
 
-主要結果（在 5.4 已經 tag 規定）：
+Primary results (pre-specified by the tag in 5.4):
 
-1. 每組資料集（primary / sensitivity / secondary）的四類比例：`clear_gaussian`、`clear_gumbel`、`inconclusive`、`unreliable`。
-2. `delta_logM` 的分佈（方向是否和模擬一致：資料偏 Gumbel 時，高斯模型給的 log(M) 較高）。
-3. 條件對比的改變量與 `conclusion_flip` 次數。
-4. PPC：兩個家族在最高信心格的 `p_stat2_highconf`。
+1. For each set of datasets (primary / sensitivity / secondary), the proportions in the four categories: `clear_gaussian`, `clear_gumbel`, `inconclusive`, `unreliable`.
+2. The distribution of `delta_logM` (whether its direction matches the simulations: when the data are Gumbel-like, the Gaussian model gives a higher log(M)).
+3. The change in condition contrasts and the number of `conclusion_flip` cases.
+4. PPC: `p_stat2_highconf` for the highest-confidence cells under both families.
 
 ```bash
 git add code/06_empirical data/processed/v3/empirical
@@ -1681,18 +1681,18 @@ git commit -m "v3 empirical: fits, LOO repair, PPC and pre-specified summary"
 
 ---
 
-## 6. 步驟 5：新圖表
+## 6. Step 5: New figures
 
-新圖放 `outputs/figures/v3/`，沿用 `fig_1`–`fig_5` 的 ggplot 主題（打開 `fig_4_g2_misspecification.R` 複製主題設定）。
+New figures go in `outputs/figures/v3/` and reuse the ggplot theme of `fig_1`–`fig_5` (open `fig_4_g2_misspecification.R` and copy the theme settings).
 
-| 腳本 | 內容 | 資料來源 |
+| Script | Content | Data source |
 |---|---|---|
-| `fig_6_relative_bias.R` | A：`delta_mean ± 2·mcse` 對 `n_trials`（log2 軸），顏色 = d′，形狀 = N。B：`base_mean`（G2 正確）與 G0 偏差並列 | `g2_relative_bias_by_cell.csv`、`g2_baseline_vs_g0.csv` |
-| `fig_7_loo_robust.R` | `diff_psis` vs `diff_exact` 散佈圖加 y = x 線；點形狀 = 是否有 bad k | `g2_loo_psis_vs_exact_by_pair.csv` |
-| `fig_8_g3_mixture.R` | A：各條件 × 聚合方式的 ELPD 差分佈（0 與 ±2SE 參考線）。B：各擬合的 log(M) 偏差 | `g3_loo_by_rep.csv`、`g3_bias.csv` |
-| `fig_9_empirical.R` | A：每個資料集的 `elpd_diff ± 2·se` 森林圖，依類別上色。B：`delta_logM` 對 `elpd_diff` | `empirical_by_dataset.csv` |
+| `fig_6_relative_bias.R` | A: `delta_mean ± 2·mcse` against `n_trials` (log2 axis), colour = d′, shape = N. B: `base_mean` (G2 correct) shown alongside the G0 bias | `g2_relative_bias_by_cell.csv`, `g2_baseline_vs_g0.csv` |
+| `fig_7_loo_robust.R` | Scatter plot of `diff_psis` vs `diff_exact` with a y = x line; point shape = whether there are bad k values | `g2_loo_psis_vs_exact_by_pair.csv` |
+| `fig_8_g3_mixture.R` | A: distribution of ELPD differences for each condition × aggregation method (reference lines at 0 and ±2SE). B: log(M) bias for each fit | `g3_loo_by_rep.csv`, `g3_bias.csv` |
+| `fig_9_empirical.R` | A: forest plot of `elpd_diff ± 2·se` for each dataset, coloured by category. B: `delta_logM` against `elpd_diff` | `empirical_by_dataset.csv` |
 
-`fig_6` 範例骨架：
+Example skeleton for `fig_6`:
 
 ```r
 suppressPackageStartupMessages({ library(dplyr); library(ggplot2) })
@@ -1712,9 +1712,9 @@ ggsave(here::here("outputs", "figures", "v3", "fig_6_relative_bias.png"), p, wid
 
 ---
 
-## 7. Makefile、測試與收尾
+## 7. Makefile, tests and wrap-up
 
-### 7.1 Makefile 新增目標
+### 7.1 New Makefile targets
 
 ```make
 .PHONY: v3-relbias v3-reloo v3-g3 v3-empirical-screen v3-empirical-fit v3-empirical-summary v3-figures
@@ -1751,56 +1751,56 @@ v3-figures:
 	$(RSCRIPT) code/05_figures/fig_9_empirical.R
 ```
 
-Windows 沒有 `make` 時，比照 `code/run_downstream.R` 寫一個 `code/run_v3.R` 依序 `source()` 不需重擬合的步驟（relbias、summary、figures）。
+If `make` is not available on Windows, write a `code/run_v3.R` modelled on `code/run_downstream.R` that `source()`s, in order, the steps that do not require refitting (relbias, summary, figures).
 
-### 7.2 測試清單（全部通過才可以合併回 `main`）
+### 7.2 Test checklist (all must pass before merging back into `main`)
 
-| 測試檔 | 保護什麼 |
+| Test file | What it protects |
 |---|---|
-| `test_formula_backcompat.R` | 修改 fit wrapper 後，v1.2.1 的公式與先驗不變 |
-| `test_ppp_functions.R` | 泛化 PPC 在 K = 4 時與 v1.2 的 p 值完全一致 |
-| `test_eligibility.R` | 信心級數合併、刺激/反應編碼、篩選規則 |
-| `test_simulate_g3.R` | 混合模擬的試次數與難度方向 |
-| 既有三個測試 | v1 的產生器與資料格式 |
+| `test_formula_backcompat.R` | After modifying the fit wrapper, the v1.2.1 formulas and priors are unchanged |
+| `test_ppp_functions.R` | The generalised PPC gives exactly the same p-values as v1.2 when K = 4 |
+| `test_eligibility.R` | Merging of confidence levels, stimulus/response coding, screening rules |
+| `test_simulate_g3.R` | Trial counts and difficulty direction in the mixture simulation |
+| The three existing tests | The v1 generators and data format |
 
 ```bash
 Rscript -e 'testthat::test_dir("tests")'
 ```
 
-### 7.3 收尾清單
+### 7.3 Wrap-up checklist
 
-- [ ] `docs/analysis_log.md`：每個步驟都有日期、腳本、輸出、偏離。
-- [ ] `docs/design_decisions.md`：新增「v3 deviations」段落（例如 `max_participants_for_fit`、adapt_delta 調整）。
-- [ ] `docs/computational_environment.md`：記錄 v3 跑的 R、brms、hmetad、loo 版本和機器。
-- [ ] `README.md`：新增 v3 狀態、重現指令、四張新圖、實證資料取得方式（不附原始資料）。
-- [ ] `CITATION.cff`：版本改為 `2.0.0`。
-- [ ] 合併：`git checkout main && git merge --no-ff v3-enhancement`，tag `v2.0.0`，push。
-- [ ] 透過 Zenodo–GitHub 整合取得這個版本的 DOI（預印本引用用）。
+- [ ] `docs/analysis_log.md`: every step has a date, script, outputs and deviations.
+- [ ] `docs/design_decisions.md`: add a "v3 deviations" section (e.g. `max_participants_for_fit`, adapt_delta adjustments).
+- [ ] `docs/computational_environment.md`: record the R, brms, hmetad and loo versions and the machine used for the v3 runs.
+- [ ] `README.md`: add the v3 status, reproduction commands, the four new figures and how to obtain the empirical data (raw data not included).
+- [ ] `CITATION.cff`: change the version to `2.0.0`.
+- [ ] Merge: `git checkout main && git merge --no-ff v3-enhancement`, tag `v2.0.0`, push.
+- [ ] Obtain a DOI for this release through the Zenodo–GitHub integration (for citing in the preprint).
 
 ---
 
-## 附錄 A：常見錯誤排除
+## Appendix A: Troubleshooting common errors
 
-| 症狀 | 可能原因 | 處理 |
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| `could not find function "gumbel_min_lcdf"` | 沒有 source `simulate_g2_gumbel.R` | 所有會做 `log_lik`、`epred`、`reloo`、`kfold` 的腳本最上方都要 source |
-| `priors do not correspond to any model parameter` | 共變項沒有進公式，卻設了 `class = "b"` 先驗 | `log_M_b_prior` 只在有 `log_M_covariates` 時傳入（預設已如此） |
-| reloo/kfold 報 `new levels` 錯誤 | 未允許新層級 | 在 `reloo_args` 或 `kfold(...)` 加 `allow_new_levels = TRUE, sample_new_levels = "uncertainty"` |
-| reloo 每次都重新編譯 Stan（很慢） | rstan 模型物件未隨 `.qs2` 保存 | 正常現象，每個擬合編譯一次約 1 分鐘；已計入時間預估 |
-| `epred_draws_metad` 記憶體不足 | 實證資料受試者多 | 用 `ndraws = 1000`（見 1.3 (d)） |
-| `pivot_wider` 產生 list 欄位 | 某個 key 組合重複（例如 v1 有重跑的列） | `count(g2, across(all_of(keys)), fit_variant) |> filter(n > 1)` 找出並記錄 |
-| VS Code 的 R 用了全域套件庫 | `.Rprofile` 沒被讀取 | 關掉 R 終端機重開，確認 `.libPaths()`（原計劃已記載） |
-| `make` 找不到 | Windows | 直接用 `Rscript` 指令，或 `code/run_v3.R` |
+| `could not find function "gumbel_min_lcdf"` | `simulate_g2_gumbel.R` has not been sourced | Every script that does `log_lik`, `epred`, `reloo` or `kfold` must source it at the top |
+| `priors do not correspond to any model parameter` | A `class = "b"` prior was set although no covariate entered the formula | Pass `log_M_b_prior` only when there are `log_M_covariates` (this is already the default) |
+| reloo/kfold reports a `new levels` error | New levels are not allowed | Add `allow_new_levels = TRUE, sample_new_levels = "uncertainty"` to `reloo_args` or `kfold(...)` |
+| reloo recompiles Stan every time (very slow) | The rstan model object is not saved with the `.qs2` | Expected behaviour: each fit compiles once, taking about 1 minute; already included in the time estimates |
+| `epred_draws_metad` runs out of memory | The empirical data have many participants | Use `ndraws = 1000` (see 1.3 (d)) |
+| `pivot_wider` produces list columns | A key combination is duplicated (e.g. rerun rows in v1) | Find and record them with `count(g2, across(all_of(keys)), fit_variant) |> filter(n > 1)` |
+| R in VS Code uses the global package library | `.Rprofile` was not read | Close the R terminal and reopen it, then check `.libPaths()` (already documented in the original plan) |
+| `make` not found | Windows | Use the `Rscript` commands directly, or `code/run_v3.R` |
 
-## 附錄 B：決定點總表
+## Appendix B: Summary of decision points
 
-| 位置 | 條件 | 若成立 | 若不成立 |
+| Location | Condition | If met | If not met |
 |---|---|---|---|
-| 1.3 API 確認 | 四項 API 行為符合預期 | 照主要寫法 | 用各節的備案，記錄在 analysis_log |
-| 2.3 相對偏差 | 數值與健全性檢查一致 | 進入步驟 2 | 先查配對錯誤 |
-| 3.5 LOO | `twose_agreement ≥ 0.9` | 報告「修補後不變」 | 做 3.4 K-fold，以它為主要結果（不停） |
-| 4.7 G3 | 預先規定的假象規則 | 實證必須建模難度；未記錄難度者排除 | 未記錄難度者可進敏感度分析 |
-| 4.7 G3 | difficulty 版本 Δlog(M) ≈ 0 | 進入步驟 4 | 先查清楚，不進入實證 |
-| 5.5 準備 | `acc_agreement ≥ 0.99`、`conf_acc_rho > 0` | 保留資料集 | 排除並記錄 |
-| 5.7 試跑 | 四個試跑擬合正常、時間可接受 | 正式跑 | 記錄偏離（受試者上限或 adapt_delta）後再跑 |
-| 5.10 結果 | 任何類別比例 | **照實報告** | 不因結果不理想而改規則 |
+| 1.3 API check | All four API behaviours are as expected | Use the main approach | Use the fallback in each section and record it in the analysis_log |
+| 2.3 Relative bias | Values agree with the sanity checks | Proceed to step 2 | Check for pairing errors first |
+| 3.5 LOO | `twose_agreement ≥ 0.9` | Report "unchanged after repair" | Run the 3.4 K-fold and use it as the primary result (do not stop) |
+| 4.7 G3 | Pre-specified artefact rule | Empirical analysis must model difficulty; datasets with unrecorded difficulty are excluded | Datasets with unrecorded difficulty may enter the sensitivity analysis |
+| 4.7 G3 | Δlog(M) ≈ 0 for the difficulty version | Proceed to step 4 | Investigate first; do not proceed to the empirical analysis |
+| 5.5 Preparation | `acc_agreement ≥ 0.99`, `conf_acc_rho > 0` | Keep the dataset | Exclude and record |
+| 5.7 Trial run | All four trial fits behave normally and run times are acceptable | Proceed to the main run | Record the deviation (participant cap or adapt_delta), then run |
+| 5.10 Results | Any category proportions | **Report them as they are** | Do not change the rules because the results are disappointing |

@@ -1,78 +1,78 @@
-# Project 1 v3b：投稿前補強計劃與程式指南
+# Project 1 v3b: Pre-submission reinforcement plan and coding guide
 
-> **狀態（2026-10-15）：重新啟動工作包 B 和 C；D（G4 不等變異數）仍暫停（見 `docs/deferred.md`）。** 分支 `v3b-confound`，從 `main`（`ccf73cf`）開出；`v3-enhancement` 已合併並刪除，下文提到它的地方改以 `v3b-confound` 為準。`config/v3b.yml` 只含 B 和 C 用到的設定（不含 `g4`）；網格只產生 C 的 40 個 job。
+> **Status (2026-10-15): work packages B and C restarted; D (G4 unequal variance) remains paused (see `docs/deferred.md`).** Branch `v3b-confound`, created from `main` (`ccf73cf`); `v3-enhancement` has been merged and deleted, so wherever it is mentioned below, read `v3b-confound` instead. `config/v3b.yml` contains only the settings used by B and C (no `g4`); the grid generates only the 40 jobs for C.
 >
-> （2026-10-14 的狀態：暫停，等決定投稿時再啟動；當時沒有執行任何部分。）
+> (Status on 2026-10-14: paused, to be restarted once a decision to submit was made; no part had been run at that point.)
 
-> 範圍：v3 實證擬合跑完之前和之後，為了**一次順利投稿**而追加的工作。
-> 原則：**審稿人很可能要求、且 ≤ 約 2 天能完成的，現在做；其餘寫進 `docs/deferred.md`。**
-> 對應 repo：`metacognitive-noise-recovery`，分支 `v3-enhancement`（目前 HEAD = `dc2124c`）。
-> 寫於 2026-10-02。所有程式碼依 repo 現有函式寫成（`fit_one_hmetad()`、`simulate_g2_gumbel()`、`run_one_cell.R` 的紀錄格式、`v3_sdprior_hetero_validation.R` 的分片寫法）。
-> 標示 **⚠️ 先確認** 的地方，是我無法在你的 Windows R 上實際執行驗證的細節，第一次執行時請先看輸出再繼續。
-
----
-
-## 目錄
-
-- [0. 總覽](#0-總覽)
-- [1. 工作包 A：準備與事先規定（半天）](#1-工作包-a準備與事先規定半天)
-- [2. 工作包 B：d′ 混淆的偽陽性再分析（1 天，不需新擬合）](#2-工作包-bd-混淆的偽陽性再分析1-天不需新擬合)
-- [3. 工作包 C：兩組單一模型檢定（1 天 + 背景運算）](#3-工作包-c兩組單一模型檢定1-天--背景運算)
-- [4. 工作包 D：不等變異數生成器 G4（1–1.5 天 + 背景運算）](#4-工作包-d不等變異數生成器-g411.5-天--背景運算)
-- [5. 工作包 E：圖](#5-工作包-e圖)
-- [6. 工作包 F：實證分析收尾](#6-工作包-f實證分析收尾)
-- [7. 工作包 G：寫作](#7-工作包-g寫作)
-- [8. 工作包 H：投稿前清單與發佈](#8-工作包-h投稿前清單與發佈)
-- [附錄 A：常見錯誤排除](#附錄-a常見錯誤排除)
-- [附錄 B：決定點總表](#附錄-b決定點總表)
-- [附錄 C：時間表](#附錄-c時間表)
+> Scope: work added before and after the v3 empirical fits finish, in order to **submit smoothly in one go**.
+> Principle: **anything a reviewer is likely to ask for that can be done in ≤ about 2 days is done now; everything else goes into `docs/deferred.md`.**
+> Corresponding repo: `metacognitive-noise-recovery`, branch `v3-enhancement` (current HEAD = `dc2124c`).
+> Written on 2026-10-02. All code is written against the repo's existing functions (`fit_one_hmetad()`, `simulate_g2_gumbel()`, the record format of `run_one_cell.R`, the sharding approach of `v3_sdprior_hetero_validation.R`).
+> Places marked **⚠️ Check first** are details I could not actually run and verify on your Windows R; the first time you run them, look at the output before continuing.
 
 ---
 
-## 0. 總覽
+## Contents
 
-### 0.1 工作包
+- [0. Overview](#0-overview)
+- [1. Work package A: Preparation and pre-specification (half a day)](#1-work-package-a-preparation-and-pre-specification-half-a-day)
+- [2. Work package B: False-positive re-analysis of the d′ confound (1 day, no new fits)](#2-work-package-b-false-positive-re-analysis-of-the-d-confound-1-day-no-new-fits)
+- [3. Work package C: Two-group single-model test (1 day + background computing)](#3-work-package-c-two-group-single-model-test-1-day--background-computing)
+- [4. Work package D: Unequal-variance generator G4 (1–1.5 days + background computing)](#4-work-package-d-unequal-variance-generator-g4-115-days--background-computing)
+- [5. Work package E: Figures](#5-work-package-e-figures)
+- [6. Work package F: Finalising the empirical analysis](#6-work-package-f-finishing-the-empirical-analysis)
+- [7. Work package G: Writing](#7-work-package-g-writing)
+- [8. Work package H: Pre-submission checklist and release](#8-work-package-h-pre-submission-checklist-and-release)
+- [Appendix A: Troubleshooting common errors](#appendix-a-troubleshooting-common-errors)
+- [Appendix B: Summary of decision points](#appendix-b-summary-of-decision-points)
+- [Appendix C: Timeline](#appendix-c-timeline)
 
-| 包 | 內容 | 回答哪個審稿問題 | 新擬合 | 時間 |
+---
+
+## 0. Overview
+
+### 0.1 Work packages
+
+| Package | Content | Which reviewer question it answers | New fits | Time |
 |---|---|---|---|---|
-| A | 設定檔、`deferred.md`、事先規定 tag | 「這些分析是看了結果才加的嗎？」 | 否 | 半天 |
-| B | 用現有 480 個 G2 擬合算「分組各自擬合」時的偽陽性率 | 「偏差有實際後果嗎？」 | 否 | 1 天 |
-| C | 兩組（d′ 不同、log M 相同）放進**同一個模型**檢定組別差異 | 同上，用正式的組間模型 | 40 | 1 天 + 2–5 h |
-| D | 不等變異數高斯（UV）生成器，看 LOO 會不會因此偏好 Gumbel-min | 「偏好 Gumbel 會不會只是不等變異數？」 | 80 | 1–1.5 天 + 4–10 h |
-| E | 圖 10（主圖）、圖 S（補充） | — | 否 | 半天 |
-| F | 實證：LOO 修補 → PPC → 彙整 → 圖 9 | 主要實證結果 | 已在跑 | 依運算 |
-| G | 文獻定位、效果量基準、UV 討論、和 Meyer-Grant 對照、改寫論文 | 新穎性、主張範圍 | 否 | 4–6 天 |
-| H | 投稿必備項目、真人閱讀、v2.0.0、DOI、預印本、投稿 | 行政和品質 | 否 | 2 天 + 等待 |
+| A | Config file, `deferred.md`, pre-specification tag | "Were these analyses added after seeing the results?" | No | Half a day |
+| B | Use the existing 480 G2 fits to compute the false-positive rate when "each group is fitted separately" | "Does the bias have practical consequences?" | No | 1 day |
+| C | Two groups (different d′, same log M) placed in **one model** to test the group difference | As above, using a formal between-group model | 40 | 1 day + 2–5 h |
+| D | Unequal-variance Gaussian (UV) generator, to see whether LOO prefers Gumbel-min because of it | "Could the preference for Gumbel just be unequal variance?" | 80 | 1–1.5 days + 4–10 h |
+| E | Figure 10 (main figure), Figure S (supplementary) | — | No | Half a day |
+| F | Empirical: LOO fix → PPC → aggregation → Figure 9 | Main empirical results | Already running | Depends on computing |
+| G | Positioning in the literature, effect-size benchmarks, UV discussion, comparison with Meyer-Grant, rewriting the paper | Novelty, scope of claims | No | 4–6 days |
+| H | Required submission items, human read-through, v2.0.0, DOI, preprint, submission | Administration and quality | No | 2 days + waiting |
 
-**凍結點**：B、C、D 的結果出來，F 完成之後，**不再新增任何分析**。結果不論方向，都照事先規定的寫法寫進論文。
+**Freeze point**: once the results of B, C and D are in and F is complete, **no further analyses are added**. Whatever the direction of the results, they are written into the paper using the pre-specified wording.
 
-### 0.2 固定規則
+### 0.2 Fixed rules
 
-1. **分支**：繼續在 `v3-enhancement` 上做。每完成一個子步驟就 commit。
-2. **不要在分片執行中修改 `config/v3.yml`**。v3b 的所有常數放在新檔 `config/v3b.yml`。
-3. **新輸出的位置**（都不會覆寫 v1、v2、v3 的檔案）：
-   - `data/interim/v3b/`：每次擬合的紀錄（`.qs2` 已經被 `.gitignore` 排除）
-   - `data/processed/v3b/`：小型結果表，進 Git
+1. **Branch**: keep working on `v3-enhancement`. Commit after each sub-step is completed.
+2. **Do not modify `config/v3.yml` while shards are running**. All v3b constants go in the new file `config/v3b.yml`.
+3. **Locations of new outputs** (none of them overwrite v1, v2 or v3 files):
+   - `data/interim/v3b/`: the record of each fit (`.qs2` is already excluded by `.gitignore`)
+   - `data/processed/v3b/`: small result tables, committed to Git
    - `outputs/figures/v3b/`
-4. **先規定、再執行**：`config/v3b.yml` 裡的判斷規則先 commit 並 tag `v3b-prereg`，之後才跑任何 v3b 的分析，包括 B 的再分析。
-5. **每一步都在 `docs/analysis_log.md` 記一段**：日期、跑了什麼、輸出檔名、任何偏離。
-6. **擬合設定**：B、C、D 都是模擬，所以用 **v1 的正式設定**（`config/design.yml`：預設 SD 先驗、閾值不分層、1000 + 1000、adapt_delta 0.95），和 G2 一致，結果才能直接和 G2 比較。**不要**用實證的設定。
-7. **符號慣例**（v3b 統一，已寫進 `config/v3b.yml`）：
-   - `diff_high_minus_low = log M(高 d′ 組) − log M(低 d′ 組)`；真值 = 0。和 C 裡 `b_groupB` 的方向相同。
-   - `elpd_diff = elpd(normal) − elpd(gumbel_min)`：正值 = 偏好高斯（沿用 v3）。
+4. **Specify first, then run**: the decision rules in `config/v3b.yml` are committed and tagged `v3b-prereg` first, and only then is any v3b analysis run, including the re-analysis in B.
+5. **Record an entry in `docs/analysis_log.md` for every step**: date, what was run, output file names, any deviations.
+6. **Fit settings**: B, C and D are all simulations, so they use the **v1 production settings** (`config/design.yml`: default SD priors, non-hierarchical thresholds, 1000 + 1000, adapt_delta 0.95), the same as G2, so that the results can be compared directly with G2. **Do not** use the empirical settings.
+7. **Sign conventions** (unified for v3b, already written into `config/v3b.yml`):
+   - `diff_high_minus_low = log M(high-d′ group) − log M(low-d′ group)`; true value = 0. Same direction as `b_groupB` in C.
+   - `elpd_diff = elpd(normal) − elpd(gumbel_min)`: positive = Gaussian preferred (as in v3).
 
-### 0.3 運算排程
+### 0.3 Compute scheduling
 
-實證擬合目前用 4 個分片，每個 4 條鏈，共 16 條。這台機器有 22 個邏輯核心，所以 v3b **只開 1 個分片**（再加 4 條鏈，共 20 條），依序跑 C（job 1–40），再跑 D（job 41–120）。單一分片會依 job 編號順序執行，C 會先完成。
+The empirical fits currently use 4 shards with 4 chains each, 16 chains in total. This machine has 22 logical cores, so v3b **opens only 1 shard** (another 4 chains, 20 in total), running C first (jobs 1–40) and then D (jobs 41–120). A single shard runs jobs in job-number order, so C will finish first.
 
-### 0.4 新增檔案一覽
+### 0.4 List of new files
 
 ```text
 config/v3b.yml
-config/grid_v3b.csv                                   # 由腳本產生
-docs/v3b_plan.md                                      # 本文件
+config/grid_v3b.csv                                   # generated by a script
+docs/v3b_plan.md                                      # this document
 docs/deferred.md
-docs/positioning.md                                   # 工作包 G
+docs/positioning.md                                   # work package G
 code/00_setup/04_create_grid_v3b.R
 code/01_simulate/simulate_v3b_two_group.R
 code/01_simulate/simulate_g4_uv.R
@@ -88,22 +88,22 @@ tests/test_simulate_g4_uv.R
 
 ---
 
-## 1. 工作包 A：準備與事先規定（半天）
+## 1. Work package A: Preparation and pre-specification (half a day)
 
-### 1.1 確認起點
+### 1.1 Confirm the starting point
 
 ```bash
 cd metacognitive-noise-recovery
-git status            # 應該只有 renv.lock、v3_reloo_stored_fits.R（只差換行字元）和 enhancement_plan_v2.md
+git status            # should show only renv.lock, v3_reloo_stored_fits.R (line endings only) and enhancement_plan_v2.md
 git log --oneline -1  # dc2124c
 mkdir -p data/processed/v3b data/interim/v3b outputs/figures/v3b
 ```
 
-順便處理 `docs/enhancement_plan_v2.md`：在檔案最上面加一行 `> SUPERSEDED by docs/v3_plan.md and docs/v3b_plan.md; kept for the record.`，然後在 1.5 和其他檔案一起 commit。
+While you are at it, deal with `docs/enhancement_plan_v2.md`: add the line `> SUPERSEDED by docs/v3_plan.md and docs/v3b_plan.md; kept for the record.` at the very top of the file, then commit it together with the other files in 1.5.
 
 ### 1.2 `config/v3b.yml`
 
-完整內容，直接建立：
+Full contents; create it directly:
 
 ```yaml
 # v3b pre-submission additions (docs/v3b_plan.md). Locked before any v3b analysis
@@ -160,10 +160,10 @@ g4:
     two_se: 2
 ```
 
-**為什麼是這些數字**：
-- C 的格子用 N = 20 + 20、T = 200。這樣總人數 40 和 G2 的 N = 40 一致，運算量也小。
-- D 的 `sigma_ratio = 1.25` 對應 zROC 斜率 0.8，是再認記憶文獻裡常見的值；知覺作業的斜率通常較接近 1，所以 1.25 偏向「明顯的違反」。這一點要寫進 limitations。
-- D 不評估 log M 的真值回復，因為這個生成器不是 meta-d′ 模型，在 UV 下「真實 M」沒有明確定義。D 只比較 UV 和 EV 對照組之間的差異。
+**Why these numbers**:
+- The C cell uses N = 20 + 20, T = 200. This makes the total of 40 participants match G2's N = 40, and keeps the computational load small.
+- D's `sigma_ratio = 1.25` corresponds to a zROC slope of 0.8, a common value in the recognition-memory literature; slopes in perceptual tasks are usually closer to 1, so 1.25 leans towards "a clear violation". This should be stated in the limitations.
+- D does not assess recovery of the true log M, because this generator is not a meta-d′ model and the "true M" has no clear definition under UV. D only compares the differences between UV and the EV control.
 
 ### 1.3 `docs/deferred.md`
 
@@ -182,9 +182,9 @@ Rule: a new idea is written here first, never implemented the same day.
 | New PPC statistics, new figures beyond Fig. 10 / Fig. S | Main-figure budget is five | Reviewer request |
 ```
 
-### 1.4 analysis log 條目（範本）
+### 1.4 Analysis log entry (template)
 
-在 `docs/analysis_log.md` 最後加上：
+Add the following at the end of `docs/analysis_log.md`:
 
 ```markdown
 ## 2026-10-0X - v3b set-up: pre-submission additions, rules locked before any v3b analysis
@@ -199,7 +199,7 @@ Rule: a new idea is written here first, never implemented the same day.
 - `docs/deferred.md` lists what is explicitly out of scope before submission.
 ```
 
-### 1.5 Commit 和 tag
+### 1.5 Commit and tag
 
 ```bash
 git add config/v3b.yml docs/v3b_plan.md docs/deferred.md docs/analysis_log.md docs/enhancement_plan_v2.md
@@ -208,24 +208,24 @@ git tag v3b-prereg
 git push origin v3-enhancement --tags
 ```
 
-### 1.6 理解檢查
+### 1.6 Check for understanding
 
-1. 為什麼 C 和 D 要用 v1 的擬合設定，而不是實證的設定？
-2. B 裡的 d′ 對比（+0.097）已經知道了，為什麼還要事先規定？事先規定的到底是什麼？
+1. Why should C and D use the v1 fit settings rather than the empirical settings?
+2. The d′ contrast in B (+0.097) is already known, so why still pre-specify? What exactly is being pre-specified?
 
 ---
 
-## 2. 工作包 B：d′ 混淆的偽陽性再分析（1 天，不需新擬合）
+## 2. Work package B: False-positive re-analysis of the d′ confound (1 day, no new fits)
 
-### 2.1 為什麼
+### 2.1 Why
 
-G2 的每個格子是分開擬合的。實務上，很多研究也是**每組各自擬合**再比較兩組的 log M（例如病人組和健康組）。如果兩組的真實 log M 相同、只有 d′ 不同，而錯設偏差會隨 d′ 改變，那「兩組 log M 差異的 95% CrI 不含 0」的比例就是**偽陽性率**。B 直接用現有的 480 個擬合回答這個問題：
+Each G2 cell was fitted separately. In practice, many studies also **fit each group separately** and then compare the two groups' log M (e.g. a patient group and a healthy group). If the two groups have the same true log M and differ only in d′, and the misspecification bias changes with d′, then the proportion of cases in which "the 95% CrI of the between-group log M difference excludes 0" is the **false-positive rate**. B answers this question directly using the existing 480 fits:
 
-- 同一個 (N, T, rep) 下，d′ = 0.75 的格子當作「低 d′ 組」，d′ = 1.5 的格子當作「高 d′ 組」。
-- 兩個擬合的後驗是獨立的，所以差異的後驗可以把兩邊的 draws 隨機配對後相減。
-- 用正確模型（Gumbel-min）做同樣的計算當作基準：正確模型本身也可能有隨 d′ 改變的小偏差（G0 的負偏差就是），所以比較的是**兩種模型的偽陽性率之差**，而不是單純和 5% 比。
+- Within the same (N, T, rep), the d′ = 0.75 cell is treated as the "low-d′ group" and the d′ = 1.5 cell as the "high-d′ group".
+- The posteriors of the two fits are independent, so the posterior of the difference can be obtained by randomly pairing the draws from each side and subtracting.
+- The same calculation with the correct model (Gumbel-min) serves as the baseline: the correct model itself may also have a small bias that changes with d′ (the negative bias in G0 is an example), so what is compared is **the difference between the two models' false-positive rates**, rather than simply comparing with 5%.
 
-每個 fit_variant 有 6 個 N×T 格子 × 20 次 = 120 對。
+Each fit_variant has 6 N×T cells × 20 replications = 120 pairs.
 
 ### 2.2 `code/03_recovery_analysis/v3b_dprime_confound_reanalysis.R`
 
@@ -345,27 +345,27 @@ cat("\n=== Paired ===\n"); print(paired)
 cat("\nframing rule met in B:", verdict_B, "\n")
 ```
 
-### 2.3 執行與檢查
+### 2.3 Running and checking
 
 ```bash
 Rscript code/03_recovery_analysis/v3b_dprime_confound_reanalysis.R
 ```
 
-健全性檢查（依已知結果推估，不是要達成的目標）：
+Sanity checks (estimated from known results; these are not targets to hit):
 
-| 檢查 | 預期 | 若不符 |
+| Check | Expected | If not |
 |---|---|---|
-| `status counts` | 480 個中只有少數 `fail`，沒有 `error` | 有 `error` 就先查是哪個檔案 |
-| 每個擬合的 `n_draws` | 4000 | 若不是 4000，確認 `draws_b_sd` 是否被截短 |
-| misspecified 的 `mean_diff` | 負值，大約 −0.10（因為 Δ_mis 在低 d′ 較大，高減低就是負的） | 正值代表配對方向寫反了 |
-| correct 的 `mean_diff` | 接近 0，也可能有小幅系統偏差 | 不要因為不接近 0 就改程式；這正是要和 misspecified 比較的原因 |
-| `fpr` 的大小 | 預期在 T = 400 的格子最高（後驗最窄、偏差仍在） | 若 T = 100 最高，先檢查 `interval` 是否讀成 0.5 |
+| `status counts` | Only a few `fail` out of 480, no `error` | If there is an `error`, first find out which file it is |
+| `n_draws` for each fit | 4000 | If it is not 4000, check whether `draws_b_sd` has been truncated |
+| `mean_diff` for misspecified | Negative, about −0.10 (because Δ_mis is larger at low d′, high minus low is negative) | A positive value means the pairing direction is reversed |
+| `mean_diff` for correct | Close to 0, possibly with a small systematic bias | Do not change the code just because it is not close to 0; this is exactly why it is compared with misspecified |
+| Size of `fpr` | Expected to be highest in the T = 400 cells (narrowest posteriors, bias still present) | If T = 100 is highest, first check whether `interval` was read as 0.5 |
 
-### 2.4 理解檢查（寫進 analysis log）
+### 2.4 Check for understanding (write into the analysis log)
 
-1. 為什麼兩個格子的 draws 可以隨機配對相減？如果兩個擬合用的是**同一份**資料，這樣做還對嗎？
-2. 為什麼「偽陽性率」要和正確模型比，而不是和 0.05 比？
-3. 如果 misspecified 的 FPR 在 T = 400 最高，這和 v3 步驟 1 的「越來越有信心地錯」有什麼關係？
+1. Why can the draws from the two cells be randomly paired and subtracted? If the two fits used **the same** data, would this still be correct?
+2. Why should the "false-positive rate" be compared with the correct model rather than with 0.05?
+3. If the misspecified FPR is highest at T = 400, how does this relate to the "increasingly confidently wrong" finding from v3 step 1?
 
 ### 2.5 Commit
 
@@ -376,15 +376,15 @@ git commit -m "v3b B: false-positive rate for group differences under separate f
 
 ---
 
-## 3. 工作包 C：兩組單一模型檢定（1 天 + 背景運算）
+## 3. Work package C: Two-group single-model test (1 day + background computing)
 
-### 3.1 為什麼
+### 3.1 Why
 
-B 用的是「兩組各自擬合」，審稿人會問：如果把兩組放進**同一個階層模型**，加上組別共變項（多數方法學論文推薦的做法），偽陽性還在嗎？C 回答這個問題：
+B uses "each group fitted separately", and a reviewer will ask: if the two groups are placed in **one hierarchical model** with a group covariate (the approach recommended by most methods papers), do the false positives persist? C answers this question:
 
-- 資料：A 組 20 人、d′ = 0.75；B 組 20 人、d′ = 1.5；兩組 log M 都是 −1；資料由 Gumbel-min 產生。
-- 模型：log M、d′、c 都加上 `group` 共變項；關鍵參數是 **`b_groupB`**（B 組減 A 組的 log M 差，真值 = 0）。
-- 兩種擬合：`correct`（Gumbel-min）和 `misspecified`（高斯），同一份資料。
+- Data: group A has 20 participants with d′ = 0.75; group B has 20 participants with d′ = 1.5; log M is −1 in both groups; the data are generated by Gumbel-min.
+- Model: log M, d′ and c all receive a `group` covariate; the key parameter is **`b_groupB`** (the log M difference, group B minus group A; true value = 0).
+- Two fits: `correct` (Gumbel-min) and `misspecified` (Gaussian), on the same data.
 
 ### 3.2 `code/01_simulate/simulate_v3b_two_group.R`
 
@@ -409,14 +409,14 @@ simulate_two_group_g2 <- function(n_per_group, n_trials, dprime_groups, log_M,
 }
 ```
 
-⚠️ **先確認**：`hmetad::sim_metad_participant()` 輸出的 `participant` 欄位型別。在 R console 執行：
+⚠️ **Check first**: the type of the `participant` column output by `hmetad::sim_metad_participant()`. Run in the R console:
 
 ```r
 source(here::here("code", "01_simulate", "simulate_g2_gumbel.R"))
 d <- simulate_g2_gumbel(3, 20, 1, -1, seed = 1); str(d$participant); head(d)
 ```
 
-如果 `participant` 是 factor 而且 level 不是 1, 2, 3…，`as.integer()` 會變成 level 的編號，仍然唯一，所以沒問題；但請確認 `head(d)` 的欄位裡有 `stimulus`、`response`、`confidence`。
+If `participant` is a factor and its levels are not 1, 2, 3…, `as.integer()` will turn it into the level index, which is still unique, so that is fine; but please confirm that the columns in `head(d)` include `stimulus`, `response` and `confidence`.
 
 ### 3.3 `tests/test_simulate_v3b_two_group.R`
 
@@ -439,7 +439,7 @@ test_that("the high-d' group is more accurate", {
 })
 ```
 
-### 3.4 `code/00_setup/04_create_grid_v3b.R`（C 和 D 共用）
+### 3.4 `code/00_setup/04_create_grid_v3b.R` (shared by C and D)
 
 ```r
 # v3b job table for work packages C (two_group) and D (g4). Run once.
@@ -474,11 +474,11 @@ print(dplyr::count(grid, study, condition, fit_variant))
 Rscript code/00_setup/04_create_grid_v3b.R
 ```
 
-預期：two_group 40 列（job 1–40），g4 80 列（job 41–120）。
+Expected: 40 rows for two_group (jobs 1–40), 80 rows for g4 (jobs 41–120).
 
-### 3.5 `code/02_fit/run_v3b_jobs.R`（C 和 D 共用的執行器）
+### 3.5 `code/02_fit/run_v3b_jobs.R` (runner shared by C and D)
 
-這個腳本要等工作包 D 的 `simulate_g4_uv.R` 也寫好才能跑 D 的 job，但 C 的 job 可以先跑：腳本只在需要時才呼叫 G4 的模擬器。
+This script cannot run D's jobs until work package D's `simulate_g4_uv.R` has also been written, but C's jobs can run first: the script only calls the G4 simulator when it is needed.
 
 ```r
 # v3b runner for work packages C (two_group) and D (g4). Resumable, shardable.
@@ -581,7 +581,7 @@ for (id in ids) {
 }
 ```
 
-### 3.6 試跑（重要）
+### 3.6 Trial run (important)
 
 ```bash
 Rscript -e 'testthat::test_file("tests/test_simulate_v3b_two_group.R")'
@@ -589,18 +589,18 @@ Rscript code/02_fit/run_v3b_jobs.R 1     # two_group, rep 1, correct
 Rscript code/02_fit/run_v3b_jobs.R 2     # two_group, rep 1, misspecified
 ```
 
-在 R console 打開其中一個紀錄，**確認參數名稱**：
+Open one of the records in the R console and **check the parameter names**:
 
 ```r
 r <- qs2::qs_read(list.files("data/interim/v3b", "job-001", full.names = TRUE))
 r$status; grep("group", names(r$draws_b_sd), value = TRUE)
 ```
 
-⚠️ **先確認**：預期會看到 `b_groupB`（log M 的組別效果）、`b_dprime_groupB`、`b_c_groupB`。如果名稱不同（例如 `b_groupB` 不存在），把 3.7 摘要腳本裡的 `"b_groupB"` 改成實際名稱，並記在 analysis log。
+⚠️ **Check first**: you should expect to see `b_groupB` (the group effect on log M), `b_dprime_groupB` and `b_c_groupB`. If the names differ (e.g. `b_groupB` does not exist), change `"b_groupB"` in the summary script in 3.7 to the actual name, and record this in the analysis log.
 
-試跑成功後，開**一個**分片背景執行（C 的 40 個會先跑完，然後接著跑 D；D 的模擬器還沒寫好時，D 的 job 會以 `error` 結束並寫入紀錄）。
+Once the trial run succeeds, start **one** shard in the background (C's 40 jobs will finish first, followed by D; if D's simulator has not been written yet, D's jobs will end with `error` and a record will be written).
 
-⚠️ 因為錯誤紀錄也會被當成「已完成」而跳過，所以**不要在 D 的模擬器寫好之前就讓分片跑到 job 41**。做法：先只跑 C 的 job。
+⚠️ Because error records are also treated as "completed" and skipped, **do not let the shard reach job 41 before D's simulator has been written**. Approach: run only C's jobs first.
 
 ```bash
 # PowerShell: run jobs 3-40 sequentially in one terminal
@@ -666,21 +666,21 @@ print(as.data.frame(pooled), digits = 3); print(paired)
 cat("framing rule met in C:", verdict_C, "\n")
 ```
 
-### 3.8 解讀（事先規定的寫法）
+### 3.8 Interpretation (pre-specified wording)
 
-`framing_rule` 在 B **或** C 成立時：
+`framing_rule` is met if it holds in B **or** C:
 
-| 結果 | 論文主軸的寫法 |
+| Result | How the paper's main message is worded |
 |---|---|
-| 規則成立 | 「訊號分佈錯設造成的偏差會隨 d′ 改變，因此在 d′ 不同的組別之間會產生**假的 log M 差異**。」作為主要發現之一，放主圖 |
-| 規則不成立 | 「偏差主要是各組共同的位移；組間比較大致穩健，但**絕對**的 log M 值（例如和 1 比、跨研究比較）會受影響。」也是有用的結論，放主圖但語氣保守 |
+| Rule met | "The bias caused by misspecifying the signal distribution changes with d′, and therefore produces **spurious log M differences** between groups that differ in d′." Presented as one of the main findings, in a main figure |
+| Rule not met | "The bias is mainly a shift common to all groups; between-group comparisons are broadly robust, but **absolute** log M values (e.g. comparisons with 1, or comparisons across studies) are affected." Also a useful conclusion, in a main figure but with cautious wording |
 
-兩種結果**都要報告**，不能因為結果不明顯就刪掉。
+**Both outcomes must be reported**; neither may be dropped because the result is not striking.
 
-### 3.9 理解檢查
+### 3.9 Check for understanding
 
-1. `b_groupB` 的真值為什麼是 0？如果 C 的正確模型（Gumbel-min）偽陽性率也明顯高於 5%，可能是什麼原因？
-2. 為什麼 d′ 和 c 也要放 `group` 共變項？如果只在 log M 放，會發生什麼？
+1. Why is the true value of `b_groupB` 0? If the false-positive rate of the correct model (Gumbel-min) in C is also clearly above 5%, what might be the reason?
+2. Why should d′ and c also receive the `group` covariate? What would happen if it were added only to log M?
 
 ### 3.10 Commit
 
@@ -691,27 +691,27 @@ git add code/01_simulate/simulate_v3b_two_group.R tests/test_simulate_v3b_two_gr
 git commit -m "v3b C: two-group single-model test of a spurious log_M difference (40 fits)"
 ```
 
-（腳本寫好、試跑成功時可以先 commit 一次程式碼，結果出來後再 commit 一次結果。）
+(You can commit the code once when the scripts are written and the trial run succeeds, and then commit the results again once they are in.)
 
 ---
 
-## 4. 工作包 D：不等變異數生成器 G4（1–1.5 天 + 背景運算）
+## 4. Work package D: unequal-variance generator G4 (1–1.5 days + background computing)
 
-### 4.1 為什麼和設計
+### 4.1 Rationale and design
 
-如果實證資料偏好 Gumbel-min，審稿人一定會問：「這會不會只是因為訊號的變異數不相等？」Gumbel-min 和不等變異數高斯（UV）都會讓 ROC 不對稱。D 只回答一個問題：**UV 資料會不會讓 LOO 偏好 Gumbel-min？**
+If the empirical data favour Gumbel-min, reviewers will certainly ask: "Could this simply be because the signal variances are unequal?" Gumbel-min and the unequal-variance Gaussian (UV) both make the ROC asymmetric. D answers only one question: **do UV data make LOO favour Gumbel-min?**
 
-設計：
-- 生成器：S1 的證據 ~ N(−d′/2, 1)，S2 的證據 ~ N(+d′/2, σ)。EV 對照組 σ = 1，UV 組 σ = 1.25。
-- 回應：證據 > 該受試者的標準 c_j 時回答 1。
-- 信心：在證據上再加一個雜訊 ε ~ N(0, σ_meta)，用「往所選方向離標準多遠」來分 4 級。這讓後設認知不完美，比較接近真實資料。
-- **配對**：同一個 (d′, rep) 下 EV 和 UV 用同一個種子，所以刺激、標準和所有標準常態亂數都一樣，只差 S2 的 SD。兩組的差異幾乎全部來自變異數，Monte Carlo 雜訊很小。
-- 每份資料擬合兩次：高斯和 Gumbel-min。2 個 d′ × 2 條件 × 10 次 × 2 種擬合 = 80 個擬合。
+Design:
+- Generator: S1 evidence ~ N(−d′/2, 1), S2 evidence ~ N(+d′/2, σ). EV control condition σ = 1, UV condition σ = 1.25.
+- Response: answer 1 when evidence > that participant's criterion c_j.
+- Confidence: add a further noise term ε ~ N(0, σ_meta) to the evidence, and bin "how far it lies from the criterion in the chosen direction" into 4 levels. This makes metacognition imperfect, which is closer to real data.
+- **Pairing**: for the same (d′, rep), EV and UV use the same seed, so the stimuli, criteria and all standard normal random numbers are identical; only the SD of S2 differs. Almost all of the difference between the two conditions comes from the variance, and Monte Carlo noise is very small.
+- Each dataset is fitted twice: Gaussian and Gumbel-min. 2 d′ × 2 conditions × 10 replications × 2 fits = 80 fits.
 
-D 回報的結果：
-1. LOO 偏好 Gumbel-min（> 2 SE）的比例：UV 對 EV，套用事先規定的 `mimicry_rule`。
-2. UV 造成的 log M 位移：同一配對下，高斯擬合的 log M(UV) − log M(EV)。
-3. 家族差：log M(normal) − log M(gumbel)，在 EV 和 UV 下各是多少。
+Results reported by D:
+1. Proportion of datasets in which LOO favours Gumbel-min (> 2 SE): UV versus EV, applying the pre-specified `mimicry_rule`.
+2. UV-induced shift in log M: within the same pair, log M(UV) − log M(EV) from the Gaussian fit.
+3. Family gap: log M(normal) − log M(gumbel), under EV and under UV separately.
 
 ### 4.2 `code/01_simulate/simulate_g4_uv.R`
 
@@ -766,7 +766,7 @@ zroc_slope <- function(d, K) {
 }
 ```
 
-**為什麼要分開抽 `z_x` 和 `z_m`**：這樣 EV 和 UV 在同一個種子下用的是完全相同的亂數，只是 S2 的證據乘上不同的 SD。如果改成 `rnorm(n, mu, sd)` 交錯抽取，兩組還是會配對，但寫成標準常態乘以 SD 比較清楚，也比較容易檢查。
+**Why `z_x` and `z_m` are drawn separately**: this way EV and UV use exactly the same random numbers under the same seed; only the S2 evidence is multiplied by a different SD. If you switched to interleaved draws with `rnorm(n, mu, sd)`, the two conditions would still be paired, but writing it as a standard normal multiplied by the SD is clearer and easier to check.
 
 ### 4.3 `tests/test_simulate_g4_uv.R`
 
@@ -816,33 +816,33 @@ test_that("accuracy rises with d'", {
 Rscript -e 'testthat::test_file("tests/test_simulate_g4_uv.R")'
 ```
 
-**如果「每個信心等級都 > 5%」的測試失敗**：代表 `conf_thresholds` 對這個證據尺度不合適。只能在**送出任何 G4 擬合之前**調整 `config/v3b.yml` 的 `conf_thresholds`，記進 analysis log，commit 之後再跑。這屬於生成器校準，不是看結果後的修改，但仍然要記錄。
+**If the "every confidence level > 5%" test fails**: this means `conf_thresholds` is not suitable for this evidence scale. You may adjust `conf_thresholds` in `config/v3b.yml` only **before submitting any G4 fits**; record it in the analysis log, commit, and then run. This counts as generator calibration, not a change made after seeing results, but it must still be recorded.
 
-另外做一次目視檢查（不進測試）：
+Also do one visual check (not part of the tests):
 
 ```r
 d_ev <- simulate_g4_uv(40, 200, 1.5, 1.00, 1, c(.5, 1, 1.5), seed = 9)
 d_uv <- simulate_g4_uv(40, 200, 1.5, 1.25, 1, c(.5, 1, 1.5), seed = 9)
-c(ev = zroc_slope(d_ev, 4), uv = zroc_slope(d_uv, 4))   # 預期 uv < ev
+c(ev = zroc_slope(d_ev, 4), uv = zroc_slope(d_uv, 4))   # expect uv < ev
 prop.table(table(d_uv$confidence))
 ```
 
-### 4.4 執行
+### 4.4 Running
 
-C 的 40 個 job 跑完（或至少確認 job 1–2 正常）之後：
+After C's 40 jobs have finished (or at least after confirming that jobs 1–2 are fine):
 
 ```bash
 Rscript code/02_fit/run_v3b_jobs.R 41      # g4, d' 0.75, ev, rep 1, normal
-Rscript code/02_fit/run_v3b_jobs.R 42      # 同一份資料, gumbel_min
+Rscript code/02_fit/run_v3b_jobs.R 42      # same dataset, gumbel_min
 ```
 
-確認兩個紀錄的 `status` 和 `loo`（不是 NULL）：
+Check `status` and `loo` (not NULL) in both records:
 
 ```r
 r <- qs2::qs_read(list.files("data/interim/v3b", "job-041", full.names = TRUE)); r$status; class(r$loo)
 ```
 
-沒問題的話依序跑完：
+If everything looks fine, run the rest in order:
 
 ```powershell
 for ($i = 43; $i -le 120; $i++) { Rscript code/02_fit/run_v3b_jobs.R $i }
@@ -926,19 +926,19 @@ print(as.data.frame(rates), digits = 3); print(as.data.frame(shift), digits = 3)
 cat("\nG4 verdict:", verdict, "\n")
 ```
 
-### 4.6 解讀（事先規定）
+### 4.6 Interpretation (pre-specified)
 
-| G4 結果 | 對實證結果的解讀 |
+| G4 result | Interpretation of the empirical results |
 |---|---|
-| **UV 會模仿 Gumbel-min** | 實證資料偏好 Gumbel-min 時，只能寫成「證據分佈**不對稱或變異數不相等**」，**不能**寫成「Gumbel-min 特別適合」 |
-| **UV 不會模仿** | 實證資料偏好 Gumbel-min 時，可以寫「偏好不是由這種程度的不等變異數造成」，但仍要說明只測了一個變異數比 |
-| EV 對照組本身就常偏好 Gumbel-min（> 10%） | 代表這個生成器（加了後設認知雜訊）本身就偏離兩個模型；照實報告，並在 limitations 說明 |
+| **UV mimics Gumbel-min** | When the empirical data favour Gumbel-min, this can only be written as "the evidence distributions are **asymmetric or have unequal variances**", **not** as "Gumbel-min is a particularly good fit" |
+| **UV does not mimic** | When the empirical data favour Gumbel-min, you can write "the preference is not caused by this degree of unequal variance", but you must still state that only one variance ratio was tested |
+| The EV control condition itself often favours Gumbel-min (> 10%) | This means the generator (with added metacognitive noise) itself departs from both models; report it as is, and explain it in the limitations |
 
-### 4.7 理解檢查
+### 4.7 Check for understanding
 
-1. 為什麼 G4 沒有「log M 真值」？為什麼用 EV 對照組就能回答我們要的問題？
-2. 為什麼 σ_meta = 0 時 zROC 斜率剛好是 1/σ？σ_meta > 0 時為什麼不是？
-3. 如果 UV 讓高斯擬合的 log M 往上移，這和 G2 的 Δ_mis 方向一致嗎？代表什麼？
+1. Why does G4 have no "true log M"? Why is the EV control condition enough to answer the question we care about?
+2. Why is the zROC slope exactly 1/σ when σ_meta = 0? Why is it not when σ_meta > 0?
+3. If UV shifts the Gaussian fit's log M upwards, is this in the same direction as G2's Δ_mis? What would that imply?
 
 ### 4.8 Commit
 
@@ -950,9 +950,9 @@ git commit -m "v3b D: unequal-variance generator (G4) and pre-specified mimicry 
 
 ---
 
-## 5. 工作包 E：圖
+## 5. Work package E: figures
 
-主圖預算最多 5 張（見 7.5）。B + C 的結果是主圖候選，D 放補充材料。沿用 `fig_6_relative_bias.R` 的主題和 Okabe–Ito 色票。
+The budget for main figures is at most 5 (see 7.5). The B + C results are candidates for main figures; D goes in the supplementary material. Reuse the theme and Okabe–Ito palette from `fig_6_relative_bias.R`.
 
 ### 5.1 `code/05_figures/fig_10_dprime_confound.R`
 
@@ -1025,9 +1025,9 @@ git add code/05_figures/fig_10_dprime_confound.R code/05_figures/fig_S_g4_uv.R o
 git commit -m "v3b figures: Fig. 10 (d' confound) and Fig. S (G4 unequal variance)"
 ```
 
-### 5.3 Makefile 和 `run_v3.R`
+### 5.3 Makefile and `run_v3.R`
 
-在 `Makefile` 最後加上：
+Add the following at the end of the `Makefile`:
 
 ```make
 .PHONY: v3b-reanalysis v3b-fits v3b-summary v3b-figures
@@ -1048,47 +1048,47 @@ v3b-figures:
 	$(RSCRIPT) code/05_figures/fig_S_g4_uv.R
 ```
 
-在 `code/run_v3.R` 不需重擬合的步驟清單裡，加上 `v3b_dprime_confound_reanalysis.R`、兩個 summary 和兩個圖的腳本，順序同上。
+In `code/run_v3.R`, add `v3b_dprime_confound_reanalysis.R`, the two summary scripts and the two figure scripts to the list of steps that do not require refitting, in the same order as above.
 
 ---
 
-## 6. 工作包 F：實證分析收尾
+## 6. Work package F: finishing the empirical analysis
 
-這部分的程式碼都已經存在（`docs/v3_plan.md` §5.8–5.10），這裡只列順序和檢查點。
+The code for this part already exists (`docs/v3_plan.md` §5.8–5.10); only the order and checkpoints are listed here.
 
-### 6.1 擬合完成後的步驟
+### 6.1 Steps after fitting is complete
 
 ```bash
-# 1. 確認 90 個擬合都在
+# 1. Confirm that all 90 fits are present
 Rscript -e 'length(list.files("data/interim/v3_empirical/fits", "[.]qs2$"))'   # 90
-# 2. LOO 修補（reloo 或分組 K-fold，依事先規定的比例）
+# 2. LOO repair (reloo or grouped K-fold, according to the pre-specified proportion)
 Rscript code/06_empirical/05_loo_repair.R
 # 3. PPC
 Rscript code/06_empirical/06_ppc_dataset.R
-# 4. 彙整：主要分類 + 事先規定的探索性分析 + SD 先驗檢查
+# 4. Summary: main classification + pre-specified exploratory analyses + SD prior check
 Rscript code/06_empirical/07_summarise_empirical.R
-# 5. 圖 9
+# 5. Figure 9
 Rscript code/05_figures/fig_9_empirical.R
 ```
 
-### 6.2 檢查點
+### 6.2 Checkpoints
 
-| 檢查 | 位置 | 若不符 |
+| Check | Location | If it does not match |
 |---|---|---|
-| 每個資料集的兩個家族都用同一種 LOO 修補方法 | `05_loo_repair.R` 的輸出 `method` | 程式已保證；若不一致，先查 `prop_bad` |
-| `exploratory_*.csv` 四個檔都產生了 | `data/processed/v3/empirical/` | 確認 `07_summarise_empirical.R` 沒有在中途停止 |
-| `flag_sd_prior` 欄位存在 | `empirical_by_dataset.csv` | 照 `config/v3.yml` 的 `sd_prior_check` |
-| 類別比例 | `empirical_category_summary.csv` | **照實報告**，不因結果改規則 |
+| Both families in each dataset use the same LOO repair method | `method` in the output of `05_loo_repair.R` | Guaranteed by the code; if inconsistent, check `prop_bad` first |
+| All four `exploratory_*.csv` files have been produced | `data/processed/v3/empirical/` | Confirm that `07_summarise_empirical.R` did not stop part-way |
+| The `flag_sd_prior` column exists | `empirical_by_dataset.csv` | Follow `sd_prior_check` in `config/v3.yml` |
+| Category proportions | `empirical_category_summary.csv` | **Report as is**; do not change the rules because of the results |
 
-### 6.3 用 v3b 的結果解讀實證（事先規定）
+### 6.3 Interpreting the empirical results using v3b (pre-specified)
 
-| 實證結果 | G4 有模仿 | G4 沒有模仿 |
+| Empirical result | G4 mimicry present | G4 mimicry absent |
 |---|---|---|
-| 多數偏好 Gumbel-min | 「證據分佈不對稱或變異數不等」 | 「偏好不是由這種程度的不等變異數造成」 |
-| 多數偏好高斯 | 「在這些資料中高斯假設大致適當」 | 同左 |
-| 多數不明確 | 「在常見資料量下，分佈假設難以辨識；但模擬顯示偏差仍存在」 | 同左 |
+| Majority favour Gumbel-min | "The evidence distributions are asymmetric or have unequal variances" | "The preference is not caused by this degree of unequal variance" |
+| Majority favour Gaussian | "In these data the Gaussian assumption is broadly adequate" | Same as left |
+| Majority inconclusive | "At typical data sizes the distributional assumption is hard to identify; but the simulations show that the bias still exists" | Same as left |
 
-再加上 B/C 的結論：若實證中**有條件差異**的資料集裡，兩個家族的條件對比結論翻轉（`conclusion_flip`），就是 B/C 在真實資料中的例證；沒有翻轉也照實報告。
+Add the B/C conclusions as well: if, among empirical datasets **with a condition difference**, the conclusion about the condition contrast flips between the two families (`conclusion_flip`), this is a real-data illustration of B/C; if there is no flip, report that as is too.
 
 ### 6.4 Commit
 
@@ -1099,104 +1099,104 @@ git commit -m "v3 empirical: LOO repair, PPC, pre-specified summary and explorat
 
 ---
 
-## 7. 工作包 G：寫作
+## 7. Work package G: writing
 
-### 7.1 `docs/positioning.md`（半天）
+### 7.1 `docs/positioning.md` (half a day)
 
-三段，總長 ≤ 1 頁：
+Three paragraphs, total length ≤ 1 page:
 
-1. **他們做了什麼**：
-   - Rausch, Hellmann & Zehetleitner（*Psychological Methods*）：改變信心機制，訊號都是高斯。**卷期和 DOI 要自己核對。**
-   - Meyer-Grant, Kellen, Harding & Singmann（*Psychological Review*）：在再認記憶的信心 ROC 上比較 Gumbel-min 和高斯，樣本外預測多半偏好 Gumbel-min。
-   - Rahnev（2025, *Nature Communications*）：用實證資料評估 17 種指標，全部假設等變異數高斯。
-   - `hmetad` 的 alternative distributions vignette：只示範正確設定下的參數回復。
-2. **本研究補上什麼**：在 meta-d′ type-2 框架和階層模型中，量化分佈錯設對 log M 的影響（包括隨 d′ 改變的偏差和由此產生的假組間差異）、它能不能被偵測、它和不等變異數的關係，以及在知覺信心資料中的實證關聯。
-3. **本研究不主張什麼**：meta-d′ 無效；第一個發現 meta-d′ 依賴假設；Gumbel-min 是人類證據的真實分佈；log M 測量的是 σ_c。
+1. **What they did**:
+   - Rausch, Hellmann & Zehetleitner (*Psychological Methods*): varied the confidence mechanism, with Gaussian signals throughout. **Check the volume, issue and DOI yourself.**
+   - Meyer-Grant, Kellen, Harding & Singmann (*Psychological Review*): compared Gumbel-min and Gaussian on confidence ROCs in recognition memory; out-of-sample prediction mostly favoured Gumbel-min.
+   - Rahnev (2025, *Nature Communications*): evaluated 17 measures using empirical data, all assuming the equal-variance Gaussian.
+   - The `hmetad` alternative distributions vignette: demonstrates parameter recovery only under correct specification.
+2. **What this study adds**: within the meta-d′ type-2 framework and hierarchical models, it quantifies the effect of distributional misspecification on log M (including bias that changes with d′ and the resulting spurious group differences), whether it can be detected, its relationship with unequal variance, and the empirical association in perceptual confidence data.
+3. **What this study does not claim**: that meta-d′ is invalid; that it is the first to find that meta-d′ depends on assumptions; that Gumbel-min is the true distribution of human evidence; that log M measures σ_c.
 
-「第一個」一律改成「據我們所知」。
+Always replace "the first" with "to our knowledge".
 
-### 7.2 效果量基準（半天，**最多 3 篇**）
+### 7.2 Effect-size benchmarks (half a day, **at most 3 papers**)
 
-目的：把 Δ_mis（約 0.1–0.25 log 單位）和 B/C 的組間差異，放在實際研究的尺度上比較。
+Aim: to compare Δ_mis (about 0.1–0.25 log units) and the B/C group differences against the scale seen in real studies.
 
-做法：
-1. 從你已知的文獻裡挑 2–3 篇有報告**組間或條件間 M-ratio（或 log M-ratio）差異**的研究。可以優先找 Confidence Database 相關論文，或用 HMeta-d 分析臨床族群的研究。
-2. 每篇記下：族群或條件、M-ratio 的組平均、差異值、是否在 log 尺度。換算方式：log M 差 = log(M₁) − log(M₂)。
-3. 做成一個小表放進 Discussion：「Δ_mis 約等於這些研究報告的組間差異的 X%」。
+Method:
+1. From literature you already know, pick 2–3 studies that report **between-group or between-condition differences in M-ratio (or log M-ratio)**. You could prioritise papers related to the Confidence Database, or studies using HMeta-d to analyse clinical populations.
+2. For each paper, record: population or condition, group mean M-ratio, difference value, and whether it is on the log scale. Conversion: log M difference = log(M₁) − log(M₂).
+3. Make a small table for the Discussion: "Δ_mis is approximately X% of the group differences reported in these studies".
 
-**規則**：只用你自己從原文讀到的數字。我沒有替你查這些數值，所以文件裡沒有放任何數字，不要從二手來源抄。
+**Rule**: use only numbers you have read yourself in the original papers. I have not looked up these values for you, so the document contains no numbers; do not copy them from secondary sources.
 
-### 7.3 不等變異數的討論段落（含 G4 結果）
+### 7.3 Discussion paragraph on unequal variance (including G4 results)
 
-結構（約 200 字）：
-1. 不等變異數高斯是知覺和記憶研究中最常見的違反（zROC 斜率 ≠ 1）。
-2. Gumbel-min 也會產生不對稱的 ROC，兩者可能互相模仿。
-3. G4 的結果：UV（SD 比 1.25）是否讓 LOO 偏好 Gumbel-min，以及它對高斯擬合 log M 的位移（引用 `d_g4_*` 的數字）。
-4. 限制：只測一個 SD 比；只有一種生成器（加了後設認知雜訊的 SDT）。
+Structure (about 200 words):
+1. The unequal-variance Gaussian is the most common violation in perception and memory research (zROC slope ≠ 1).
+2. Gumbel-min also produces asymmetric ROCs, so the two may mimic each other.
+3. G4 results: whether UV (SD ratio 1.25) makes LOO favour Gumbel-min, and the shift it causes in the Gaussian fit's log M (cite the numbers from `d_g4_*`).
+4. Limitations: only one SD ratio tested; only one generator (SDT with added metacognitive noise).
 
-### 7.4 和 Meyer-Grant et al. 的對照（一段）
+### 7.4 Comparison with Meyer-Grant et al. (one paragraph)
 
-只做質性比較：你的**記憶**資料集（次要分析）偏好的方向，和他們的結果一致嗎？不逐一比對資料集（已寫進 `deferred.md`）。
+Qualitative comparison only: is the direction of preference in your **memory** datasets (secondary analysis) consistent with their results? Do not compare dataset by dataset (already recorded in `deferred.md`).
 
-### 7.5 改寫論文
+### 7.5 Revising the paper
 
-結構沿用 `docs/enhancement_plan_v2.md` 的 Stage 4，更新如下：
+Keep the structure from Stage 4 of `docs/enhancement_plan_v2.md`, updated as follows:
 
-**主要結果順序**
-1. 健全性檢查（G0 校準，簡短；G1 移到補充材料）
-2. 錯設的後果：Δ_mis、隨 d′ 改變、不隨資料量消失、覆蓋率
-3. **假的組間差異**（B + C）
-4. 可偵測性：LOO（修補後）、最高信心格的 PPC
-5. 替代解釋：G3（難度混合）、G4（不等變異數）
-6. 實證：類別比例、log M 和條件對比的改變、SD 先驗檢查、探索性的診斷表
+**Order of main results**
+1. Sanity checks (G0 calibration, brief; G1 moved to the supplementary material)
+2. Consequences of misspecification: Δ_mis, change with d′, not disappearing with more data, coverage
+3. **Spurious group differences** (B + C)
+4. Detectability: LOO (after repair), PPC of the highest-confidence cells
+5. Alternative explanations: G3 (difficulty mixture), G4 (unequal variance)
+6. Empirical: category proportions, changes in log M and condition contrasts, SD prior check, exploratory diagnostic tables
 
-**主圖（最多 5 張）**
+**Main figures (at most 5)**
 
-| # | 內容 | 來源 |
+| # | Content | Source |
 |---|---|---|
-| 1 | 設計總覽（更新 `fig_1_design.R`，加入 G3、G4、兩組設計） | — |
-| 2 | Δ_mis 和覆蓋率 | 圖 6 |
-| 3 | 假的組間差異 | 圖 10 |
-| 4 | 可偵測性：LOO 修補前後 + 目標式 PPC | 圖 7 + v1.2 的 PPC 圖 |
-| 5 | 實證結果 | 圖 9 |
+| 1 | Design overview (update `fig_1_design.R` to add G3, G4 and the two-group design) | — |
+| 2 | Δ_mis and coverage | Figure 6 |
+| 3 | Spurious group differences | Figure 10 |
+| 4 | Detectability: LOO before and after repair + targeted PPC | Figure 7 + the v1.2 PPC figure |
+| 5 | Empirical results | Figure 9 |
 
-補充材料：G1、G3（圖 8）、G4（圖 S）、v1 的圖 5–7、所有探索性表格。
+Supplementary material: G1, G3 (Figure 8), G4 (Figure S), v1 Figures 5–7, all exploratory tables.
 
-**Methods 要明確寫出的事**
-- 每個事先規定的 tag 和 commit（`v3-prereg-g3`、`v3-prereg-empirical`、`v3b-prereg`），以及每一次偏離（取樣設定、受試者上限 100、SD 先驗），附上 commit hash。
-- 實證的 LOO 單位是「受試者 × 條件」的聚合計數。
-- 已知限制：一種錯設家族加一個 UV 比、一個 log M 真值、K = 4、只用 `hmetad`/brms。
+**What Methods must state explicitly**
+- Every pre-specified tag and commit (`v3-prereg-g3`, `v3-prereg-empirical`, `v3b-prereg`), and every deviation (sampling settings, 100-participant cap, SD prior), with the commit hash.
+- The empirical LOO unit is aggregated counts per "participant × condition".
+- Known limitations: one misspecification family plus one UV ratio, one true log M value, K = 4, `hmetad`/brms only.
 
-**寫作規則**：「與……相關」、「與……一致」；每個數字都能追溯到 `data/processed/` 的某個 CSV；**摘要最後寫**，從數字寫起（五步：問題 → 設計 → 後果 → 可偵測性 → 實證）。
+**Writing rules**: "was associated with", "was consistent with"; every number must be traceable to a CSV in `data/processed/`; **write the abstract last**, starting from the numbers (five steps: question → design → consequences → detectability → empirical).
 
 ---
 
-## 8. 工作包 H：投稿前清單與發佈
+## 8. Work package H: pre-submission checklist and release
 
-### 8.1 投稿必備項目
+### 8.1 Essential submission items
 
-- [ ] 資料與程式碼可得性聲明（GitHub + Zenodo DOI；原始資料不附，附下載說明和 `raw_manifest.csv`）
-- [ ] 事先規定的聲明：tag、commit、偏離清單，並說明這不是正式的預先註冊（沒有第三方時間戳記）
-- [ ] Confidence Database 的授權和引用：資料庫論文（Rahnev et al., 2020）＋**每個用到的資料集的原始論文**
-- [ ] 二手資料的倫理聲明（公開、去識別化的資料；依期刊要求寫）
-- [ ] CRediT 作者貢獻、利益衝突、經費聲明
-- [ ] **AI 使用聲明**（依期刊政策，寫明哪些部分用了 AI 協助）
-- [ ] `README.md`：v2.0 狀態、重現指令（`make v3b-*` 等）、新圖、資料取得方式
-- [ ] `CITATION.cff` 改成 2.0.0；`docs/deliverables_checklist.md` 更新
-- [ ] 期刊格式、字數、圖數限制；投稿信；推薦審稿人（避開利益衝突）
-- [ ] 全部測試通過：`Rscript -e 'testthat::test_dir("tests")'`
-- [ ] 從乾淨的 clone 重跑不需擬合的步驟（`code/run_downstream.R`、`code/run_v3.R`），確認數字一致
+- [ ] Data and code availability statement (GitHub + Zenodo DOI; raw data not included, with download instructions and `raw_manifest.csv`)
+- [ ] Pre-specification statement: tags, commits, list of deviations, and a note that this is not a formal preregistration (no third-party timestamp)
+- [ ] Confidence Database licence and citations: the database paper (Rahnev et al., 2020) + **the original paper for every dataset used**
+- [ ] Ethics statement for secondary data (public, de-identified data; write according to journal requirements)
+- [ ] CRediT author contributions, conflicts of interest, funding statement
+- [ ] **AI use statement** (according to journal policy, stating which parts used AI assistance)
+- [ ] `README.md`: v2.0 status, reproduction commands (`make v3b-*` etc.), new figures, data access
+- [ ] Change `CITATION.cff` to 2.0.0; update `docs/deliverables_checklist.md`
+- [ ] Journal formatting, word count and figure limits; cover letter; suggested reviewers (avoiding conflicts of interest)
+- [ ] All tests pass: `Rscript -e 'testthat::test_dir("tests")'`
+- [ ] From a clean clone, rerun the steps that do not require fitting (`code/run_downstream.R`, `code/run_v3.R`) and confirm the numbers match
 
-### 8.2 真人閱讀（最容易跳過，價值最高）
+### 8.2 Human readers (the easiest to skip, the most valuable)
 
-- 找 1–2 位讀者：導師、實驗室同事，或做後設認知、計算建模的人。
-- 請他們回答三個問題：
-  1. 貢獻相對於 Rausch et al. 和 Meyer-Grant et al. 清楚嗎？
-  2. 有沒有說過頭的地方？
-  3. 哪一個結果最有說服力？哪一個最弱？
-- 給他們 1–2 週。他們的意見只用來**改寫**，不用來新增分析（除非指出明確的錯誤）。
+- Find 1–2 readers: a supervisor, a lab colleague, or someone working on metacognition or computational modelling.
+- Ask them to answer three questions:
+  1. Is the contribution clear relative to Rausch et al. and Meyer-Grant et al.?
+  2. Are there any places where claims go too far?
+  3. Which result is most convincing? Which is weakest?
+- Give them 1–2 weeks. Use their comments only for **rewriting**, not for adding new analyses (unless they point out a clear error).
 
-### 8.3 發佈和投稿
+### 8.3 Release and submission
 
 ```bash
 git checkout main
@@ -1205,55 +1205,55 @@ git tag v2.0.0
 git push origin main --tags
 ```
 
-1. 透過 Zenodo–GitHub 整合取得 v2.0.0 的 DOI。
-2. 上傳 PsyArXiv，連結 GitHub 和 DOI。
-3. 讀 2–3 本候選期刊的 aims & scope 和預印本政策（建議順序：*Behavior Research Methods* → *Computational Brain & Behavior* → *Meta-Psychology* 或 *Neuroscience of Consciousness*），選一本投稿。
-4. 投稿後才把 CV 改成「Preprint (under review)」。
+1. Obtain a DOI for v2.0.0 through the Zenodo–GitHub integration.
+2. Upload to PsyArXiv, linking GitHub and the DOI.
+3. Read the aims & scope and preprint policies of 2–3 candidate journals (suggested order: *Behavior Research Methods* → *Computational Brain & Behavior* → *Meta-Psychology* or *Neuroscience of Consciousness*), and choose one to submit to.
+4. Only after submission, change the CV entry to "Preprint (under review)".
 
 ---
 
-## 附錄 A：常見錯誤排除
+## Appendix A: troubleshooting common errors
 
-| 症狀 | 可能原因 | 處理 |
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| `could not find function "gumbel_min_lcdf"` | 沒有 source `simulate_g2_gumbel.R` | `run_v3b_jobs.R` 第一行已經 source；自己寫的測試腳本也要加 |
-| `fit_one_hmetad: every covariate must also be listed in agg_by` | C 的 `agg_by` 沒有設成 `"group"` | 檢查 `fit_job()` 的 `two` 判斷 |
-| 找不到 `b_groupB` | 因子 level 名稱不同 | 照 3.6 的方法看實際名稱，改摘要腳本並記錄 |
-| `priors do not correspond to any model parameter` | 有設 `log_M_b_prior` 但公式裡沒有 log M 共變項 | 只有 two_group 會傳 `log_M_covariates`；預設值已處理 |
-| G4 的 job 狀態是 `error`，訊息提到 `simulate_g4_uv.R not written yet` | 在 D 的模擬器寫好之前就跑到 job 41 以後 | 刪除那些 `g4_*` 的錯誤紀錄後重跑（只刪 `status == "error"` 的） |
-| `confidence must be coded 1:K` | G4 的閾值數和 `design.yml` 的 K 不一致 | `conf_thresholds` 必須是 3 個值（K = 4） |
-| 測試 zROC 斜率失敗 | 試次不夠或閾值落在極端 | 用 200000 個試次；確認 `sd_threshold_jitter = 0`、`sd_criterion = 0` |
-| 加上 v3b 分片後實證擬合明顯變慢 | CPU 爭用 | 正常；必要時先暫停 v3b 的迴圈（Ctrl+C，已完成的不會重跑） |
-| `pivot_wider` 產生 list 欄位 | 某個 key 組合重複 | `count(..., fit_variant) |> filter(n > 1)` 找出重複並記錄 |
+| `could not find function "gumbel_min_lcdf"` | `simulate_g2_gumbel.R` was not sourced | The first line of `run_v3b_jobs.R` already sources it; your own test scripts must source it too |
+| `fit_one_hmetad: every covariate must also be listed in agg_by` | C's `agg_by` was not set to `"group"` | Check the `two` condition in `fit_job()` |
+| `b_groupB` not found | The factor level name is different | Use the method in 3.6 to see the actual name, update the summary script and record it |
+| `priors do not correspond to any model parameter` | `log_M_b_prior` is set but the formula has no log M covariate | Only two_group passes `log_M_covariates`; the default already handles this |
+| A G4 job has status `error` and the message mentions `simulate_g4_uv.R not written yet` | Jobs from 41 onwards were run before D's simulator was written | Delete those `g4_*` error records and rerun (delete only those with `status == "error"`) |
+| `confidence must be coded 1:K` | The number of G4 thresholds does not match K in `design.yml` | `conf_thresholds` must contain 3 values (K = 4) |
+| zROC slope test fails | Too few trials or thresholds at extreme values | Use 200000 trials; confirm `sd_threshold_jitter = 0` and `sd_criterion = 0` |
+| Empirical fits become noticeably slower after adding v3b shards | CPU contention | Normal; if necessary, pause the v3b loop first (Ctrl+C; completed jobs will not be rerun) |
+| `pivot_wider` produces list columns | A key combination is duplicated | Use `count(..., fit_variant) |> filter(n > 1)` to find the duplicates and record them |
 
-## 附錄 B：決定點總表
+## Appendix B: summary of decision points
 
-| 位置 | 條件 | 成立 | 不成立 |
+| Location | Condition | If met | If not met |
 |---|---|---|---|
-| 1.5 | `v3b-prereg` 已 tag 並 push | 開始 B | 先完成 |
-| 2.3 | B 的健全性檢查符合 | 進入 C | 先查配對方向和檔名 |
-| 3.6 | C 的試跑有 `b_groupB` | 跑完 40 個 | 改參數名稱並記錄 |
-| 3.8 | `framing_rule` 在 B 或 C 成立 | 主軸：「假的組間差異」 | 主軸：「共同位移，絕對值受影響」（兩者都報告） |
-| 4.3 | G4 測試全部通過 | 送出 80 個擬合 | 只能調整 `conf_thresholds`，記錄後再 commit |
-| 4.6 | `mimicry_rule` 成立 | 實證偏好 Gumbel 時寫成「不對稱或變異數不等」 | 寫「不是由這種程度的 UV 造成」 |
-| 6.2 | 實證類別比例 | **照實報告** | 不因結果改規則 |
-| 8.2 | 真人讀者指出明確錯誤 | 修正 | 其他意見只用來改寫 |
+| 1.5 | `v3b-prereg` has been tagged and pushed | Start B | Complete it first |
+| 2.3 | B's sanity checks match | Proceed to C | First check the pairing direction and file names |
+| 3.6 | C's trial run has `b_groupB` | Run all 40 | Change the parameter name and record it |
+| 3.8 | `framing_rule` holds in B or C | Main framing: "spurious group differences" | Main framing: "a common shift, with absolute values affected" (report both) |
+| 4.3 | All G4 tests pass | Submit the 80 fits | You may only adjust `conf_thresholds`; record it, then commit |
+| 4.6 | `mimicry_rule` holds | When the empirical data favour Gumbel, write "asymmetric or unequal variances" | Write "not caused by this degree of UV" |
+| 6.2 | Empirical category proportions | **Report as is** | Do not change the rules because of the results |
+| 8.2 | A human reader points out a clear error | Correct it | Use other comments only for rewriting |
 
-## 附錄 C：時間表
+## Appendix C: timeline
 
-以「工作天」計算，運算在背景進行；實證擬合大約還要 2–3 天。
+Counted in "working days", with computing running in the background; the empirical fits need roughly another 2–3 days.
 
-| 天 | 前景工作 | 背景運算 |
+| Day | Foreground work | Background computing |
 |---|---|---|
-| 1 | A（設定、tag）＋ B（再分析） | 實證擬合 |
-| 2 | C 的程式、測試、試跑 → 送出 C | 實證 + C（2–5 h） |
-| 3 | D 的模擬器、測試、試跑 → 送出 D；C 的摘要 | 實證 + D（4–10 h） |
-| 4 | D 的摘要；圖 10、圖 S；`positioning.md` | 實證（應接近完成） |
-| 5 | 效果量基準、UV 討論、Meyer-Grant 段落 | — |
-| 6 | 實證收尾（F） | LOO 修補（reloo/K-fold，數小時） |
-| 7–10 | 改寫論文（G 的 7.5） | — |
-| 11 | 投稿清單（H 的 8.1）→ 送給真人讀者 | — |
-| 等待 1–2 週 | — | — |
-| 之後 1–2 天 | 依意見改寫 → v2.0.0 → DOI → 預印本 → 投稿 | — |
+| 1 | A (setup, tag) + B (reanalysis) | Empirical fits |
+| 2 | C's code, tests, trial run → submit C | Empirical + C (2–5 h) |
+| 3 | D's simulator, tests, trial run → submit D; C's summary | Empirical + D (4–10 h) |
+| 4 | D's summary; Figure 10, Figure S; `positioning.md` | Empirical (should be nearly complete) |
+| 5 | Effect-size benchmarks, UV discussion, Meyer-Grant paragraph | — |
+| 6 | Finishing the empirical analysis (F) | LOO repair (reloo/K-fold, several hours) |
+| 7–10 | Revising the paper (7.5 in G) | — |
+| 11 | Submission checklist (8.1 in H) → send to human readers | — |
+| Wait 1–2 weeks | — | — |
+| 1–2 days afterwards | Revise according to comments → v2.0.0 → DOI → preprint → submit | — |
 
-**凍結點**在第 6 天結束：這之後只寫作，不再新增分析。
+The **freeze point** is the end of day 6: after this, only writing; no new analyses are added.

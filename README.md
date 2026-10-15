@@ -1,5 +1,7 @@
 # Metacognitive noise recovery with `hmetad`
 
+[![DOI](https://zenodo.org/badge/1391029961.svg)](https://doi.org/10.5281/zenodo.23386351)
+
 **Static meta-d′ estimation under dynamic confidence generation and distributional misspecification.**
 A reproducible R/Stan simulation study, extended in v3 (2.0.0) with three further simulation analyses and an empirical analysis of the Confidence Database. Draft report: [manuscript/report.md](manuscript/report.md) (draft v2.0, including the v3 results: §§3.6 and 4.8–4.11).
 
@@ -128,4 +130,4 @@ The v3 empirical fits use the same diagnostic thresholds with stricter sampling 
 
 ## Licence and citation
 
-MIT licence (`LICENSE`). Citation metadata is in `CITATION.cff`. Reference details in `manuscript/references.bib` were checked against Crossref on 2026-09-28 (the Bürkner page range was not returned by Crossref; see the file header).
+MIT licence (`LICENSE`). Citation metadata is in `CITATION.cff`. The code is archived on Zenodo: cite the concept DOI [10.5281/zenodo.23386351](https://doi.org/10.5281/zenodo.23386351) (all versions), or [10.5281/zenodo.23386352](https://doi.org/10.5281/zenodo.23386352) for v2.2.0 specifically. Reference details in `manuscript/references.bib` were checked against Crossref on 2026-09-28 (the Bürkner page range was not returned by Crossref; see the file header).

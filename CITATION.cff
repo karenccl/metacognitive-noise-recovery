@@ -9,3 +9,11 @@ repository-code: "https://github.com/karenccl/metacognitive-noise-recovery"
 license: MIT
 version: 2.2.0
 date-released: 2026-10-15
+doi: 10.5281/zenodo.23386351
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23386351
+    description: "Concept DOI (all versions; resolves to the latest)"
+  - type: doi
+    value: 10.5281/zenodo.23386352
+    description: "Version DOI for v2.2.0"
