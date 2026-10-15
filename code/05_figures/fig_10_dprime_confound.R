@@ -5,6 +5,7 @@
 #
 # Run from the project root: Rscript code/05_figures/fig_10_dprime_confound.R
 suppressPackageStartupMessages({ library(dplyr); library(ggplot2) })
+source(here::here("code", "05_figures", "fig_helpers.R"))
 okabe_v <- c(correct = "#009E73", misspecified = "#D55E00")
 lab_v   <- c(correct = "Correct (Gumbel-min)", misspecified = "Gaussian (misspecified)")
 
@@ -37,7 +38,7 @@ pB <- ggplot(c2, aes(fit_variant, diff_mean, colour = fit_variant)) +
   theme_minimal() + theme(legend.position = "top")
 
 dir.create(here::here("outputs", "figures", "v3b"), recursive = TRUE, showWarnings = FALSE)
-g <- gridExtra::arrangeGrob(pA, pB, ncol = 2, widths = c(1.4, 1))
-ggsave(here::here("outputs", "figures", "v3b", "fig_10_dprime_confound.png"), g,
-       width = 11, height = 4.5, dpi = 300)
+g <- gridExtra::arrangeGrob(print_ready(pA), print_ready(pB), ncol = 2, widths = c(1.4, 1))
+save_fig(g, here::here("outputs", "figures", "v3b", "fig_10_dprime_confound.png"), width = 11, height = 4.5, dpi = 300,
+         sub_name = "Fig3", sub_height_mm = 85)
 cat("Wrote outputs/figures/v3b/fig_10_dprime_confound.png\n")

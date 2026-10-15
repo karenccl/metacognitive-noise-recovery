@@ -10,6 +10,7 @@
 
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
+source(here::here("code", "05_figures", "fig_helpers.R"))
 set.seed(20260923)  # jitter positions are reproducible
 
 okabe <- c(orange = "#E69F00", sky = "#56B4E9", green = "#009E73", blue = "#0072B2", vermillion = "#D55E00")
@@ -71,6 +72,7 @@ p_cov <- ggplot(cov_summary, aes(x = condition, y = coverage)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-g <- gridExtra::arrangeGrob(p_bias, p_cov, ncol = 1, heights = c(1.15, 1))
-ggsave(here::here("outputs", "figures", "fig_2_g0_validation.png"), g, width = 9, height = 9.5, dpi = 200)
+g <- gridExtra::arrangeGrob(print_ready(p_bias), print_ready(p_cov), ncol = 1, heights = c(1.15, 1))
+save_fig(g, here::here("outputs", "figures", "fig_2_g0_validation.png"), width = 9, height = 9.5,
+         sub_name = "FigS3", sub_height_mm = 190)
 cat("Wrote outputs/figures/fig_2_g0_validation.png\n")

@@ -5,6 +5,7 @@
 # Run from the project root: Rscript code/05_figures/fig_7_loo_robust.R
 
 suppressPackageStartupMessages({ library(dplyr); library(ggplot2) })
+source(here::here("code", "05_figures", "fig_helpers.R"))
 p <- readr::read_csv(here::here("data", "processed", "v3", "g2_loo_psis_vs_exact_by_pair.csv"),
                      show_col_types = FALSE) |>
   mutate(refit = if_else(n_bad_k_correct + n_bad_k_mis > 0, "some participants refitted", "no k > 0.7"))
@@ -34,6 +35,7 @@ pB <- ggplot(k, aes(cell, prop_obs_bad, fill = fit)) +
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "top")
 
 dir.create(here::here("outputs", "figures", "v3"), recursive = TRUE, showWarnings = FALSE)
-g <- gridExtra::arrangeGrob(pA, pB, ncol = 2, widths = c(1, 1.2))
-ggsave(here::here("outputs", "figures", "v3", "fig_7_loo_robust.png"), g, width = 13, height = 6, dpi = 200)
+g <- gridExtra::arrangeGrob(print_ready(pA), print_ready(pB), ncol = 2, widths = c(1, 1.2))
+save_fig(g, here::here("outputs", "figures", "v3", "fig_7_loo_robust.png"), width = 13, height = 6,
+         sub_name = "FigS4", sub_height_mm = 105)
 cat("Wrote outputs/figures/v3/fig_7_loo_robust.png\n")

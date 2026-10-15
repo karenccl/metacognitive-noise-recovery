@@ -111,6 +111,7 @@ make test        # unit tests, fast
 #   Rscript code/run_downstream.R
 make all         # setup, grid, G1, G0, G2, compile, analyse, figures
 make robustness  # prior sweep (~20 min) and K=6 refits (~75 min)
+make figures-submission  # paper figures without in-figure titles: TIFF, 300 dpi, 174 mm wide (outputs/figures/submission/)
 ```
 
 The full grid took about 26 hours on one 22-core Windows machine (5 concurrent fits × 4 chains, about 55 fits/hour, thermally throttled). Lower `execution.max_concurrent_fits` in `config/design.yml` on a smaller machine. Only replications 1–2 of each cell keep the full `brmsfit`; every fit keeps a compact record (posterior draws for population-level effects and SDs, aggregated counts, diagnostics).

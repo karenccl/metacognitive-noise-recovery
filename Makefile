@@ -95,3 +95,15 @@ v3-figures:
 	$(RSCRIPT) code/05_figures/fig_7_loo_robust.R
 	$(RSCRIPT) code/05_figures/fig_8_g3_mixture.R
 	$(RSCRIPT) code/05_figures/fig_9_empirical.R
+	$(RSCRIPT) code/05_figures/fig_10_dprime_confound.R  # v3b
+
+# Submission versions of the 12 paper figures (paper.md: Fig. 1-6, S1-S6):
+# no in-figure titles, TIFF 300 dpi at printed size, in outputs/figures/submission/
+# (dropped_text.md lists the removed titles/subtitles/captions). Report PNGs untouched.
+.PHONY: figures-submission
+SUBMISSION_FIGS := fig_4_g2_misspecification fig_6_relative_bias fig_10_dprime_confound fig_g2_ppp \
+	fig_8_g3_mixture fig_9_empirical fig_3_g1_ordinal_recovery fig_1_design fig_2_g0_validation \
+	fig_7_loo_robust fig_g2_ppc_all fig_5_ppc
+figures-submission:
+	rm -f outputs/figures/submission/dropped_text.md
+	for f in $(SUBMISSION_FIGS); do FIG_SUBMISSION=1 $(RSCRIPT) code/05_figures/$$f.R || exit 1; done

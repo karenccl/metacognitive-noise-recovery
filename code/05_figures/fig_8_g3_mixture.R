@@ -6,6 +6,7 @@
 # Run from the project root: Rscript code/05_figures/fig_8_g3_mixture.R
 
 suppressPackageStartupMessages({ library(dplyr); library(ggplot2) })
+source(here::here("code", "05_figures", "fig_helpers.R"))
 l <- readr::read_csv(here::here("data", "processed", "v3", "g3_loo_by_rep.csv"), show_col_types = FALSE) |>
   mutate(agg = factor(agg, levels = c("pooled", "difficulty"),
                       labels = c("Pooled over difficulty", "Difficulty modelled")),
@@ -37,6 +38,7 @@ pB <- ggplot(b, aes(interaction(agg, condition, sep = "\n"), bias, colour = fam)
   theme_minimal() + theme(legend.position = "top")
 
 dir.create(here::here("outputs", "figures", "v3"), recursive = TRUE, showWarnings = FALSE)
-g <- gridExtra::arrangeGrob(pA, pB, ncol = 2, widths = c(1.3, 1))
-ggsave(here::here("outputs", "figures", "v3", "fig_8_g3_mixture.png"), g, width = 13, height = 5.5, dpi = 200)
+g <- gridExtra::arrangeGrob(print_ready(pA), print_ready(pB), ncol = 2, widths = c(1.3, 1))
+save_fig(g, here::here("outputs", "figures", "v3", "fig_8_g3_mixture.png"), width = 13, height = 5.5,
+         sub_name = "Fig5", sub_height_mm = 95)
 cat("Wrote outputs/figures/v3/fig_8_g3_mixture.png\n")

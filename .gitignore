@@ -21,3 +21,6 @@ Rplots.pdf
 # Submission manuscript drafts (kept local, not versioned)
 manuscript/paper*.md
 manuscript/paper*.docx
+
+# Submission figures (regenerate with `make figures-submission`)
+outputs/figures/submission/

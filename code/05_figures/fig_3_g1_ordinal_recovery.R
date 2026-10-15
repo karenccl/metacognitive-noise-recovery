@@ -11,6 +11,7 @@
 
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
+source(here::here("code", "05_figures", "fig_helpers.R"))
 set.seed(20260923)  # jitter positions are reproducible
 
 okabe <- c(orange = "#E69F00", blue = "#0072B2")
@@ -61,5 +62,6 @@ matched-rep ordering accuracy >= %.0f%% in every condition.",
   theme(legend.position = "bottom", plot.caption = element_text(hjust = 0, size = 7.5),
         plot.subtitle = element_text(size = 9))
 
-ggsave(here::here("outputs", "figures", "fig_3_g1_ordinal_recovery.png"), p, width = 10, height = 6.5, dpi = 200)
+save_fig(print_ready(p), here::here("outputs", "figures", "fig_3_g1_ordinal_recovery.png"), width = 10, height = 6.5,
+         sub_name = "FigS1", sub_height_mm = 120)
 cat("Wrote outputs/figures/fig_3_g1_ordinal_recovery.png\n")

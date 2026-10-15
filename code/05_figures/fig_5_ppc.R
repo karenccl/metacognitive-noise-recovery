@@ -12,6 +12,7 @@
 
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
+source(here::here("code", "05_figures", "fig_helpers.R"))
 
 ppc <- readr::read_csv(here::here("data", "processed", "ppc_joint_counts.csv"), show_col_types = FALSE)
 summ <- readr::read_csv(here::here("data", "processed", "ppc_discrepancy_summary.csv"), show_col_types = FALSE)
@@ -43,5 +44,6 @@ p <- ggplot(ppc, aes(x = predicted_prop, y = observed_prop)) +
   theme(legend.position = "bottom", plot.caption = element_text(hjust = 0, size = 7.5),
         plot.subtitle = element_text(size = 9))
 
-ggsave(here::here("outputs", "figures", "fig_5_ppc.png"), p, width = 10.5, height = 7, dpi = 200)
+save_fig(print_ready(p), here::here("outputs", "figures", "fig_5_ppc.png"), width = 10.5, height = 7,
+         sub_name = "FigS6", sub_height_mm = 125)
 cat("Wrote outputs/figures/fig_5_ppc.png\n")

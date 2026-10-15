@@ -6,6 +6,7 @@
 # Run from the project root: Rscript code/05_figures/fig_6_relative_bias.R
 
 suppressPackageStartupMessages({ library(dplyr); library(ggplot2) })
+source(here::here("code", "05_figures", "fig_helpers.R"))
 okabe_d <- c("0.75" = "#E69F00", "1.5" = "#0072B2")
 
 d <- readr::read_csv(here::here("data", "processed", "v3", "g2_relative_bias_by_cell.csv"),
@@ -39,9 +40,11 @@ pB <- ggplot(b, aes(cell, bias, colour = source)) +
   scale_colour_manual(values = c("G2, correct (Gumbel) fit" = "#009E73", "G0 (Gaussian data, Gaussian fit)" = "#999999")) +
   labs(subtitle = "B. Baseline error of correctly specified fits (mean ± 2 MCSE)",
        x = NULL, y = "log M error (estimate - truth)", colour = NULL) +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "top")
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "top") +
+  (if (fig_submission) guides(colour = guide_legend(nrow = 2)))
 
 dir.create(here::here("outputs", "figures", "v3"), recursive = TRUE, showWarnings = FALSE)
-g <- gridExtra::arrangeGrob(pA, pB, ncol = 2, widths = c(1, 1.1))
-ggsave(here::here("outputs", "figures", "v3", "fig_6_relative_bias.png"), g, width = 13, height = 5.5, dpi = 200)
+g <- gridExtra::arrangeGrob(print_ready(pA), print_ready(pB), ncol = 2, widths = c(1, 1.1))
+save_fig(g, here::here("outputs", "figures", "v3", "fig_6_relative_bias.png"), width = 13, height = 5.5,
+         sub_name = "Fig2", sub_height_mm = 95)
 cat("Wrote outputs/figures/v3/fig_6_relative_bias.png\n")

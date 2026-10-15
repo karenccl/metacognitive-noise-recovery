@@ -14,6 +14,7 @@
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
 set.seed(20260923)  # jitter positions are reproducible
+source(here::here("code", "05_figures", "fig_helpers.R"))
 
 okabe <- c(correct = "#009E73", misspecified = "#D55E00")
 log_M_truth <- yaml::read_yaml(here::here("config", "design.yml"))$truth$log_M
@@ -102,6 +103,7 @@ pC <- ggplot(cov, aes(x = condition, y = coverage, color = fit_variant)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-g <- gridExtra::arrangeGrob(pA, pB, pC, ncol = 1, heights = c(1, 1.15, 0.85))
-ggsave(here::here("outputs", "figures", "fig_4_g2_misspecification.png"), g, width = 10, height = 13, dpi = 200)
+g <- gridExtra::arrangeGrob(print_ready(pA), print_ready(pB), print_ready(pC), ncol = 1, heights = c(1, 1.15, 0.85))
+save_fig(g, here::here("outputs", "figures", "fig_4_g2_misspecification.png"), width = 10, height = 13,
+         sub_name = "Fig1", sub_height_mm = 230)
 cat("Wrote outputs/figures/fig_4_g2_misspecification.png\n")
