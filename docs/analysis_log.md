@@ -1695,3 +1695,22 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   shared thresholds in C (hierarchical_thresholds = false, no group term on the gaps) as a cause.
   The misspecified - correct difference is similar in B and C, and the gap (~0.05, SE ~0.05) is
   within Monte Carlo error; reported as not interpreted.
+
+## 2026-10-15 - Review response: diagnostics for every K-fold refit
+
+- An editorial review pointed out that refit convergence was checked on one pilot dataset only
+  (05_loo_repair.R used save_fits = FALSE), while full-data fits must have no divergences.
+- Added `code/06_empirical/05c_kfold_refit_diagnostics.R`: reruns the identical K-fold step
+  (same folds, seeds and sampler settings) for all 22 K-fold datasets with save_fits = TRUE,
+  applies `extract_fit_summary()` to every refit, checks that the stored ELPD is reproduced, and
+  drops the refits. The refits reuse the stored Stan seeds, but the held-out participants'
+  effects (sample_new_levels = "gaussian") come from R's RNG, seeded once per dataset in
+  make_folds(); if the original run was resumed between the two families, those draws differ.
+  "Reproduced" is therefore |difference| < 1% of the stored SE (set before running); exact
+  agreement is recorded separately (`elpd_exact`).
+- Rule added after the categories were known (therefore reported as a deviation, with both
+  versions): a dataset whose cross-validation includes any refit failing the full-data diagnostic
+  rule is reported as unreliable in a stricter categorisation (`category_cv_diag`). The
+  pre-specified categorisation is kept and shown alongside.
+- Also from the review, no new computation: empirical log M differences and condition contrasts
+  are now reported first for the 10 datasets in which both full-data fits passed.

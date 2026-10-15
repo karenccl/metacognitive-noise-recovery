@@ -55,5 +55,5 @@ pB <- ggplot(bars, aes(x = label, y = rate, fill = fit_variant)) +
 
 g <- gridExtra::arrangeGrob(print_ready(pA), print_ready(pB), ncol = 2, widths = c(1.1, 1))
 save_fig(g, file.path(out_fig, "fig_g2_ppp.png"), width = 15, height = 9,
-         sub_name = "Fig4", sub_height_mm = 150)
+         sub_name = "Fig3", sub_height_mm = 150)
 cat("Wrote outputs/figures/v2/fig_g2_ppp.png\n")
