@@ -1714,3 +1714,27 @@ Design locked in `32de75f` (`design_decisions.md`, "v2 extension 2"). Script
   pre-specified categorisation is kept and shown alongside.
 - Also from the review, no new computation: empirical log M differences and condition contrasts
   are now reported first for the 10 datasets in which both full-data fits passed.
+
+## 2026-10-17 - K-fold refit diagnostics: results
+
+- `05c_kfold_refit_diagnostics.R` ran from 2026-10-15 16:40 to 2026-10-17 17:40 (2 shards). Outputs:
+  `data/processed/v3/empirical/kfold_refit_diagnostics.csv` (220 refits) and
+  `kfold_refit_by_dataset.csv`.
+- 84 of 220 refits failed the full-data diagnostic rule: 58 of 110 Gaussian, 26 of 110 Gumbel-min.
+- ELPD reproduced exactly for 43 of 44 dataset-family records. Exception: Schurgin_2018
+  gumbel_min, |difference| 24.2 (stored SE 243). This is the record deleted and rerun alone after
+  the shutdown (2026-10-06, see above), so its held-out participants' new-level draws
+  (sample_new_levels = "gaussian", R's RNG seeded once per dataset in make_folds()) started from
+  the seed, whereas here they followed the normal family. The Stan refits are seeded, so the
+  refit diagnostics are unaffected; the dataset is unreliable under every rule, and its ELPD
+  difference keeps its sign (+405 stored, +429 recomputed). Not confirmed by a rerun (~11 h);
+  explanation recorded as the likely cause.
+- Stricter categorisation (post hoc, any failed refit -> unreliable): 2 of the 10 categorised
+  datasets keep their category (Hu_2017 clear Gaussian, Kantner_2012_E1 clear Gumbel-min).
+  The 8 that drop, by failure type: divergences 1 (Gherman_2018, 2 Gaussian refits, 6 divergent
+  transitions); max treedepth 1 (VanBoxtel_2019_Expt2, 3 Gaussian refits); R-hat only 6
+  (OHora_unpub_1, Kantner_2012_E2, Kantner_2012_E3, Kantner_2014_E1, Kantner_2014_E2,
+  Lindsay_2014; R-hat 1.0101-1.0138 in 1-3 refits, no divergences).
+- Reporting decision (author, 2026-10-17): the pre-specified categories remain primary; the
+  stricter categorisation is reported as a post hoc sensitivity analysis together with this
+  breakdown by failure type (paper: empirical Results and Table 4).
